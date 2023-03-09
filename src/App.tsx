@@ -1,8 +1,13 @@
 import { IonApp, IonRouterOutlet, IonSplitPane, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Redirect, Route } from 'react-router-dom';
+import { App as CapApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useEffect } from "react";
 import Menu from './components/Menu';
 import Page from './pages/Page';
+import {callbackUri} from "./auth.config";
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -26,6 +31,23 @@ import './theme/variables.css';
 setupIonicReact();
 
 const App: React.FC = () => {
+  const { handleRedirectCallback } = useAuth0();
+
+  useEffect(() => {
+    CapApp.addListener("appUrlOpen", async ({ url }) => {
+      if (url.startsWith(callbackUri)) {
+        if (
+            url.includes("state") &&
+            (url.includes("code") || url.includes("error"))
+        ) {
+          await handleRedirectCallback(url);
+        }
+
+        await Browser.close();
+      }
+    });
+  }, [handleRedirectCallback]);
+
   return (
     <IonApp>
       <IonReactRouter>
