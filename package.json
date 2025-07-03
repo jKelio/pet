@@ -22,9 +22,11 @@
     "@types/react-router": "^5.1.11",
     "@types/react-router-dom": "^5.1.7",
     "history": "^4.9.0",
+    "i18next": "^22.4.11",
     "ionicons": "^6.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-i18next": "^12.2.0",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
     "react-scripts": "^5.0.0",
@@ -71,7 +73,8 @@
     ]
   },
   "devDependencies": {
-    "@capacitor/cli": "4.7.0"
+    "@capacitor/cli": "4.7.0",
+    "@ionic/lab": "3.2.15"
   },
   "description": "An Ionic project"
 }
