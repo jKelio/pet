@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import Menu from './components/Menu';
 import Page from './pages/Page';
 import {callbackUri} from "./auth.config";
+import TrackingContextProvider from "./pages/tracking/TrackingContextProvider";
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -30,10 +31,12 @@ import './theme/variables.css';
 import Language from "./pages/language/Language";
 import Feedback from "./pages/feedback/Feedback";
 import Tracking from "./pages/tracking/tracking";
+import TimeWatcher from "./pages/tracking/TimeWatcher";
+import Results from "./pages/tracking/Results";
 
 setupIonicReact();
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const { handleRedirectCallback } = useAuth0();
 
   useEffect(() => {
@@ -66,6 +69,12 @@ const App: React.FC = () => {
             <Route path="/page/tracking" exact={true}>
               <Tracking />
             </Route>
+            <Route path="/page/timeWatcher" exact={true}>
+              <TimeWatcher />
+            </Route>
+            <Route path="/page/results" exact={true}>
+              <Results />
+            </Route>
             <Route path="/page/feedback" exact={true}>
               <Feedback />
             </Route>
@@ -73,6 +82,14 @@ const App: React.FC = () => {
         </IonSplitPane>
       </IonReactRouter>
     </IonApp>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <TrackingContextProvider>
+      <AppContent />
+    </TrackingContextProvider>
   );
 };
 

@@ -57,6 +57,27 @@ const resources = {
                 "typeLabel": "Type",
                 "timer": "Timer",
                 "counter": "Counter"
+            },
+            "timeWatcher": {
+                "title": "Time Watcher",
+                "timers": "Timers",
+                "counters": "Counters",
+                "active": "Active",
+                "inactive": "Inactive",
+                "count": "Count",
+                "placeholder": "Ready to start tracking?",
+                "startButton": "Start TimeWatcher",
+                "wasteTime": "Waste Time"
+            },
+            "results": {
+                "title": "Training Results",
+                "summary": "Training Summary",
+                "totalDrills": "Total Drills",
+                "totalTime": "Total Time",
+                "wasteTime": "Waste Time",
+                "detailedResults": "Detailed Results",
+                "placeholder": "Detailed analysis coming soon...",
+                "backToHome": "Back to Home"
             }
         },
         menu: {
@@ -122,6 +143,27 @@ const resources = {
                 "typeLabel": "Typ",
                 "timer": "Zeit",
                 "counter": "Zähler"
+            },
+            "timeWatcher": {
+                "title": "Zeit Beobachter",
+                "timers": "Zeitmesser",
+                "counters": "Zähler",
+                "active": "Aktiv",
+                "inactive": "Inaktiv",
+                "count": "Anzahl",
+                "placeholder": "Bereit zum Tracking?",
+                "startButton": "ZeitBeobachter starten",
+                "wasteTime": "Verschwendete Zeit"
+            },
+            "results": {
+                "title": "Trainingsergebnisse",
+                "summary": "Trainingszusammenfassung",
+                "totalDrills": "Gesamte Drills",
+                "totalTime": "Gesamtzeit",
+                "wasteTime": "Verschwendete Zeit",
+                "detailedResults": "Detaillierte Ergebnisse",
+                "placeholder": "Detaillierte Analyse kommt bald...",
+                "backToHome": "Zurück zum Start"
             }
         },
         menu: {

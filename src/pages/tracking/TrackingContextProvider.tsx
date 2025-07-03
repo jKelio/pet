@@ -204,6 +204,7 @@ const TrackingContextProvider: React.FC<{ children: React.ReactNode }> = ({child
                 case 'practiceInfo':
                     return 'drills';
                 case 'drills':
+                    setCurrentDrillIndex(0); // Reset auf ersten Drill beim Wechsel zu timeWatcher
                     return 'timeWatcher';
                 case 'timeWatcher':
                     return 'timeWatcher'; // bleibt
