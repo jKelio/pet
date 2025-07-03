@@ -1,4 +1,4 @@
-import React, {Dispatch, ReactNode, SetStateAction, useCallback, useContext, useState} from "react";
+import React, {Dispatch, ReactNode, SetStateAction, useContext, useState} from "react";
 import {createContext} from "react";
 
 const initialActionButtons: ActionButton[] = [
@@ -63,7 +63,7 @@ const createDrills = (drillsNumber: number) => {
     return Array.from(Array(drillsNumber).keys()).map(n => ({
         id: n + 1,
         tags: new Set(),
-        actionButtons: initialActionButtons
+        actionButtons: initialActionButtons.map(a => ({ ...a }))
     } as Drill));
 }
 
@@ -92,33 +92,56 @@ interface ActionButton {
     enabled: boolean
 }
 
+export type TrackingMode = 'practiceInfo' | 'drills' | 'timeWatcher';
+
 export const useTrackingContext = () => {
+    const context = useContext(TrackingContext);
     const {
         practiceInfo,
         setPracticeInfo,
         drills,
         setDrills,
         currentDrillIndex,
-        setCurrentDrillIndex
-    } = useContext(TrackingContext);
+        setCurrentDrillIndex,
+        mode,
+        setMode,
+        goToNextStep,
+        goToPrevStep,
+        updateDrillAction
+    } = context;
 
-    const initDrills = useCallback((drillsNumber: number) => {
+    const initDrills = (drillsNumber: number) => {
         setDrills(createDrills(drillsNumber));
-    }, [setDrills]);
+    };
 
-    const getCurrentDrill = useCallback(() => {
+    const getCurrentDrill = () => {
         return drills[currentDrillIndex];
-    }, [currentDrillIndex, drills])
+    };
 
-    const updateCurrentDrill = useCallback((updatedDrill: Drill) => {
+    const updateCurrentDrill = (updatedDrill: Drill) => {
         setDrills([
             ...drills.slice(0, currentDrillIndex),
             updatedDrill,
-            ...drills.slice(currentDrillIndex)
+            ...drills.slice(currentDrillIndex + 1)
         ]);
-    }, [currentDrillIndex, drills, setDrills]);
+    };
 
-    return {practiceInfo, setPracticeInfo, drills, setDrills, currentDrillIndex, setCurrentDrillIndex, initDrills, getCurrentDrill, updateCurrentDrill};
+    return {
+        practiceInfo,
+        setPracticeInfo,
+        drills,
+        setDrills,
+        currentDrillIndex,
+        setCurrentDrillIndex,
+        mode,
+        setMode,
+        goToNextStep,
+        goToPrevStep,
+        initDrills,
+        getCurrentDrill,
+        updateCurrentDrill,
+        updateDrillAction
+    };
 }
 
 const TrackingContext = createContext<{
@@ -127,7 +150,12 @@ const TrackingContext = createContext<{
     drills: Drill[],
     setDrills: Dispatch<SetStateAction<Drill[]>>,
     currentDrillIndex: number,
-    setCurrentDrillIndex: Dispatch<SetStateAction<number>>
+    setCurrentDrillIndex: Dispatch<SetStateAction<number>>,
+    mode: TrackingMode,
+    setMode: Dispatch<SetStateAction<TrackingMode>>,
+    goToNextStep: () => void,
+    goToPrevStep: () => void,
+    updateDrillAction: (drillIndex: number, actionId: string, newAction: Partial<ActionButton>) => void
 }>({
     practiceInfo: {
         clubName: '',
@@ -141,17 +169,19 @@ const TrackingContext = createContext<{
         trackedPlayerName: '',
         drillsNumber: 0,
     },
-    setPracticeInfo: () => {
-    },
+    setPracticeInfo: () => {},
     drills: [] as Drill[],
-    setDrills: () => {
-    },
+    setDrills: () => {},
     currentDrillIndex: 0,
-    setCurrentDrillIndex: () => {
-    }
+    setCurrentDrillIndex: () => {},
+    mode: 'practiceInfo',
+    setMode: () => {},
+    goToNextStep: () => {},
+    goToPrevStep: () => {},
+    updateDrillAction: () => {}
 });
 
-const TrackingContextProvider: React.FC<{ children: ReactNode[] }> = ({children}) => {
+const TrackingContextProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
     const [practiceInfo, setPracticeInfo] = useState<PracticeInfo>({
         clubName: '',
         teamName: '',
@@ -165,8 +195,51 @@ const TrackingContextProvider: React.FC<{ children: ReactNode[] }> = ({children}
         drillsNumber: 0,
     });
     const [drills, setDrills] = useState<Drill[]>([]);
-    const [currentDrillIndex, setCurrentDrillIndex] = useState<number>(0)
+    const [currentDrillIndex, setCurrentDrillIndex] = useState<number>(0);
+    const [mode, setMode] = useState<TrackingMode>('practiceInfo');
 
+    const goToNextStep = () => {
+        setMode((prev) => {
+            switch (prev) {
+                case 'practiceInfo':
+                    return 'drills';
+                case 'drills':
+                    return 'timeWatcher';
+                case 'timeWatcher':
+                    return 'timeWatcher'; // bleibt
+                default:
+                    return prev;
+            }
+        });
+    };
+
+    const goToPrevStep = () => {
+        setMode((prev) => {
+            switch (prev) {
+                case 'drills':
+                    return 'practiceInfo';
+                case 'timeWatcher':
+                    return 'drills';
+                case 'practiceInfo':
+                    return 'practiceInfo'; // bleibt
+                default:
+                    return prev;
+            }
+        });
+    };
+
+    // Neue Funktion zum gezielten Updaten einer Action eines Drills
+    const updateDrillAction = (drillIndex: number, actionId: string, newAction: Partial<ActionButton>) => {
+        setDrills(prevDrills => prevDrills.map((drill, idx) => {
+            if (idx !== drillIndex) return drill;
+            return {
+                ...drill,
+                actionButtons: drill.actionButtons.map(action =>
+                    action.id === actionId ? { ...action, ...newAction } : action
+                )
+            };
+        }));
+    };
 
     return <TrackingContext.Provider value={{
         practiceInfo,
@@ -174,7 +247,12 @@ const TrackingContextProvider: React.FC<{ children: ReactNode[] }> = ({children}
         drills,
         setDrills,
         currentDrillIndex,
-        setCurrentDrillIndex
+        setCurrentDrillIndex,
+        mode,
+        setMode,
+        goToNextStep,
+        goToPrevStep,
+        updateDrillAction
     }}>
         {children}
     </TrackingContext.Provider>

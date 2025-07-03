@@ -31,8 +31,9 @@ const PracticeInfoForm: React.FC = () => {
                 </IonListHeader>
             </IonItemDivider>
             <IonItem>
-                <IonLabel position="floating">{t('general.clubLabel')}</IonLabel>
-                <IonInput value={practiceInfo.clubName}
+                <IonInput label={t('general.clubLabel') || ''}
+                          labelPlacement="floating"
+                          value={practiceInfo.clubName}
                           clearInput={true}
                           onIonChange={(e) => setPracticeInfo({
                               ...practiceInfo,
@@ -40,8 +41,9 @@ const PracticeInfoForm: React.FC = () => {
                           })}/>
             </IonItem>
             <IonItem>
-                <IonLabel position="floating">{t('general.teamLabel')}</IonLabel>
-                <IonInput value={practiceInfo.teamName}
+                <IonInput label={t('general.teamLabel') || ''}
+                          labelPlacement="floating"
+                          value={practiceInfo.teamName}
                           clearInput={true}
                           onIonChange={(e) => setPracticeInfo({
                               ...practiceInfo,
@@ -59,8 +61,9 @@ const PracticeInfoForm: React.FC = () => {
                 </IonModal>
             </IonItem>
             <IonItem>
-                <IonLabel position="floating">{t('general.coachLabel')}</IonLabel>
-                <IonInput value={practiceInfo.coachName}
+                <IonInput label={t('general.coachLabel') || ''}
+                          labelPlacement="floating"
+                          value={practiceInfo.coachName}
                           clearInput={true}
                           onIonChange={(e) => setPracticeInfo({
                               ...practiceInfo,
@@ -68,8 +71,9 @@ const PracticeInfoForm: React.FC = () => {
                           })}/>
             </IonItem>
             <IonItem>
-                <IonLabel position="floating">{t('general.evaluationLabel')}</IonLabel>
-                <IonInput type="number"
+                <IonInput label={t('general.evaluationLabel') || ''}
+                          labelPlacement="floating"
+                          type="number"
                           value={practiceInfo.evaluation}
                           clearInput={true}
                           onIonChange={(e) => setPracticeInfo({
@@ -85,8 +89,9 @@ const PracticeInfoForm: React.FC = () => {
                 </IonListHeader>
             </IonItemDivider>
             <IonItem>
-                <IonLabel position="floating">{t('practice.athletesNumberLabel')}</IonLabel>
-                <IonInput type="number"
+                <IonInput label={t('practice.athletesNumberLabel') || ''}
+                          labelPlacement="floating"
+                          type="number"
                           value={practiceInfo.athletesNumber}
                           clearInput={true}
                           onIonChange={(e) => setPracticeInfo({
@@ -95,8 +100,9 @@ const PracticeInfoForm: React.FC = () => {
                           })}/>
             </IonItem>
             <IonItem>
-                <IonLabel position="floating">{t('practice.coachesNumberLabel')}</IonLabel>
-                <IonInput type="number"
+                <IonInput label={t('practice.coachesNumberLabel') || ''}
+                          labelPlacement="floating"
+                          type="number"
                           value={practiceInfo.coachesNumber}
                           clearInput={true}
                           onIonChange={(e) => setPracticeInfo({
@@ -105,8 +111,9 @@ const PracticeInfoForm: React.FC = () => {
                           })}/>
             </IonItem>
             <IonItem>
-                <IonLabel position="floating">{t('practice.totalTimeLabel')}</IonLabel>
-                <IonInput type="number"
+                <IonInput label={t('practice.totalTimeLabel') || ''}
+                          labelPlacement="floating"
+                          type="number"
                           value={practiceInfo.totalTime}
                           clearInput={true}
                           onIonChange={(e) => setPracticeInfo({
@@ -115,8 +122,9 @@ const PracticeInfoForm: React.FC = () => {
                           })}/>
             </IonItem>
             <IonItem>
-                <IonLabel position="floating">{t('practice.trackedPlayerNameLabel')}</IonLabel>
-                <IonInput value={practiceInfo.trackedPlayerName}
+                <IonInput label={t('practice.trackedPlayerNameLabel') || ''}
+                          labelPlacement="floating"
+                          value={practiceInfo.trackedPlayerName}
                           clearInput={true}
                           onIonChange={(e) => setPracticeInfo({
                               ...practiceInfo,
@@ -124,8 +132,9 @@ const PracticeInfoForm: React.FC = () => {
                           })}/>
             </IonItem>
             <IonItem>
-                <IonLabel position="floating">{t('practice.drillsNumberLabel')}</IonLabel>
-                <IonInput type="number"
+                <IonInput label={t('practice.drillsNumberLabel') || ''}
+                          labelPlacement="floating"
+                          type="number"
                           value={practiceInfo.drillsNumber}
                           clearInput={true}
                           onIonChange={(e) => changeDrillsNumber(parseInt(e.detail.value || '0'))}/>
