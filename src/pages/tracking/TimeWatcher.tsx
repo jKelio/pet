@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {
     IonPage,
     IonHeader,
@@ -25,6 +25,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { useTrackingContext } from './TrackingContextProvider';
+import { useTimerContext } from './TimerContextProvider';
 import { 
     play, 
     pause, 
@@ -40,264 +41,46 @@ import {
     checkmarkCircleOutline
 } from 'ionicons/icons';
 
-interface TimerState {
-    isRunning: boolean;
-    startTime: number | null;
-    elapsedTime: number;
-    totalTime: number;
-    timeSegments: Array<{
-        startTime: number;
-        endTime: number | null;
-        duration: number;
-    }>;
-}
-
-interface CounterState {
-    count: number;
-}
-
 const TimeWatcher: React.FC = () => {
     const { t } = useTranslation('pet');
     const { 
         drills, 
         currentDrillIndex, 
         setCurrentDrillIndex,
-        updateDrillAction,
         practiceInfo,
         initDrills
     } = useTrackingContext();
+    const {
+        timers,
+        counters,
+        currentTimer,
+        wasteTime,
+        startTimer,
+        pauseTimer,
+        resetTimer,
+        incrementCounter,
+        decrementCounter,
+        resetCounter,
+        resetWasteTime,
+        formatTime
+    } = useTimerContext();
     const history = useHistory();
-    
-    const [timers, setTimers] = useState<Record<string, TimerState>>({});
-    const [counters, setCounters] = useState<Record<string, CounterState>>({});
-    const [currentTimer, setCurrentTimer] = useState<string | null>(null);
-    const [wasteTime, setWasteTime] = useState<number>(0);
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
-    const wasteTimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     const currentDrill = drills[currentDrillIndex];
     const enabledActions = currentDrill?.actionButtons.filter(action => action.enabled) || [];
 
-    // Stelle sicher, dass Drills initialisiert sind und currentDrillIndex korrekt ist
+    // Ensure drills are initialized and currentDrillIndex is correct
     useEffect(() => {
         if (drills.length === 0 && practiceInfo.drillsNumber > 0) {
-            // Drills wurden noch nicht erstellt, erstelle sie jetzt
+            // Drills haven't been created yet, create them now
             initDrills(practiceInfo.drillsNumber);
         }
         
-        // Stelle sicher, dass currentDrillIndex im gültigen Bereich ist
+        // Ensure currentDrillIndex is within valid range
         if (drills.length > 0 && (currentDrillIndex >= drills.length || currentDrillIndex < 0)) {
             setCurrentDrillIndex(0);
         }
-    }, [drills.length, currentDrillIndex, practiceInfo.drillsNumber, initDrills]);
-
-    // Timer-Logik
-    useEffect(() => {
-        if (currentTimer && timers[currentTimer]?.isRunning) {
-            intervalRef.current = setInterval(() => {
-                setTimers(prev => ({
-                    ...prev,
-                    [currentTimer]: {
-                        ...prev[currentTimer],
-                        elapsedTime: Date.now() - (prev[currentTimer].startTime || 0)
-                    }
-                }));
-            }, 100);
-        } else {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-            }
-        }
-
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-        };
-    }, [currentTimer]); // Entferne 'timers' aus den Dependencies
-
-    // Waste Time Tracking
-    useEffect(() => {
-        if (!currentTimer) {
-            // Kein Timer läuft - starte Waste Time Tracking
-            wasteTimeIntervalRef.current = setInterval(() => {
-                setWasteTime(prev => prev + 100);
-            }, 100);
-        } else {
-            // Timer läuft - stoppe Waste Time Tracking
-            if (wasteTimeIntervalRef.current) {
-                clearInterval(wasteTimeIntervalRef.current);
-                wasteTimeIntervalRef.current = null;
-            }
-        }
-
-        return () => {
-            if (wasteTimeIntervalRef.current) {
-                clearInterval(wasteTimeIntervalRef.current);
-            }
-        };
-    }, [currentTimer]);
-
-    // Initialisiere Timer und Counter für enabled Actions
-    useEffect(() => {
-        const newTimers: Record<string, TimerState> = {};
-        const newCounters: Record<string, CounterState> = {};
-
-        enabledActions.forEach(action => {
-            if (action.type === 'timer') {
-                newTimers[action.id] = {
-                    isRunning: false,
-                    startTime: null,
-                    elapsedTime: 0,
-                    totalTime: 0,
-                    timeSegments: []
-                };
-            } else if (action.type === 'counter') {
-                newCounters[action.id] = {
-                    count: 0
-                };
-            }
-        });
-
-        setTimers(newTimers);
-        setCounters(newCounters);
-        setCurrentTimer(null);
-        setWasteTime(0); // Reset Waste Time für neuen Drill
-    }, [currentDrillIndex]); // Verwende currentDrillIndex statt enabledActions
-
-    const startTimer = (actionId: string) => {
-        if (currentTimer && currentTimer !== actionId) {
-            // Stoppe aktuellen Timer
-            stopTimer(currentTimer);
-        }
-
-        const now = Date.now();
-        setTimers(prev => ({
-            ...prev,
-            [actionId]: {
-                ...prev[actionId],
-                isRunning: true,
-                startTime: now,
-                elapsedTime: 0,
-                timeSegments: [
-                    ...prev[actionId].timeSegments,
-                    {
-                        startTime: now,
-                        endTime: null,
-                        duration: 0
-                    }
-                ]
-            }
-        }));
-        setCurrentTimer(actionId);
-    };
-
-    const pauseTimer = (actionId: string) => {
-        const now = Date.now();
-        setTimers(prev => {
-            const timer = prev[actionId];
-            if (!timer.isRunning) return prev;
-
-            // Aktualisiere das letzte Zeitsegment
-            const updatedSegments = [...timer.timeSegments];
-            if (updatedSegments.length > 0) {
-                const lastSegment = updatedSegments[updatedSegments.length - 1];
-                lastSegment.endTime = now;
-                lastSegment.duration = now - lastSegment.startTime;
-            }
-
-            return {
-                ...prev,
-                [actionId]: {
-                    ...timer,
-                    isRunning: false,
-                    totalTime: timer.totalTime + timer.elapsedTime,
-                    elapsedTime: 0,
-                    startTime: null,
-                    timeSegments: updatedSegments
-                }
-            };
-        });
-        setCurrentTimer(null);
-    };
-
-    const stopTimer = (actionId: string) => {
-        const now = Date.now();
-        setTimers(prev => {
-            const timer = prev[actionId];
-            
-            // Aktualisiere das letzte Zeitsegment
-            const updatedSegments = [...timer.timeSegments];
-            if (updatedSegments.length > 0) {
-                const lastSegment = updatedSegments[updatedSegments.length - 1];
-                lastSegment.endTime = now;
-                lastSegment.duration = now - lastSegment.startTime;
-            }
-
-            return {
-                ...prev,
-                [actionId]: {
-                    ...timer,
-                    isRunning: false,
-                    totalTime: timer.totalTime + timer.elapsedTime,
-                    elapsedTime: 0,
-                    startTime: null,
-                    timeSegments: updatedSegments
-                }
-            };
-        });
-        setCurrentTimer(null);
-    };
-
-    const resetTimer = (actionId: string) => {
-        setTimers(prev => ({
-            ...prev,
-            [actionId]: {
-                isRunning: false,
-                startTime: null,
-                elapsedTime: 0,
-                totalTime: 0,
-                timeSegments: []
-            }
-        }));
-    };
-
-    const incrementCounter = (actionId: string) => {
-        setCounters(prev => ({
-            ...prev,
-            [actionId]: {
-                count: prev[actionId].count + 1
-            }
-        }));
-    };
-
-    const decrementCounter = (actionId: string) => {
-        setCounters(prev => ({
-            ...prev,
-            [actionId]: {
-                count: Math.max(0, prev[actionId].count - 1)
-            }
-        }));
-    };
-
-    const resetCounter = (actionId: string) => {
-        setCounters(prev => ({
-            ...prev,
-            [actionId]: {
-                count: 0
-            }
-        }));
-    };
-
-    const formatTime = (milliseconds: number): string => {
-        const totalSeconds = Math.floor(milliseconds / 1000);
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        const tenths = Math.floor((milliseconds % 1000) / 100);
-        
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}`;
-    };
+    }, [drills.length, currentDrillIndex, practiceInfo.drillsNumber, initDrills, setCurrentDrillIndex]);
 
     const goToNextDrill = () => {
         if (currentDrillIndex < drills.length - 1) {
@@ -480,7 +263,7 @@ const TimeWatcher: React.FC = () => {
                                         <IonButton
                                             slot="end"
                                             fill="clear"
-                                            onClick={() => setWasteTime(0)}
+                                            onClick={resetWasteTime}
                                             color="danger"
                                         >
                                             <IonIcon icon={trashOutline} size="large" />

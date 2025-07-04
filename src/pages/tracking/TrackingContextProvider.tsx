@@ -63,7 +63,10 @@ const createDrills = (drillsNumber: number) => {
     return Array.from(Array(drillsNumber).keys()).map(n => ({
         id: n + 1,
         tags: new Set(),
-        actionButtons: initialActionButtons.map(a => ({ ...a }))
+        actionButtons: initialActionButtons.map(a => ({ ...a })),
+        timerData: {},
+        counterData: {},
+        wasteTime: 0
     } as Drill));
 }
 
@@ -80,10 +83,26 @@ interface PracticeInfo {
     drillsNumber: number;
 }
 
+interface TimerData {
+    totalTime: number;
+    timeSegments: Array<{
+        startTime: number;
+        endTime: number | null;
+        duration: number;
+    }>;
+}
+
+interface CounterData {
+    count: number;
+}
+
 interface Drill {
     id: number;
     tags: Set<string>;
-    actionButtons: ActionButton[]
+    actionButtons: ActionButton[];
+    timerData: Record<string, TimerData>;
+    counterData: Record<string, CounterData>;
+    wasteTime: number;
 }
 
 interface ActionButton {

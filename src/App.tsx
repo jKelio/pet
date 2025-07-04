@@ -9,6 +9,7 @@ import Menu from './components/Menu';
 import Page from './pages/Page';
 import {callbackUri} from "./auth.config";
 import TrackingContextProvider from "./pages/tracking/TrackingContextProvider";
+import TimerContextProvider from "./pages/tracking/TimerContextProvider";
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -88,7 +89,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <TrackingContextProvider>
-      <AppContent />
+      <TimerContextProvider>
+        <AppContent />
+      </TimerContextProvider>
     </TrackingContextProvider>
   );
 };
