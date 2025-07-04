@@ -58,14 +58,14 @@ const Menu: React.FC = () => {
             url: '/page/glossary',
             iosIcon: bookOutline,
             mdIcon: book,
-            secured: false
+            secured: true
         },
         {
             title: t('feedback'),
             url: '/page/feedback',
             iosIcon: chatboxEllipsesOutline,
             mdIcon: chatboxEllipses,
-            secured: false
+            secured: true
         }
     ];
 

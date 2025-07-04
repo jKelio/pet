@@ -91,6 +91,15 @@ const resources = {
             "language": "Select Language",
             "welcome": "Welcome"
         },
+        feedback: {
+            userLabel: "User",
+            typeLabel: "Type of Feedback",
+            typeGeneral: "General",
+            typeFeature: "Feature Request",
+            feedbackLabel: "Your Feedback",
+            submitButton: "Submit",
+            feedbackPlaceholder: "Enter your feedback here..."
+        },
         glossary: {
             wasteTime: {
                 title: "Waste Time",
@@ -255,6 +264,15 @@ const resources = {
             "language": "Sprache wählen",
             "welcome": "Willkommen"
         },
+        feedback: {
+            userLabel: "Benutzer",
+            typeLabel: "Art des Feedbacks",
+            typeGeneral: "Allgemein",
+            typeFeature: "Feature Request",
+            feedbackLabel: "Ihr Feedback",
+            submitButton: "Absenden",
+            feedbackPlaceholder: "Geben Sie hier Ihr Feedback ein..."
+        },
         glossary: {
             wasteTime: {
                 title: "Verschwendete Zeit",
@@ -418,6 +436,15 @@ const resources = {
             video: "Видео объяснение",
             language: "Выбрать язык",
             welcome: "Добро пожаловать"
+        },
+        feedback: {
+            userLabel: "Пользователь",
+            typeLabel: "Тип отзыва",
+            typeGeneral: "Общий",
+            typeFeature: "Запрос функции",
+            feedbackLabel: "Ваш отзыв",
+            submitButton: "Отправить",
+            feedbackPlaceholder: "Введите ваш отзыв здесь..."
         },
         glossary: {
             wasteTime: {
