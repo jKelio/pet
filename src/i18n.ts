@@ -95,7 +95,7 @@ const resources = {
             userLabel: "User",
             typeLabel: "Type of Feedback",
             typeGeneral: "General",
-            typeFeature: "Feature Request",
+            typeFeature: "Feature Request / Bug",
             feedbackLabel: "Your Feedback",
             submitButton: "Submit",
             feedbackPlaceholder: "Enter your feedback here..."
@@ -268,7 +268,7 @@ const resources = {
             userLabel: "Benutzer",
             typeLabel: "Art des Feedbacks",
             typeGeneral: "Allgemein",
-            typeFeature: "Feature Request",
+            typeFeature: "Feature Request / Fehler",
             feedbackLabel: "Ihr Feedback",
             submitButton: "Absenden",
             feedbackPlaceholder: "Geben Sie hier Ihr Feedback ein..."
@@ -441,7 +441,7 @@ const resources = {
             userLabel: "Пользователь",
             typeLabel: "Тип отзыва",
             typeGeneral: "Общий",
-            typeFeature: "Запрос функции",
+            typeFeature: "Запрос функции / Баг",
             feedbackLabel: "Ваш отзыв",
             submitButton: "Отправить",
             feedbackPlaceholder: "Введите ваш отзыв здесь..."
