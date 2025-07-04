@@ -120,9 +120,20 @@ const TimeWatcher: React.FC = () => {
         <IonPage>
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle>
-                        {t('timeWatcher.title')} - {t('drills.drill')} {currentDrillIndex + 1}
-                    </IonTitle>
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', minHeight: 48 }}>
+                        <IonTitle style={{ flex: '0 1 auto', marginRight: 12 }}>
+                            {t('timeWatcher.title')} - {t('drills.drill')} {currentDrillIndex + 1}
+                        </IonTitle>
+                        {currentDrill?.tags && Array.from(currentDrill.tags).length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {Array.from(currentDrill.tags).map(tag => (
+                                    <IonBadge key={tag} color="primary" style={{ marginRight: 6, marginBottom: 2 }}>
+                                        {t(`drills.${tag}`)}
+                                    </IonBadge>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </IonToolbar>
             </IonHeader>
 
