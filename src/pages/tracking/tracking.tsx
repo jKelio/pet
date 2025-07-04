@@ -16,13 +16,16 @@ import PracticeInfoForm from "../../components/practiceInfoForm/PracticeInfoForm
 import DrillsForm from "../../components/drillsForm/DrillsForm";
 import { useTrackingContext } from "./TrackingContextProvider";
 import DrillSegments from "../../components/DrillSegments";
+import { useTimerContext } from "./TimerContextProvider";
 
 const Tracking: React.FC = () => {
     const { t } = useTranslation('pet');
     const { mode, goToNextStep, goToPrevStep } = useTrackingContext();
     const history = useHistory();
+    const { setWasteTrackingActive } = useTimerContext();
 
     const goToTimeWatcher = () => {
+        setWasteTrackingActive(true);
         history.push('/page/timeWatcher');
     };
 

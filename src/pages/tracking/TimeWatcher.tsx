@@ -101,6 +101,14 @@ const TimeWatcher: React.FC = () => {
     const isFirstDrill = currentDrillIndex === 0;
     const isLastDrill = currentDrillIndex === drills.length - 1;
 
+    const handleTimerButtonClick = (actionId: string, isCurrentTimer: boolean, isRunning: boolean) => {
+        if (isCurrentTimer && isRunning) {
+            pauseTimer(actionId);
+        } else {
+            startTimer(actionId);
+        }
+    };
+
     return (
         <IonPage>
             <IonHeader>
@@ -147,8 +155,9 @@ const TimeWatcher: React.FC = () => {
                                                         <IonButton
                                                             slot="end"
                                                             fill="clear"
-                                                            onClick={() => isRunning ? pauseTimer(action.id) : startTimer(action.id)}
+                                                            onClick={() => handleTimerButtonClick(action.id, isCurrentTimer, isRunning)}
                                                             color={isRunning ? 'warning' : 'success'}
+                                                            disabled={!isCurrentTimer && !!currentTimer}
                                                         >
                                                             <IonIcon icon={isRunning ? pause : play} size="large" />
                                                         </IonButton>

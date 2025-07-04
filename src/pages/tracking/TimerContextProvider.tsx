@@ -22,6 +22,8 @@ interface TimerContextType {
     counters: Record<string, CounterState>;
     currentTimer: string | null;
     wasteTime: number;
+    wasteTrackingActive: boolean;
+    setWasteTrackingActive: (active: boolean) => void;
     startTimer: (actionId: string) => void;
     pauseTimer: (actionId: string) => void;
     stopTimer: (actionId: string) => void;
@@ -57,6 +59,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
     const [counters, setCounters] = useState<Record<string, CounterState>>({});
     const [currentTimer, setCurrentTimer] = useState<string | null>(null);
     const [wasteTime, setWasteTime] = useState<number>(0);
+    const [wasteTrackingActive, setWasteTrackingActive] = useState<boolean>(false);
     
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const wasteTimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -91,7 +94,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         setCounters(newCounters);
         setCurrentTimer(null);
         setWasteTime(currentDrill?.wasteTime || 0); // Load saved waste time
-    }, [currentDrillIndex, currentDrill]);
+    }, [currentDrillIndex]);
 
     // Timer logic
     useEffect(() => {
@@ -121,13 +124,13 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
 
     // Waste time tracking
     useEffect(() => {
-        if (!currentTimer) {
-            // No timer running - start waste time tracking
+        if (wasteTrackingActive && !currentTimer) {
+            // Waste time tracking aktiv
             wasteTimeIntervalRef.current = setInterval(() => {
                 setWasteTime(prev => prev + 100);
             }, 100);
         } else {
-            // Timer running - stop waste time tracking
+            // Timer running oder Waste Tracking nicht aktiv - stop waste time tracking
             if (wasteTimeIntervalRef.current) {
                 clearInterval(wasteTimeIntervalRef.current);
                 wasteTimeIntervalRef.current = null;
@@ -139,7 +142,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
                 clearInterval(wasteTimeIntervalRef.current);
             }
         };
-    }, [currentTimer]);
+    }, [wasteTrackingActive, currentTimer]);
 
     const startTimer = (actionId: string) => {
         if (currentTimer && currentTimer !== actionId) {
@@ -161,23 +164,32 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
             }
         }
 
-        setTimers(prev => ({
-            ...prev,
-            [actionId]: {
-                ...prev[actionId],
-                isRunning: true,
-                startTime: now,
+        setTimers(prev => {
+            const timer = prev[actionId] || {
+                isRunning: false,
+                startTime: null,
                 elapsedTime: 0,
-                timeSegments: [
-                    ...prev[actionId].timeSegments,
-                    {
-                        startTime: now,
-                        endTime: null,
-                        duration: 0
-                    }
-                ]
-            }
-        }));
+                totalTime: 0,
+                timeSegments: []
+            };
+            return {
+                ...prev,
+                [actionId]: {
+                    ...timer,
+                    isRunning: true,
+                    startTime: now,
+                    elapsedTime: 0,
+                    timeSegments: [
+                        ...timer.timeSegments,
+                        {
+                            startTime: now,
+                            endTime: null,
+                            duration: 0
+                        }
+                    ]
+                }
+            };
+        });
         setCurrentTimer(actionId);
     };
 
@@ -365,6 +377,8 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         counters,
         currentTimer,
         wasteTime,
+        wasteTrackingActive,
+        setWasteTrackingActive,
         startTimer,
         pauseTimer,
         stopTimer,
