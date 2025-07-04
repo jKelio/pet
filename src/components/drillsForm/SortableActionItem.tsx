@@ -35,14 +35,14 @@ const SortableActionItem: React.FC<SortableActionItemProps> = ({ action, onToggl
     return (
         <IonItem 
             ref={setNodeRef} 
-            style={style} 
-            {...attributes}
-            {...listeners}
+            style={style}
         >
             <IonIcon 
                 icon={reorderThreeOutline} 
                 slot="start" 
                 style={{ cursor: 'grab', color: '#666' }}
+                {...attributes}
+                {...listeners}
             />
             <IonLabel>
                 <h3>{t(`actions.${action.id}`)}</h3>
