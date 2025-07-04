@@ -281,7 +281,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
 
     const incrementCounter = (actionId: string) => {
         setCounters(prev => {
-            const newCount = prev[actionId].count + 1;
+            const newCount = (prev[actionId]?.count ?? 0) + 1;
             const updatedCounters = {
                 ...prev,
                 [actionId]: {
@@ -298,7 +298,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
 
     const decrementCounter = (actionId: string) => {
         setCounters(prev => {
-            const newCount = Math.max(0, prev[actionId].count - 1);
+            const newCount = Math.max(0, (prev[actionId]?.count ?? 0) - 1);
             const updatedCounters = {
                 ...prev,
                 [actionId]: {

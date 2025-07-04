@@ -62,7 +62,8 @@ const TimeWatcher: React.FC = () => {
         decrementCounter,
         resetCounter,
         resetWasteTime,
-        formatTime
+        formatTime,
+        stopTimer
     } = useTimerContext();
     const history = useHistory();
 
@@ -89,6 +90,12 @@ const TimeWatcher: React.FC = () => {
     };
 
     const finishTraining = () => {
+        // Alle laufenden Timer stoppen
+        Object.keys(timers).forEach((id) => {
+            if (timers[id]?.isRunning) {
+                stopTimer(id);
+            }
+        });
         history.push('/page/results');
     };
 
