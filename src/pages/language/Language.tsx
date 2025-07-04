@@ -13,6 +13,7 @@ import {
     IonToolbar
 } from "@ionic/react";
 import {useTranslation} from "react-i18next";
+import Glossary from "./Glossary";
 
 const Language: React.FC = () => {
     const { t, i18n} = useTranslation('menu');
@@ -35,7 +36,7 @@ const Language: React.FC = () => {
             <IonContent fullscreen>
                 <IonHeader collapse="condense">
                     <IonToolbar>
-                        <IonTitle size="large">{t('language' || '')}</IonTitle>
+                        <IonTitle size="large">{t('language')}</IonTitle>
                     </IonToolbar>
                 </IonHeader>
                 <IonList>
@@ -47,6 +48,7 @@ const Language: React.FC = () => {
                         >
                             <IonSelectOption value="en">English</IonSelectOption>
                             <IonSelectOption value="de">Deutsch</IonSelectOption>
+                            <IonSelectOption value="ru">Русский</IonSelectOption>
                         </IonSelect>
                     </IonItem>
                 </IonList>

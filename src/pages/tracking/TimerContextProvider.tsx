@@ -158,9 +158,15 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         ) {
             const trainingStart = new Date(practiceInfo.date).getTime();
             const diff = now - trainingStart;
+            console.log('[WasteTime] Trainingsbeginn:', new Date(trainingStart).toISOString());
+            console.log('[WasteTime] Erster Timer-Start:', new Date(now).toISOString());
+            console.log('[WasteTime] Differenz (ms):', diff);
             if (diff > 0) {
                 setWasteTime(diff);
                 saveWasteTime(diff);
+                console.log('[WasteTime] WasteTime gesetzt:', diff);
+            } else {
+                console.log('[WasteTime] Keine WasteTime gesetzt, da Differenz <= 0');
             }
         }
 
@@ -216,11 +222,11 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
                 timeSegments: updatedSegments
             };
 
-            // Save timer data to tracking context
-            saveTimerData(actionId, {
-                totalTime: updatedTimer.totalTime,
-                timeSegments: updatedTimer.timeSegments
-            });
+            // Save timer data to tracking context (verschoben in useEffect)
+            // saveTimerData(actionId, {
+            //     totalTime: updatedTimer.totalTime,
+            //     timeSegments: updatedTimer.timeSegments
+            // });
 
             return {
                 ...prev,
@@ -252,11 +258,11 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
                 timeSegments: updatedSegments
             };
 
-            // Save timer data to tracking context
-            saveTimerData(actionId, {
-                totalTime: updatedTimer.totalTime,
-                timeSegments: updatedTimer.timeSegments
-            });
+            // Save timer data to tracking context (verschoben in useEffect)
+            // saveTimerData(actionId, {
+            //     totalTime: updatedTimer.totalTime,
+            //     timeSegments: updatedTimer.timeSegments
+            // });
 
             return {
                 ...prev,
@@ -265,6 +271,22 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         });
         setCurrentTimer(null);
     };
+
+    // useEffect zum Speichern der Timer-Daten nach State-Update
+    React.useEffect(() => {
+        Object.entries(timers).forEach(([actionId, timer]) => {
+            if (timer.timeSegments.length > 0) {
+                const lastSegment = timer.timeSegments[timer.timeSegments.length - 1];
+                // Speichere nur, wenn der Timer nicht läuft (z.B. nach Pause oder Stop)
+                if (!timer.isRunning) {
+                    saveTimerData(actionId, {
+                        totalTime: timer.totalTime,
+                        timeSegments: timer.timeSegments
+                    });
+                }
+            }
+        });
+    }, [timers]);
 
     const resetTimer = (actionId: string) => {
         setTimers(prev => ({
@@ -288,10 +310,8 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
                     count: newCount
                 }
             };
-            
-            // Save counter data to tracking context
-            saveCounterData(actionId, newCount);
-            
+            // Save counter data to tracking context (verschoben in useEffect)
+            // saveCounterData(actionId, newCount);
             return updatedCounters;
         });
     };
@@ -305,13 +325,20 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
                     count: newCount
                 }
             };
-            
-            // Save counter data to tracking context
-            saveCounterData(actionId, newCount);
-            
+            // Save counter data to tracking context (verschoben in useEffect)
+            // saveCounterData(actionId, newCount);
             return updatedCounters;
         });
     };
+
+    // useEffect zum Speichern der Counter-Daten nach State-Update
+    React.useEffect(() => {
+        Object.entries(counters).forEach(([actionId, counter]) => {
+            if (typeof counter.count === 'number') {
+                saveCounterData(actionId, counter.count);
+            }
+        });
+    }, [counters]);
 
     const resetCounter = (actionId: string) => {
         setCounters(prev => ({

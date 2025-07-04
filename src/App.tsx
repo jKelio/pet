@@ -34,6 +34,7 @@ import Feedback from "./pages/feedback/Feedback";
 import Tracking from "./pages/tracking/tracking";
 import TimeWatcher from "./pages/tracking/TimeWatcher";
 import Results from "./pages/tracking/Results";
+import Glossary from "./pages/language/Glossary";
 
 setupIonicReact();
 
@@ -78,6 +79,9 @@ const AppContent: React.FC = () => {
             </Route>
             <Route path="/page/feedback" exact={true}>
               <Feedback />
+            </Route>
+            <Route path="/page/glossary" exact={true}>
+              <Glossary />
             </Route>
           </IonRouterOutlet>
         </IonSplitPane>

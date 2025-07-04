@@ -54,6 +54,13 @@ const Menu: React.FC = () => {
             secured: false
         },
         {
+            title: t('glossary'),
+            url: '/page/glossary',
+            iosIcon: bookOutline,
+            mdIcon: book,
+            secured: false
+        },
+        {
             title: t('feedback'),
             url: '/page/feedback',
             iosIcon: chatboxEllipsesOutline,
@@ -66,7 +73,7 @@ const Menu: React.FC = () => {
         <IonMenu contentId="main" type="overlay">
             <IonContent>
                 <IonList id="inbox-list">
-                    <IonListHeader>Welcome</IonListHeader>
+                    <IonListHeader>{t('welcome')}</IonListHeader>
                     {isAuthenticated ? <IonNote>{user?.name}</IonNote> : <LoginButton/>}
                     {appPages.filter(p => isAuthenticated ? true : !p.secured).map((appPage, index) => {
                         return (
