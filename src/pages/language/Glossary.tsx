@@ -1,5 +1,5 @@
 import React from "react";
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardContent, IonList, IonItem, IonLabel } from "@ionic/react";
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardContent, IonList, IonItem, IonLabel, IonButtons, IonMenuButton } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 
 const glossaryKeys = [
@@ -26,6 +26,9 @@ const Glossary: React.FC = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonMenuButton />
+          </IonButtons>
           <IonTitle>{t('title', { defaultValue: 'Glossary' })}</IonTitle>
         </IonToolbar>
       </IonHeader>
