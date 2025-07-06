@@ -184,6 +184,7 @@ const TimeWatcher: React.FC = () => {
                                                             fill="clear"
                                                             onClick={() => resetTimer(action.id)}
                                                             color="danger"
+                                                            disabled={isRunning}
                                                         >
                                                             <IonIcon icon={trashOutline} size="large" />
                                                         </IonButton>

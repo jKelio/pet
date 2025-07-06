@@ -13,11 +13,6 @@ const initialActionButtons: ActionButton[] = [
         enabled: true
     },
     {
-        id: 'gettingstarted',
-        type: 'timer',
-        enabled: true
-    },
-    {
         id: 'feedbackteam',
         type: 'timer',
         enabled: true

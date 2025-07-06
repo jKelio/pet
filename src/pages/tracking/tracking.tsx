@@ -20,7 +20,7 @@ import { useTimerContext } from "./TimerContextProvider";
 
 const Tracking: React.FC = () => {
     const { t } = useTranslation('pet');
-    const { mode, goToNextStep, goToPrevStep } = useTrackingContext();
+    const { mode, goToNextStep, goToPrevStep, practiceInfo } = useTrackingContext();
     const history = useHistory();
     const { setWasteTrackingActive } = useTimerContext();
 
@@ -61,7 +61,13 @@ const Tracking: React.FC = () => {
                     {mode !== 'practiceInfo' && <IonButton fill="outline" onClick={goToPrevStep}>
                         {t('buttons.previousButtonText')}
                     </IonButton>}
-                    {mode !== 'timeWatcher' && <IonButton fill="outline" onClick={goToNextStep}>{t('buttons.nextButtenText')}</IonButton>}
+                    {mode !== 'timeWatcher' && <IonButton 
+                        fill="outline" 
+                        onClick={goToNextStep}
+                        disabled={mode === 'practiceInfo' && practiceInfo.drillsNumber <= 0}
+                    >
+                        {t('buttons.nextButtenText')}
+                    </IonButton>}
                 </IonRow>
             </IonContent>
         </IonPage>
