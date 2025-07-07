@@ -89,6 +89,7 @@ interface TimerData {
 
 interface CounterData {
     count: number;
+    timestamps: number[];
 }
 
 interface Drill {

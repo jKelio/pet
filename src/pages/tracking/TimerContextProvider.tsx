@@ -15,6 +15,7 @@ interface TimerState {
 
 interface CounterState {
     count: number;
+    timestamps: number[];
 }
 
 interface TimerContextType {
@@ -82,7 +83,8 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
             } else if (action.type === 'counter') {
                 const savedCounterData = currentDrill?.counterData[action.id];
                 newCounters[action.id] = {
-                    count: savedCounterData?.count || 0
+                    count: savedCounterData?.count || 0,
+                    timestamps: savedCounterData?.timestamps || []
                 };
             }
         });
@@ -289,30 +291,30 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
 
     const incrementCounter = (actionId: string) => {
         setCounters(prev => {
+            const prevTimestamps = prev[actionId]?.timestamps ?? [];
             const newCount = (prev[actionId]?.count ?? 0) + 1;
             const updatedCounters = {
                 ...prev,
                 [actionId]: {
-                    count: newCount
+                    count: newCount,
+                    timestamps: [...prevTimestamps, Date.now()]
                 }
             };
-            // Save counter data to tracking context (verschoben in useEffect)
-            // saveCounterData(actionId, newCount);
             return updatedCounters;
         });
     };
 
     const decrementCounter = (actionId: string) => {
         setCounters(prev => {
+            const prevTimestamps = prev[actionId]?.timestamps ?? [];
             const newCount = Math.max(0, (prev[actionId]?.count ?? 0) - 1);
             const updatedCounters = {
                 ...prev,
                 [actionId]: {
-                    count: newCount
+                    count: newCount,
+                    timestamps: prevTimestamps.slice(0, -1)
                 }
             };
-            // Save counter data to tracking context (verschoben in useEffect)
-            // saveCounterData(actionId, newCount);
             return updatedCounters;
         });
     };
@@ -321,7 +323,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
     React.useEffect(() => {
         Object.entries(counters).forEach(([actionId, counter]) => {
             if (typeof counter.count === 'number') {
-                saveCounterData(actionId, counter.count);
+                saveCounterData(actionId, counter);
             }
         });
     }, [counters]);
@@ -350,14 +352,21 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         }));
     };
 
-    const saveCounterData = (actionId: string, count: number) => {
+    const saveCounterData = (actionId: string, countOrData: any) => {
         setDrills(prevDrills => prevDrills.map((drill, idx) => {
             if (idx !== currentDrillIndex) return drill;
+            let counterData;
+            if (typeof countOrData === 'number') {
+                // Backward compatibility: falls nur count übergeben wird
+                counterData = { count: countOrData, timestamps: [] };
+            } else {
+                counterData = countOrData;
+            }
             return {
                 ...drill,
                 counterData: {
                     ...drill.counterData,
-                    [actionId]: { count }
+                    [actionId]: counterData
                 }
             };
         }));
