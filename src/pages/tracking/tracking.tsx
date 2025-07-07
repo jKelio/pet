@@ -61,13 +61,24 @@ const Tracking: React.FC = () => {
                     {mode !== 'practiceInfo' && <IonButton fill="outline" onClick={goToPrevStep}>
                         {t('buttons.previousButtonText')}
                     </IonButton>}
-                    {mode !== 'timeWatcher' && <IonButton 
-                        fill="outline" 
-                        onClick={goToNextStep}
-                        disabled={mode === 'practiceInfo' && practiceInfo.drillsNumber <= 0}
-                    >
-                        {t('buttons.nextButtenText')}
-                    </IonButton>}
+                    {mode === 'drills' ? (
+                        <IonButton 
+                            fill="solid"
+                            color="primary"
+                            expand="block"
+                            onClick={goToTimeWatcher}
+                        >
+                            {t('timeWatcher.startButton') || 'Start TimeWatcher'}
+                        </IonButton>
+                    ) : (
+                        mode !== 'timeWatcher' && <IonButton 
+                            fill="outline" 
+                            onClick={goToNextStep}
+                            disabled={mode === 'practiceInfo' && practiceInfo.drillsNumber <= 0}
+                        >
+                            {t('buttons.nextButtenText')}
+                        </IonButton>
+                    )}
                 </IonRow>
             </IonContent>
         </IonPage>
