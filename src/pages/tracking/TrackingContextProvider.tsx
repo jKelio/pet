@@ -29,7 +29,7 @@ const initialActionButtons: ActionButton[] = [
     },
     {
         id: 'timemoving',
-        type: 'counter',
+        type: 'timer',
         enabled: true
     },
     {

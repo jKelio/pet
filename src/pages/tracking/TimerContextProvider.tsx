@@ -27,11 +27,8 @@ interface TimerContextType {
     startTimer: (actionId: string) => void;
     pauseTimer: (actionId: string) => void;
     stopTimer: (actionId: string) => void;
-    resetTimer: (actionId: string) => void;
     incrementCounter: (actionId: string) => void;
     decrementCounter: (actionId: string) => void;
-    resetCounter: (actionId: string) => void;
-    resetWasteTime: () => void;
     formatTime: (milliseconds: number) => string;
     saveTimerData: (actionId: string, timerData: any) => void;
     saveCounterData: (actionId: string, count: number) => void;
@@ -288,18 +285,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         });
     }, [timers]);
 
-    const resetTimer = (actionId: string) => {
-        setTimers(prev => ({
-            ...prev,
-            [actionId]: {
-                isRunning: false,
-                startTime: null,
-                elapsedTime: 0,
-                totalTime: 0,
-                timeSegments: []
-            }
-        }));
-    };
+
 
     const incrementCounter = (actionId: string) => {
         setCounters(prev => {
@@ -340,19 +326,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         });
     }, [counters]);
 
-    const resetCounter = (actionId: string) => {
-        setCounters(prev => ({
-            ...prev,
-            [actionId]: {
-                count: 0
-            }
-        }));
-    };
 
-    const resetWasteTime = () => {
-        setWasteTime(0);
-        saveWasteTime(0);
-    };
 
     const formatTime = (milliseconds: number): string => {
         const totalSeconds = Math.floor(milliseconds / 1000);
@@ -409,11 +383,8 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         startTimer,
         pauseTimer,
         stopTimer,
-        resetTimer,
         incrementCounter,
         decrementCounter,
-        resetCounter,
-        resetWasteTime,
         formatTime,
         saveTimerData,
         saveCounterData,

@@ -34,7 +34,6 @@ import {
     arrowBack,
     timeOutline,
     calculatorOutline,
-    trashOutline,
     hourglassOutline,
     addCircleOutline,
     removeCircleOutline,
@@ -57,11 +56,8 @@ const TimeWatcher: React.FC = () => {
         wasteTime,
         startTimer,
         pauseTimer,
-        resetTimer,
         incrementCounter,
         decrementCounter,
-        resetCounter,
-        resetWasteTime,
         formatTime,
         stopTimer
     } = useTimerContext();
@@ -179,15 +175,6 @@ const TimeWatcher: React.FC = () => {
                                                         >
                                                             <IonIcon icon={isRunning ? pause : play} size="large" />
                                                         </IonButton>
-                                                        <IonButton
-                                                            slot="end"
-                                                            fill="clear"
-                                                            onClick={() => resetTimer(action.id)}
-                                                            color="danger"
-                                                            disabled={isRunning}
-                                                        >
-                                                            <IonIcon icon={trashOutline} size="large" />
-                                                        </IonButton>
                                                     </IonItem>
                                                 );
                                             })
@@ -244,14 +231,6 @@ const TimeWatcher: React.FC = () => {
                                                         >
                                                             <IonIcon icon={removeCircleOutline} size="large" />
                                                         </IonButton>
-                                                        <IonButton
-                                                            slot="end"
-                                                            fill="clear"
-                                                            onClick={() => resetCounter(action.id)}
-                                                            color="danger"
-                                                        >
-                                                            <IonIcon icon={trashOutline} size="large" />
-                                                        </IonButton>
                                                     </IonItem>
                                                 );
                                             })
@@ -288,14 +267,6 @@ const TimeWatcher: React.FC = () => {
                                         >
                                             {!currentTimer ? t('timeWatcher.active') : t('timeWatcher.inactive')}
                                         </IonBadge>
-                                        <IonButton
-                                            slot="end"
-                                            fill="clear"
-                                            onClick={resetWasteTime}
-                                            color="danger"
-                                        >
-                                            <IonIcon icon={trashOutline} size="large" />
-                                        </IonButton>
                                     </IonItem>
                                 </IonCardContent>
                             </IonCard>
