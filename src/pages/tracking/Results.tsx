@@ -17,11 +17,11 @@ import {
     IonRow,
     IonCol,
     IonButtons,
-    IonBackButton
+    IonBackButton,
 } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
-import { 
+import {
     analyticsOutline,
     timeOutline,
     trophyOutline,
@@ -29,11 +29,14 @@ import {
 } from 'ionicons/icons';
 import { useTrackingContext } from './TrackingContextProvider';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
+import ActionTimeChart from '../../components/gantt/ActionTimeChart';
+import ActionTimeline from '../../components/gantt/ActionTimeline';
+import { aggregateTimeByAction, extractTimelineSegments } from '../../components/gantt/ganttUtils';
 
 const Results: React.FC = () => {
     const { t } = useTranslation('pet');
     const history = useHistory();
-    const { drills, practiceInfo } = useTrackingContext();
+    const { drills } = useTrackingContext();
 
     // Hilfsfunktionen
     const formatTime = (ms: number) => {
@@ -89,6 +92,13 @@ const Results: React.FC = () => {
         { name: t('results.wasteTime') || 'Leerlauf', value: totalWasteTime },
     ];
     const COLORS = ['#0088FE', '#FF8042'];
+
+    // Action time chart data (aggregated)
+    const actionTimeData = aggregateTimeByAction(drills, t);
+    const chartHeight = Math.max(200, actionTimeData.length * 40 + 50);
+
+    // Timeline data (individual segments)
+    const { segments: timelineSegments, actionLabels } = extractTimelineSegments(drills, t);
 
     const goHome = () => {
         history.push('/page/language');
@@ -153,12 +163,43 @@ const Results: React.FC = () => {
                                     </IonCardTitle>
                                 </IonCardHeader>
                                 <IonCardContent>
-                                    <IonItem>
-                                        <IonLabel>
-                                            <h3>{t('results.placeholder') || 'Detailed analysis coming soon...'}</h3>
-                                            <p>Gantt charts, efficiency metrics, and detailed breakdowns will be displayed here.</p>
-                                        </IonLabel>
-                                    </IonItem>
+                                    {/* Timeline - einzelne Segmente */}
+                                    <div style={{ marginBottom: 24 }}>
+                                        <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                            {t('results.actionTimeline') || 'Aktions-Timeline'}
+                                        </h3>
+                                        {timelineSegments.length > 0 ? (
+                                            <ActionTimeline
+                                                segments={timelineSegments}
+                                                actionLabels={actionLabels}
+                                            />
+                                        ) : (
+                                            <IonItem>
+                                                <IonLabel>
+                                                    <p>{t('results.noTimeData') || 'No timing data recorded.'}</p>
+                                                </IonLabel>
+                                            </IonItem>
+                                        )}
+                                    </div>
+
+                                    {/* Zeit pro Aktion (Summe) */}
+                                    <div style={{ marginBottom: 24 }}>
+                                        <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                            {t('results.timePerAction') || 'Zeit pro Aktion'}
+                                        </h3>
+                                        {actionTimeData.length > 0 ? (
+                                            <ActionTimeChart
+                                                data={actionTimeData}
+                                                height={chartHeight}
+                                            />
+                                        ) : (
+                                            <IonItem>
+                                                <IonLabel>
+                                                    <p>{t('results.noTimeData') || 'No timing data recorded.'}</p>
+                                                </IonLabel>
+                                            </IonItem>
+                                        )}
+                                    </div>
 
                                     {/* Kreisdiagramm für Zeitverteilung pro Drill */}
                                     <div style={{ marginTop: 32 }}>

@@ -78,7 +78,12 @@ const resources = {
                 "placeholder": "Detailed analysis coming soon...",
                 "backToHome": "Back to Home",
                 "timeDistributionPerDrill": "Time Distribution per Drill",
-                "drill": "Drill"
+                "drill": "Drill",
+                "ganttOverview": "Training Timeline",
+                "drillDetails": "Drill Details",
+                "noTimeData": "No timing data recorded.",
+                "timePerAction": "Time per Action",
+                "actionTimeline": "Action Timeline"
             }
         },
         menu: {
@@ -252,7 +257,12 @@ const resources = {
                 "placeholder": "Detaillierte Analyse kommt bald...",
                 "backToHome": "Zurück zum Start",
                 "timeDistributionPerDrill": "Zeitverteilung pro Drill",
-                "drill": "Drill"
+                "drill": "Drill",
+                "ganttOverview": "Trainingszeitleiste",
+                "drillDetails": "Drill-Details",
+                "noTimeData": "Keine Zeitdaten aufgezeichnet.",
+                "timePerAction": "Zeit pro Aktion",
+                "actionTimeline": "Aktions-Timeline"
             }
         },
         menu: {
@@ -426,7 +436,12 @@ const resources = {
                 placeholder: "Детальный анализ скоро появится...",
                 backToHome: "На главную",
                 timeDistributionPerDrill: "Распределение времени по упражнениям",
-                drill: "Упражнение"
+                drill: "Упражнение",
+                ganttOverview: "Временная шкала тренировки",
+                drillDetails: "Детали упражнений",
+                noTimeData: "Нет записанных данных о времени.",
+                timePerAction: "Время по действиям",
+                actionTimeline: "Таймлайн действий"
             }
         },
         menu: {
