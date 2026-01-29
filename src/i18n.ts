@@ -76,7 +76,9 @@ const resources = {
                 "wasteTime": "Waste Time",
                 "detailedResults": "Detailed Results",
                 "placeholder": "Detailed analysis coming soon...",
-                "backToHome": "Back to Home"
+                "backToHome": "Back to Home",
+                "timeDistributionPerDrill": "Time Distribution per Drill",
+                "drill": "Drill"
             }
         },
         menu: {
@@ -248,7 +250,9 @@ const resources = {
                 "wasteTime": "Verschwendete Zeit",
                 "detailedResults": "Detaillierte Ergebnisse",
                 "placeholder": "Detaillierte Analyse kommt bald...",
-                "backToHome": "Zurück zum Start"
+                "backToHome": "Zurück zum Start",
+                "timeDistributionPerDrill": "Zeitverteilung pro Drill",
+                "drill": "Drill"
             }
         },
         menu: {
@@ -413,14 +417,16 @@ const resources = {
                 wasteTime: "Время простоя"
             },
             results: {
-                title: "Результаты тренировки",
+                title: "Отчёт о тренировке",
                 summary: "Сводка тренировки",
                 totalDrills: "Всего упражнений",
                 totalTime: "Общее время",
-                wasteTime: "Время простоя",
+                wasteTime: "Потерянное время",
                 detailedResults: "Детальные результаты",
                 placeholder: "Детальный анализ скоро появится...",
-                backToHome: "На главную"
+                backToHome: "На главную",
+                timeDistributionPerDrill: "Распределение времени по упражнениям",
+                drill: "Упражнение"
             }
         },
         menu: {

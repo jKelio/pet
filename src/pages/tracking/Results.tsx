@@ -28,6 +28,7 @@ import {
     homeOutline
 } from 'ionicons/icons';
 import { useTrackingContext } from './TrackingContextProvider';
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Results: React.FC = () => {
     const { t } = useTranslation('pet');
@@ -42,6 +43,37 @@ const Results: React.FC = () => {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
+    // Zeitformatierung für Diagramm-Labels (Minuten oder Stunden)
+    const formatDuration = (ms: number) => {
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        if (hours > 0) {
+            return `${hours}h ${minutes}min`;
+        } else {
+            return `${minutes}min`;
+        }
+    };
+
+    // Zeitverteilung pro Drill berechnen
+    const drillPieData = drills.map((drill, idx) => {
+        const drillTimerTime = Object.values(drill.timerData || {}).reduce((s, t) => s + (t.totalTime || 0), 0);
+        const drillTotal = drillTimerTime + (drill.wasteTime || 0);
+        // Kategorie-Tags als String, übersetzt
+        let tagString = '';
+        if (drill.tags && drill.tags.size > 0) {
+            tagString = Array.from(drill.tags)
+                .map(tag => t('drills.' + tag) || tag)
+                .join(', ');
+        }
+        return {
+            name: `${t('results.drill')} ${drill.id}${tagString ? ' (' + tagString + ')' : ''}`,
+            value: drillTotal,
+            label: `${t('results.drill')} ${drill.id}${tagString ? ' (' + tagString + ')' : ''}: ${formatDuration(drillTotal)}`
+        };
+    });
+    const DRILL_COLORS = ['#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE', '#FF6699', '#33CC99', '#FF6666', '#66B3FF', '#FFCC99'];
+
     // Daten berechnen
     const totalDrills = drills.length;
     const totalWasteTime = drills.reduce((sum, drill) => sum + (drill.wasteTime || 0), 0);
@@ -50,6 +82,13 @@ const Results: React.FC = () => {
     }, 0);
     const totalTime = totalTimerTime + totalWasteTime;
     const wastePercent = totalTime > 0 ? Math.round((totalWasteTime / totalTime) * 100) : 0;
+
+    // Daten für das Kreisdiagramm
+    const pieData = [
+        { name: t('results.activeTime') || 'Aktive Zeit', value: totalTimerTime },
+        { name: t('results.wasteTime') || 'Leerlauf', value: totalWasteTime },
+    ];
+    const COLORS = ['#0088FE', '#FF8042'];
 
     const goHome = () => {
         history.push('/page/language');
@@ -120,6 +159,31 @@ const Results: React.FC = () => {
                                             <p>Gantt charts, efficiency metrics, and detailed breakdowns will be displayed here.</p>
                                         </IonLabel>
                                     </IonItem>
+
+                                    {/* Kreisdiagramm für Zeitverteilung pro Drill */}
+                                    <div style={{ marginTop: 32 }}>
+                                        <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                            {t('results.timeDistributionPerDrill') || 'Zeitverteilung pro Drill'}
+                                        </h3>
+                                        <ResponsiveContainer width="100%" height={250}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={drillPieData}
+                                                    dataKey="value"
+                                                    nameKey="name"
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    outerRadius={80}
+                                                >
+                                                    {drillPieData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={DRILL_COLORS[index % DRILL_COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
+                                                <Legend />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
                                 </IonCardContent>
                             </IonCard>
                         </IonCol>
