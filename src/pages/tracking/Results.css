@@ -1,0 +1,9 @@
+.results-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.results-card-title ion-icon {
+    flex-shrink: 0;
+}

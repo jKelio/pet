@@ -33,6 +33,7 @@ import ActionTimeChart from '../../components/gantt/ActionTimeChart';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
 import ActionTimeline from '../../components/gantt/ActionTimeline';
 import { aggregateTimeByAction, extractTimelineSegments } from '../../components/gantt/ganttUtils';
+import './Results.css';
 
 const Results: React.FC = () => {
     const { t } = useTranslation('pet');
@@ -133,7 +134,7 @@ const Results: React.FC = () => {
                         <IonCol>
                             <IonCard>
                                 <IonCardHeader>
-                                    <IonCardTitle>
+                                    <IonCardTitle className="results-card-title">
                                         <IonIcon icon={analyticsOutline} size="large" />
                                         {t('results.summary') || 'Training Summary'}
                                     </IonCardTitle>
@@ -166,7 +167,7 @@ const Results: React.FC = () => {
                         <IonCol>
                             <IonCard>
                                 <IonCardHeader>
-                                    <IonCardTitle>
+                                    <IonCardTitle className="results-card-title">
                                         <IonIcon icon={timeOutline} size="large" />
                                         {t('results.detailedResults') || 'Detailed Results'}
                                     </IonCardTitle>
