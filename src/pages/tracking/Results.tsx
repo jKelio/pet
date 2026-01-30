@@ -125,12 +125,30 @@ const Results: React.FC = () => {
 
         setIsExporting(true);
         try {
-            const canvas = await html2canvas(exportRef.current, {
+            const container = exportRef.current;
+
+            // Temporarily make container visible for rendering
+            container.style.position = 'fixed';
+            container.style.left = '0';
+            container.style.top = '0';
+            container.style.zIndex = '-1';
+            container.style.opacity = '1';
+
+            // Wait for charts to render
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const canvas = await html2canvas(container, {
                 scale: 2,
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff'
             });
+
+            // Hide container again
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.zIndex = '';
+            container.style.opacity = '';
 
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({
