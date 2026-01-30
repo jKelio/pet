@@ -43,9 +43,16 @@ const Results: React.FC = () => {
     // Hilfsfunktionen
     const formatTime = (ms: number) => {
         const totalSeconds = Math.floor(ms / 1000);
-        const minutes = Math.floor(totalSeconds / 60);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        if (hours > 0) {
+            const time = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            return `${time} ${t('results.unitHours')}`;
+        }
+        const time = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        return `${time} ${t('results.unitMinutes')}`;
     };
 
     // Zeitformatierung für Diagramm-Labels (Minuten oder Stunden)
@@ -141,13 +148,13 @@ const Results: React.FC = () => {
                                     <IonItem>
                                         <IonLabel>
                                             <h3>{t('results.totalTime') || 'Total Time'}</h3>
-                                            <p>{formatTime(totalTime)} min</p>
+                                            <p>{formatTime(totalTime)}</p>
                                         </IonLabel>
                                     </IonItem>
                                     <IonItem>
                                         <IonLabel>
                                             <h3>{t('results.wasteTime') || 'Waste Time'}</h3>
-                                            <p>{formatTime(totalWasteTime)} min ({wastePercent}%)</p>
+                                            <p>{formatTime(totalWasteTime)} ({wastePercent}%)</p>
                                         </IonLabel>
                                     </IonItem>
                                 </IonCardContent>

@@ -83,7 +83,9 @@ const resources = {
                 "drillDetails": "Drill Details",
                 "noTimeData": "No timing data recorded.",
                 "timePerAction": "Time per Action",
-                "actionTimeline": "Action Timeline"
+                "actionTimeline": "Action Timeline",
+                "unitMinutes": "min",
+                "unitHours": "h"
             }
         },
         menu: {
@@ -262,7 +264,9 @@ const resources = {
                 "drillDetails": "Drill-Details",
                 "noTimeData": "Keine Zeitdaten aufgezeichnet.",
                 "timePerAction": "Zeit pro Aktion",
-                "actionTimeline": "Aktions-Timeline"
+                "actionTimeline": "Aktions-Timeline",
+                "unitMinutes": "Min",
+                "unitHours": "Std"
             }
         },
         menu: {
@@ -441,7 +445,9 @@ const resources = {
                 drillDetails: "Детали упражнений",
                 noTimeData: "Нет записанных данных о времени.",
                 timePerAction: "Время по действиям",
-                actionTimeline: "Таймлайн действий"
+                actionTimeline: "Таймлайн действий",
+                unitMinutes: "мин",
+                unitHours: "ч"
             }
         },
         menu: {
