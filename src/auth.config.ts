@@ -34,11 +34,3 @@ const getWebCallbackUri = () => {
 export const callbackUri = iosOrAndroid
   ? `${appId}://${auth0Domain}/capacitor/${appId}/callback`
   : getWebCallbackUri();
-
-// Debug logging
-console.log('[Auth Config]', {
-  isNativeApp,
-  iosOrAndroid,
-  callbackUri,
-  href: typeof window !== 'undefined' ? window.location.href : 'N/A'
-});

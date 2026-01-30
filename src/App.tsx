@@ -38,6 +38,17 @@ import Glossary from "./pages/language/Glossary";
 
 setupIonicReact();
 
+// Redirect based on auth status
+const AuthRedirect: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth0();
+
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
+
+  return <Redirect to={isAuthenticated ? "/page/tracking" : "/page/language"} />;
+};
+
 const AppContent: React.FC = () => {
   const { handleRedirectCallback } = useAuth0();
 
@@ -63,7 +74,7 @@ const AppContent: React.FC = () => {
           <Menu />
           <IonRouterOutlet id="main">
             <Route path="/" exact={true}>
-              <Redirect to="/page/language" />
+              <AuthRedirect />
             </Route>
             <Route path="/page/language" exact={true}>
               <Language />
