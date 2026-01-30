@@ -13,7 +13,6 @@ import {
     IonToolbar
 } from "@ionic/react";
 import {useTranslation} from "react-i18next";
-import Glossary from "./Glossary";
 
 const Language: React.FC = () => {
     const { t, i18n} = useTranslation('menu');

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { useTrackingContext } from './TrackingContextProvider';
 
 interface TimerState {
@@ -62,17 +62,58 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const wasteTimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    const currentDrill = drills[currentDrillIndex];
-    const enabledActions = currentDrill?.actionButtons.filter(action => action.enabled) || [];
+    const wasteTimeRef = useRef(wasteTime);
+    wasteTimeRef.current = wasteTime;
 
-    // Initialize timers and counters for enabled actions
+    const drillsRef = useRef(drills);
+    drillsRef.current = drills;
+
+    const isInitializingRef = useRef(false);
+
+    const saveTimerData = useCallback((actionId: string, timerData: any) => {
+        setDrills(prevDrills => prevDrills.map((drill, idx) => {
+            if (idx !== currentDrillIndex) return drill;
+            return {
+                ...drill,
+                timerData: {
+                    ...drill.timerData,
+                    [actionId]: timerData
+                }
+            };
+        }));
+    }, [currentDrillIndex, setDrills]);
+
+    const saveCounterData = useCallback((actionId: string, countOrData: any) => {
+        setDrills(prevDrills => prevDrills.map((drill, idx) => {
+            if (idx !== currentDrillIndex) return drill;
+            let counterData;
+            if (typeof countOrData === 'number') {
+                counterData = { count: countOrData, timestamps: [] };
+            } else {
+                counterData = countOrData;
+            }
+            return {
+                ...drill,
+                counterData: {
+                    ...drill.counterData,
+                    [actionId]: counterData
+                }
+            };
+        }));
+    }, [currentDrillIndex, setDrills]);
+
     useEffect(() => {
+        isInitializingRef.current = true;
+
+        const drill = drillsRef.current[currentDrillIndex];
+        const actions = drill?.actionButtons.filter(action => action.enabled) || [];
+
         const newTimers: Record<string, TimerState> = {};
         const newCounters: Record<string, CounterState> = {};
 
-        enabledActions.forEach(action => {
+        actions.forEach(action => {
             if (action.type === 'timer') {
-                const savedTimerData = currentDrill?.timerData[action.id];
+                const savedTimerData = drill?.timerData[action.id];
                 newTimers[action.id] = {
                     isRunning: false,
                     startTime: null,
@@ -81,7 +122,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
                     timeSegments: savedTimerData?.timeSegments || []
                 };
             } else if (action.type === 'counter') {
-                const savedCounterData = currentDrill?.counterData[action.id];
+                const savedCounterData = drill?.counterData[action.id];
                 newCounters[action.id] = {
                     count: savedCounterData?.count || 0,
                     timestamps: savedCounterData?.timestamps || []
@@ -92,36 +133,44 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         setTimers(newTimers);
         setCounters(newCounters);
         setCurrentTimer(null);
-        setWasteTime(currentDrill?.wasteTime || 0); // Load saved waste time
+        setWasteTime(drill?.wasteTime || 0);
+
+        setTimeout(() => {
+            isInitializingRef.current = false;
+        }, 0);
     }, [currentDrillIndex]);
 
-    // Timer logic
     useEffect(() => {
-        if (currentTimer && timers[currentTimer]?.isRunning) {
-            intervalRef.current = setInterval(() => {
-                setTimers(prev => ({
-                    ...prev,
-                    [currentTimer]: {
-                        ...prev[currentTimer],
-                        elapsedTime: Date.now() - (prev[currentTimer].startTime || 0)
-                    }
-                }));
-            }, 100);
-        } else {
+        if (!currentTimer) {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
                 intervalRef.current = null;
             }
+            return;
         }
+
+        intervalRef.current = setInterval(() => {
+            setTimers(prev => {
+                const timer = prev[currentTimer];
+                if (!timer?.isRunning) return prev;
+                return {
+                    ...prev,
+                    [currentTimer]: {
+                        ...timer,
+                        elapsedTime: Date.now() - (timer.startTime || 0)
+                    }
+                };
+            });
+        }, 100);
 
         return () => {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
+                intervalRef.current = null;
             }
         };
     }, [currentTimer]);
 
-    // Waste time tracking
     useEffect(() => {
         if (wasteTrackingActive && !currentTimer) {
             wasteTimeIntervalRef.current = setInterval(() => {
@@ -141,19 +190,17 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         };
     }, [wasteTrackingActive, currentTimer]);
 
-    // Save waste time to drill when timer starts/stops or drill changes
     useEffect(() => {
-        if (wasteTime > 0) {
+        if (wasteTimeRef.current > 0) {
             setDrills(prevDrills => prevDrills.map((drill, idx) => {
                 if (idx !== currentDrillIndex) return drill;
-                return { ...drill, wasteTime };
+                return { ...drill, wasteTime: wasteTimeRef.current };
             }));
         }
-    }, [currentTimer, currentDrillIndex]);
+    }, [currentTimer, currentDrillIndex, setDrills]);
 
     const startTimer = (actionId: string) => {
         if (currentTimer && currentTimer !== actionId) {
-            // Stop current timer
             stopTimer(currentTimer);
         }
 
@@ -194,7 +241,6 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
             const timer = prev[actionId];
             if (!timer.isRunning) return prev;
 
-            // Update the last time segment
             const updatedSegments = [...timer.timeSegments];
             if (updatedSegments.length > 0) {
                 const lastSegment = updatedSegments[updatedSegments.length - 1];
@@ -210,12 +256,6 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
                 startTime: null,
                 timeSegments: updatedSegments
             };
-
-            // Save timer data to tracking context (verschoben in useEffect)
-            // saveTimerData(actionId, {
-            //     totalTime: updatedTimer.totalTime,
-            //     timeSegments: updatedTimer.timeSegments
-            // });
 
             return {
                 ...prev,
@@ -229,8 +269,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         const now = Date.now();
         setTimers(prev => {
             const timer = prev[actionId];
-            
-            // Update the last time segment
+
             const updatedSegments = [...timer.timeSegments];
             if (updatedSegments.length > 0) {
                 const lastSegment = updatedSegments[updatedSegments.length - 1];
@@ -247,12 +286,6 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
                 timeSegments: updatedSegments
             };
 
-            // Save timer data to tracking context (verschoben in useEffect)
-            // saveTimerData(actionId, {
-            //     totalTime: updatedTimer.totalTime,
-            //     timeSegments: updatedTimer.timeSegments
-            // });
-
             return {
                 ...prev,
                 [actionId]: updatedTimer
@@ -261,23 +294,18 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         setCurrentTimer(null);
     };
 
-    // useEffect zum Speichern der Timer-Daten nach State-Update
-    React.useEffect(() => {
+    useEffect(() => {
+        if (isInitializingRef.current) return;
+
         Object.entries(timers).forEach(([actionId, timer]) => {
-            if (timer.timeSegments.length > 0) {
-                const lastSegment = timer.timeSegments[timer.timeSegments.length - 1];
-                // Speichere nur, wenn der Timer nicht läuft (z.B. nach Pause oder Stop)
-                if (!timer.isRunning) {
-                    saveTimerData(actionId, {
-                        totalTime: timer.totalTime,
-                        timeSegments: timer.timeSegments
-                    });
-                }
+            if (timer.timeSegments.length > 0 && !timer.isRunning) {
+                saveTimerData(actionId, {
+                    totalTime: timer.totalTime,
+                    timeSegments: timer.timeSegments
+                });
             }
         });
-    }, [timers]);
-
-
+    }, [timers, saveTimerData]);
 
     const incrementCounter = (actionId: string) => {
         setCounters(prev => {
@@ -309,16 +337,15 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         });
     };
 
-    // useEffect zum Speichern der Counter-Daten nach State-Update
-    React.useEffect(() => {
+    useEffect(() => {
+        if (isInitializingRef.current) return;
+
         Object.entries(counters).forEach(([actionId, counter]) => {
             if (typeof counter.count === 'number') {
                 saveCounterData(actionId, counter);
             }
         });
-    }, [counters]);
-
-
+    }, [counters, saveCounterData]);
 
     const formatTime = (milliseconds: number): string => {
         const totalSeconds = Math.floor(milliseconds / 1000);
@@ -327,39 +354,6 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         const tenths = Math.floor((milliseconds % 1000) / 100);
         
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}`;
-    };
-
-    const saveTimerData = (actionId: string, timerData: any) => {
-        setDrills(prevDrills => prevDrills.map((drill, idx) => {
-            if (idx !== currentDrillIndex) return drill;
-            return {
-                ...drill,
-                timerData: {
-                    ...drill.timerData,
-                    [actionId]: timerData
-                }
-            };
-        }));
-    };
-
-    const saveCounterData = (actionId: string, countOrData: any) => {
-        setDrills(prevDrills => prevDrills.map((drill, idx) => {
-            if (idx !== currentDrillIndex) return drill;
-            let counterData;
-            if (typeof countOrData === 'number') {
-                // Backward compatibility: falls nur count übergeben wird
-                counterData = { count: countOrData, timestamps: [] };
-            } else {
-                counterData = countOrData;
-            }
-            return {
-                ...drill,
-                counterData: {
-                    ...drill.counterData,
-                    [actionId]: counterData
-                }
-            };
-        }));
     };
 
     const saveWasteTime = (wasteTime: number) => {

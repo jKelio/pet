@@ -6,7 +6,6 @@ import { Browser } from "@capacitor/browser";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect } from "react";
 import Menu from './components/Menu';
-import Page from './pages/Page';
 import {callbackUri} from "./auth.config";
 import TrackingContextProvider from "./pages/tracking/TrackingContextProvider";
 import TimerContextProvider from "./pages/tracking/TimerContextProvider";

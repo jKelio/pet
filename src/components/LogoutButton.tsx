@@ -1,6 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { Browser } from "@capacitor/browser";
-import {IonButton, IonIcon, IonItem, IonLabel, IonMenuToggle} from "@ionic/react";
+import {IonIcon, IonItem, IonLabel, IonMenuToggle} from "@ionic/react";
 import { callbackUri } from "../auth.config";
 import {logOut, logOutOutline} from "ionicons/icons";
 import {useTranslation} from "react-i18next";

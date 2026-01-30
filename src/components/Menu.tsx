@@ -14,8 +14,6 @@ import {useLocation} from 'react-router-dom';
 import {
     chatboxEllipsesOutline,
     chatboxEllipses,
-    helpCircleOutline,
-    helpCircle,
     bookOutline,
     book, stopwatchOutline, stopwatch, languageOutline, languageSharp
 } from 'ionicons/icons';

@@ -18,20 +18,16 @@ import {
     IonRow,
     IonCol,
     IonFab,
-    IonFabButton,
-    IonButtons,
-    IonBackButton
+    IonFabButton
 } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { useTrackingContext } from './TrackingContextProvider';
 import { useTimerContext } from './TimerContextProvider';
-import { 
-    play, 
-    pause, 
-    stop, 
-    arrowForward, 
-    arrowBack,
+import {
+    play,
+    pause,
+    arrowForward,
     timeOutline,
     calculatorOutline,
     hourglassOutline,
@@ -70,7 +66,7 @@ const TimeWatcher: React.FC = () => {
 
     useEffect(() => {
         setWasteTrackingActive(true);
-    }, []);
+    }, [setWasteTrackingActive]);
 
     // Ensure drills are initialized and currentDrillIndex is correct
     useEffect(() => {
@@ -102,14 +98,6 @@ const TimeWatcher: React.FC = () => {
         history.push('/page/results');
     };
 
-    const goToPrevDrill = () => {
-        if (currentDrillIndex > 0) {
-            saveWasteTime(wasteTime);
-            setCurrentDrillIndex(currentDrillIndex - 1);
-        }
-    };
-
-    const isFirstDrill = currentDrillIndex === 0;
     const isLastDrill = currentDrillIndex === drills.length - 1;
 
     const handleTimerButtonClick = (actionId: string, isCurrentTimer: boolean, isRunning: boolean) => {

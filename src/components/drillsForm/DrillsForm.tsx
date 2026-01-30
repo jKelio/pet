@@ -5,8 +5,7 @@ import {
     IonList,
     IonListHeader,
     IonSelect,
-    IonSelectOption,
-    IonToggle
+    IonSelectOption
 } from "@ionic/react";
 import React from "react";
 import {useTranslation} from "react-i18next";

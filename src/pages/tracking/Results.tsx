@@ -102,13 +102,6 @@ const Results: React.FC = () => {
     const totalTime = totalTimerTime + totalWasteTime;
     const wastePercent = totalTime > 0 ? Math.round((totalWasteTime / totalTime) * 100) : 0;
 
-    // Daten für das Kreisdiagramm
-    const pieData = [
-        { name: t('results.activeTime') || 'Aktive Zeit', value: totalTimerTime },
-        { name: t('results.wasteTime') || 'Leerlauf', value: totalWasteTime },
-    ];
-    const COLORS = ['#0088FE', '#FF8042'];
-
     // Action time chart data (aggregated)
     const actionTimeData = aggregateTimeByAction(drills, t);
     const chartHeight = Math.max(200, actionTimeData.length * 40 + 50);
