@@ -135,7 +135,7 @@ const TimeWatcher: React.FC = () => {
                         <IonCol>
                             <IonCard>
                                 <IonCardHeader>
-                                    <IonCardTitle>
+                                    <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <IonIcon icon={timeOutline} size="large" />
                                         {t('timeWatcher.timers')}
                                     </IonCardTitle>
@@ -190,7 +190,7 @@ const TimeWatcher: React.FC = () => {
                         <IonCol>
                             <IonCard>
                                 <IonCardHeader>
-                                    <IonCardTitle>
+                                    <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <IonIcon icon={calculatorOutline} size="large" />
                                         {t('timeWatcher.counters')}
                                     </IonCardTitle>
@@ -246,7 +246,7 @@ const TimeWatcher: React.FC = () => {
                         <IonCol>
                             <IonCard>
                                 <IonCardHeader>
-                                    <IonCardTitle>
+                                    <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <IonIcon icon={hourglassOutline} size="large" />
                                         {t('timeWatcher.wasteTime') || 'Waste Time'}
                                     </IonCardTitle>
