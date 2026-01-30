@@ -69,7 +69,7 @@ const AppContent: React.FC = () => {
 
   return (
     <IonApp>
-      <IonReactRouter>
+      <IonReactRouter basename={process.env.PUBLIC_URL}>
         <IonSplitPane contentId="main">
           <Menu />
           <IonRouterOutlet id="main">
