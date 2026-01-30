@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ACTION_COLORS, formatRelativeTime, CounterEvent, DrillBoundary } from './ganttUtils';
+import './ActionTimeline.css';
 
 interface TimeSegment {
     actionId: string;
@@ -116,9 +117,9 @@ const ActionTimeline: React.FC<ActionTimelineProps> = ({
     };
 
     return (
-        <div ref={containerRef} style={{ width: '100%' }}>
+        <div ref={containerRef} className="action-timeline-container">
             {width > 0 && (
-                <svg width={width} height={height} style={{ display: 'block' }}>
+                <svg width={width} height={height} className="action-timeline-svg">
                     {/* Background rows */}
                     {actionLabels.map((_, idx) => (
                         <rect
@@ -193,19 +194,19 @@ const ActionTimeline: React.FC<ActionTimelineProps> = ({
                         />
                     ))}
 
-                    {/* Y-Axis labels */}
-                    {actionLabels.map((item) => (
-                        <text
+                    {/* Y-Axis labels with text wrapping */}
+                    {actionLabels.map((item, idx) => (
+                        <foreignObject
                             key={`label-${item.actionId}`}
-                            x={LABEL_WIDTH - 8}
-                            y={yCenter(item.actionId)}
-                            textAnchor="end"
-                            dominantBaseline="middle"
-                            fontSize={11}
-                            fill="#333"
+                            x={0}
+                            y={topPadding + idx * ROW_HEIGHT}
+                            width={LABEL_WIDTH - 8}
+                            height={ROW_HEIGHT}
                         >
-                            {item.actionLabel}
-                        </text>
+                            <div className="action-timeline-label">
+                                {item.actionLabel}
+                            </div>
+                        </foreignObject>
                     ))}
 
                     {/* Time segments as bars */}
