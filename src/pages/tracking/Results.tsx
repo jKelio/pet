@@ -121,7 +121,7 @@ const Results: React.FC = () => {
                     <IonButtons slot="start">
                         <IonBackButton defaultHref="/page/tracking" />
                     </IonButtons>
-                    <IonTitle>
+                    <IonTitle className="results-header-title">
                         <IonIcon icon={trophyOutline} />
                         {t('results.title') || 'Training Results'}
                     </IonTitle>

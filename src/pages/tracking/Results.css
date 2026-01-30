@@ -7,3 +7,10 @@
 .results-card-title ion-icon {
     flex-shrink: 0;
 }
+
+.results-header-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
