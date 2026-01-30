@@ -9,13 +9,22 @@ const appId = "io.ionic.starter";
 const auth0Domain = domain;
 export const iosOrAndroid = isPlatform('ios') || isPlatform('android');
 
-// For web, use current origin + base path (works for localhost and GitHub Pages)
+// For web, extract base path from current URL (works for localhost and GitHub Pages)
 const getWebCallbackUri = () => {
   if (typeof window === 'undefined') return 'http://localhost:8100';
 
-  const origin = window.location.origin;
-  const basePath = process.env.PUBLIC_URL || '';
-  return origin + basePath;
+  // Get origin + pathname up to the base path
+  // e.g., https://jkelio.github.io/pet/page/language -> https://jkelio.github.io/pet
+  const { origin, pathname } = window.location;
+
+  // For GitHub Pages, extract the repo name (first path segment)
+  const pathParts = pathname.split('/').filter(Boolean);
+  if (pathParts.length > 0 && origin.includes('github.io')) {
+    return `${origin}/${pathParts[0]}`;
+  }
+
+  // For localhost or other deployments, just use origin
+  return origin;
 };
 
 export const callbackUri = iosOrAndroid
