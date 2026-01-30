@@ -12,6 +12,7 @@ export interface GanttSegment {
 }
 
 export const ACTION_COLORS: Record<string, string> = {
+    // Timer actions
     explanation: '#0088FE',
     demonstration: '#00C49F',
     feedbackteam: '#FFBB28',
@@ -19,6 +20,11 @@ export const ACTION_COLORS: Record<string, string> = {
     changesidetwo: '#FF6666',
     timemoving: '#A28BFE',
     wasteTime: '#808080',
+    // Counter actions
+    repetition: '#E91E63',
+    feedbackplayers: '#9C27B0',
+    shots: '#F44336',
+    passes: '#4CAF50',
 };
 
 interface TimerData {
@@ -30,11 +36,30 @@ interface TimerData {
     }>;
 }
 
+interface CounterData {
+    count: number;
+    timestamps: number[];
+}
+
 interface Drill {
     id: number;
     tags: Set<string>;
     timerData: Record<string, TimerData>;
+    counterData: Record<string, CounterData>;
     wasteTime: number;
+}
+
+export interface CounterEvent {
+    actionId: string;
+    actionLabel: string;
+    timestamp: number;  // ms from training start
+    drillId: number;
+}
+
+export interface DrillBoundary {
+    drillId: number;
+    drillLabel: string;
+    startOffset: number;  // ms from training start
 }
 
 export function drillsToGanttSegments(
@@ -147,6 +172,8 @@ export function extractTimelineSegments(
         endOffset: number;
         duration: number;
     }>;
+    counterEvents: CounterEvent[];
+    drillBoundaries: DrillBoundary[];
     actionLabels: Array<{ actionId: string; actionLabel: string }>;
 } {
     const rawSegments: Array<{
@@ -156,8 +183,15 @@ export function extractTimelineSegments(
         duration: number;
     }> = [];
 
-    // Collect all segments with absolute timestamps
+    const rawCounterEvents: Array<{
+        actionId: string;
+        timestamp: number;
+        drillId: number;
+    }> = [];
+
+    // Collect all segments and counter events with absolute timestamps
     drills.forEach((drill) => {
+        // Timer segments
         Object.entries(drill.timerData || {}).forEach(([actionId, timerData]) => {
             if (!timerData.timeSegments || timerData.timeSegments.length === 0) return;
 
@@ -172,16 +206,36 @@ export function extractTimelineSegments(
                 }
             });
         });
+
+        // Counter events
+        Object.entries(drill.counterData || {}).forEach(([actionId, counterData]) => {
+            if (!counterData.timestamps || counterData.timestamps.length === 0) return;
+
+            counterData.timestamps.forEach((ts) => {
+                rawCounterEvents.push({
+                    actionId,
+                    timestamp: ts,
+                    drillId: drill.id,
+                });
+            });
+        });
     });
 
-    if (rawSegments.length === 0) {
-        return { segments: [], actionLabels: [] };
+    // Collect all timestamps to find min time
+    const allTimestamps: number[] = [
+        ...rawSegments.map(s => s.startTime),
+        ...rawSegments.map(s => s.endTime),
+        ...rawCounterEvents.map(e => e.timestamp),
+    ];
+
+    if (allTimestamps.length === 0) {
+        return { segments: [], counterEvents: [], drillBoundaries: [], actionLabels: [] };
     }
 
     // Find earliest start time
-    const minStartTime = Math.min(...rawSegments.map(s => s.startTime));
+    const minStartTime = Math.min(...allTimestamps);
 
-    // Convert to relative offsets and add labels
+    // Convert timer segments to relative offsets
     const segments = rawSegments.map(seg => ({
         actionId: seg.actionId,
         actionLabel: t(`actions.${seg.actionId}`) || seg.actionId,
@@ -190,9 +244,68 @@ export function extractTimelineSegments(
         duration: seg.duration,
     }));
 
-    // Get unique action labels (in order of first appearance)
+    // Convert counter events to relative offsets
+    const counterEvents: CounterEvent[] = rawCounterEvents.map(evt => ({
+        actionId: evt.actionId,
+        actionLabel: t(`actions.${evt.actionId}`) || evt.actionId,
+        timestamp: evt.timestamp - minStartTime,
+        drillId: evt.drillId,
+    }));
+
+    // Calculate drill boundaries based on first event/segment per drill
+    const drillBoundaries: DrillBoundary[] = [];
+    const drillStartTimes = new Map<number, number>();
+
+    // Find earliest timestamp for each drill
+    rawSegments.forEach(seg => {
+        // We need to find which drill this segment belongs to
+        // Since we don't have drillId in rawSegments, we need to re-iterate drills
+    });
+
+    // Re-iterate to properly calculate drill boundaries
+    drills.forEach((drill) => {
+        let earliestTime = Infinity;
+
+        // Check timer segments
+        Object.values(drill.timerData || {}).forEach((timerData) => {
+            timerData.timeSegments?.forEach((segment) => {
+                if (segment.startTime && segment.startTime < earliestTime) {
+                    earliestTime = segment.startTime;
+                }
+            });
+        });
+
+        // Check counter events
+        Object.values(drill.counterData || {}).forEach((counterData) => {
+            counterData.timestamps?.forEach((ts) => {
+                if (ts < earliestTime) {
+                    earliestTime = ts;
+                }
+            });
+        });
+
+        if (earliestTime !== Infinity) {
+            drillStartTimes.set(drill.id, earliestTime);
+        }
+    });
+
+    // Convert to boundaries sorted by time
+    const sortedDrills = Array.from(drillStartTimes.entries())
+        .sort((a, b) => a[1] - b[1]);
+
+    sortedDrills.forEach(([drillId, startTime]) => {
+        drillBoundaries.push({
+            drillId,
+            drillLabel: `${t('results.drill')} ${drillId}`,
+            startOffset: startTime - minStartTime,
+        });
+    });
+
+    // Get unique action labels (timers first, then counters)
     const seenActions = new Set<string>();
     const actionLabels: Array<{ actionId: string; actionLabel: string }> = [];
+
+    // Add timer actions first
     segments.forEach(seg => {
         if (!seenActions.has(seg.actionId)) {
             seenActions.add(seg.actionId);
@@ -203,7 +316,18 @@ export function extractTimelineSegments(
         }
     });
 
-    return { segments, actionLabels };
+    // Then add counter actions
+    counterEvents.forEach(evt => {
+        if (!seenActions.has(evt.actionId)) {
+            seenActions.add(evt.actionId);
+            actionLabels.push({
+                actionId: evt.actionId,
+                actionLabel: evt.actionLabel,
+            });
+        }
+    });
+
+    return { segments, counterEvents, drillBoundaries, actionLabels };
 }
 
 // Aggregiert Gesamtzeit pro Aktionstyp aus allen Drills

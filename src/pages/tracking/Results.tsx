@@ -99,8 +99,8 @@ const Results: React.FC = () => {
     const actionTimeData = aggregateTimeByAction(drills, t);
     const chartHeight = Math.max(200, actionTimeData.length * 40 + 50);
 
-    // Timeline data (individual segments)
-    const { segments: timelineSegments, actionLabels } = extractTimelineSegments(drills, t);
+    // Timeline data (individual segments, counter events, drill boundaries)
+    const { segments: timelineSegments, counterEvents, drillBoundaries, actionLabels } = extractTimelineSegments(drills, t);
 
     const goHome = () => {
         history.push('/page/language');
@@ -170,9 +170,11 @@ const Results: React.FC = () => {
                                         <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
                                             {t('results.actionTimeline') || 'Aktions-Timeline'}
                                         </h3>
-                                        {timelineSegments.length > 0 ? (
+                                        {(timelineSegments.length > 0 || counterEvents.length > 0) ? (
                                             <ActionTimeline
                                                 segments={timelineSegments}
+                                                counterEvents={counterEvents}
+                                                drillBoundaries={drillBoundaries}
                                                 actionLabels={actionLabels}
                                             />
                                         ) : (
