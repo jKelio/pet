@@ -1,5 +1,4 @@
 import { isPlatform } from "@ionic/react";
-import { Capacitor } from "@capacitor/core";
 
 export const domain = "petty.eu.auth0.com";
 export const clientId = "ufGkLQUR6G6LhjeWK0D4aNyBaJhKg6i7";
@@ -9,8 +8,9 @@ const appId = "io.ionic.starter";
 // get replaced by the quickstart auto-packager
 const auth0Domain = domain;
 
-// Check if running as native app (not just mobile browser)
-const isNativeApp = Capacitor.isNativePlatform();
+// Check if running as native Capacitor app (not mobile browser)
+// Use isPlatform('capacitor') which is true only in native apps
+const isNativeApp = isPlatform('capacitor');
 export const iosOrAndroid = isNativeApp && (isPlatform('ios') || isPlatform('android'));
 
 // For web, extract base path from current URL (works for localhost and GitHub Pages)
