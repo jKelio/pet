@@ -26,3 +26,82 @@
     justify-content: center;
     gap: 12px;
 }
+
+/* PDF Export Container - hidden off-screen */
+.pdf-export-container {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: #ffffff;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.pdf-export-header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #eee;
+}
+
+.pdf-export-header h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #333;
+}
+
+.pdf-summary-row {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 32px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.pdf-summary-item {
+    text-align: center;
+    flex: 1;
+    padding: 0 16px;
+}
+
+.pdf-summary-item h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.pdf-summary-item p {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+.pdf-chart-section {
+    margin-bottom: 24px;
+}
+
+.pdf-chart-section h3 {
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: #333;
+}
+
+.pdf-charts-row {
+    display: flex;
+    gap: 24px;
+}
+
+.pdf-chart-col {
+    flex: 1;
+}
+
+.pdf-chart-col h3 {
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: #333;
+}
