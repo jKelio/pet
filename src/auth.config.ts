@@ -9,11 +9,15 @@ const appId = "io.ionic.starter";
 const auth0Domain = domain;
 export const iosOrAndroid = isPlatform('ios') || isPlatform('android');
 
-// For web, use current origin (works for localhost and GitHub Pages)
-const webCallbackUri = typeof window !== 'undefined'
-  ? window.location.origin
-  : 'http://localhost:8100';
+// For web, use current origin + base path (works for localhost and GitHub Pages)
+const getWebCallbackUri = () => {
+  if (typeof window === 'undefined') return 'http://localhost:8100';
+
+  const origin = window.location.origin;
+  const basePath = process.env.PUBLIC_URL || '';
+  return origin + basePath;
+};
 
 export const callbackUri = iosOrAndroid
   ? `${appId}://${auth0Domain}/capacitor/${appId}/callback`
-  : webCallbackUri;
+  : getWebCallbackUri();
