@@ -182,49 +182,51 @@ const Results: React.FC = () => {
                                         )}
                                     </div>
 
-                                    {/* Zeit pro Aktion (Summe) */}
-                                    <div style={{ marginBottom: 24 }}>
-                                        <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
-                                            {t('results.timePerAction') || 'Zeit pro Aktion'}
-                                        </h3>
-                                        {actionTimeData.length > 0 ? (
-                                            <ActionTimeChart
-                                                data={actionTimeData}
-                                                height={chartHeight}
-                                            />
-                                        ) : (
-                                            <IonItem>
-                                                <IonLabel>
-                                                    <p>{t('results.noTimeData') || 'No timing data recorded.'}</p>
-                                                </IonLabel>
-                                            </IonItem>
-                                        )}
-                                    </div>
+                                    <IonRow>
+                                        {/* Zeit pro Aktion (Summe) */}
+                                        <IonCol size="12" sizeMd="6">
+                                            <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                                {t('results.timePerAction') || 'Zeit pro Aktion'}
+                                            </h3>
+                                            {actionTimeData.length > 0 ? (
+                                                <ActionTimeChart
+                                                    data={actionTimeData}
+                                                    height={chartHeight}
+                                                />
+                                            ) : (
+                                                <IonItem>
+                                                    <IonLabel>
+                                                        <p>{t('results.noTimeData') || 'No timing data recorded.'}</p>
+                                                    </IonLabel>
+                                                </IonItem>
+                                            )}
+                                        </IonCol>
 
-                                    {/* Kreisdiagramm für Zeitverteilung pro Drill */}
-                                    <div style={{ marginTop: 32 }}>
-                                        <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
-                                            {t('results.timeDistributionPerDrill') || 'Zeitverteilung pro Drill'}
-                                        </h3>
-                                        <ResponsiveContainer width="100%" height={250}>
-                                            <PieChart>
-                                                <Pie
-                                                    data={drillPieData}
-                                                    dataKey="value"
-                                                    nameKey="name"
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    outerRadius={80}
-                                                >
-                                                    {drillPieData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={DRILL_COLORS[index % DRILL_COLORS.length]} />
-                                                    ))}
-                                                </Pie>
-                                                <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
-                                                <Legend />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    </div>
+                                        {/* Kreisdiagramm für Zeitverteilung pro Drill */}
+                                        <IonCol size="12" sizeMd="6">
+                                            <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                                {t('results.timeDistributionPerDrill') || 'Zeitverteilung pro Drill'}
+                                            </h3>
+                                            <ResponsiveContainer width="100%" height={250}>
+                                                <PieChart>
+                                                    <Pie
+                                                        data={drillPieData}
+                                                        dataKey="value"
+                                                        nameKey="name"
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        outerRadius={80}
+                                                    >
+                                                        {drillPieData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={DRILL_COLORS[index % DRILL_COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
+                                                    <Legend />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </IonCol>
+                                    </IonRow>
                                 </IonCardContent>
                             </IonCard>
                         </IonCol>

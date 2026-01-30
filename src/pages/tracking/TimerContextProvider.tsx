@@ -51,7 +51,7 @@ interface TimerContextProviderProps {
 }
 
 const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children }) => {
-    const { drills, currentDrillIndex, setDrills, practiceInfo } = useTrackingContext();
+    const { drills, currentDrillIndex, setDrills } = useTrackingContext();
     
     const [timers, setTimers] = useState<Record<string, TimerState>>({});
     const [counters, setCounters] = useState<Record<string, CounterState>>({});
@@ -124,12 +124,10 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
     // Waste time tracking
     useEffect(() => {
         if (wasteTrackingActive && !currentTimer) {
-            // Waste time tracking aktiv
             wasteTimeIntervalRef.current = setInterval(() => {
                 setWasteTime(prev => prev + 100);
             }, 100);
         } else {
-            // Timer running oder Waste Tracking nicht aktiv - stop waste time tracking
             if (wasteTimeIntervalRef.current) {
                 clearInterval(wasteTimeIntervalRef.current);
                 wasteTimeIntervalRef.current = null;
@@ -143,6 +141,16 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         };
     }, [wasteTrackingActive, currentTimer]);
 
+    // Save waste time to drill when timer starts/stops or drill changes
+    useEffect(() => {
+        if (wasteTime > 0) {
+            setDrills(prevDrills => prevDrills.map((drill, idx) => {
+                if (idx !== currentDrillIndex) return drill;
+                return { ...drill, wasteTime };
+            }));
+        }
+    }, [currentTimer, currentDrillIndex]);
+
     const startTimer = (actionId: string) => {
         if (currentTimer && currentTimer !== actionId) {
             // Stop current timer
@@ -150,24 +158,6 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         }
 
         const now = Date.now();
-        // Trainingsstartzeit aus practiceInfo holen
-        if (
-            currentDrillIndex === 0 &&
-            (currentDrill?.wasteTime === 0 || currentDrill?.wasteTime === undefined)
-        ) {
-            const trainingStart = new Date(practiceInfo.date).getTime();
-            const diff = now - trainingStart;
-            console.log('[WasteTime] Trainingsbeginn:', new Date(trainingStart).toISOString());
-            console.log('[WasteTime] Erster Timer-Start:', new Date(now).toISOString());
-            console.log('[WasteTime] Differenz (ms):', diff);
-            if (diff > 0) {
-                setWasteTime(diff);
-                saveWasteTime(diff);
-                console.log('[WasteTime] WasteTime gesetzt:', diff);
-            } else {
-                console.log('[WasteTime] Keine WasteTime gesetzt, da Differenz <= 0');
-            }
-        }
 
         setTimers(prev => {
             const timer = prev[actionId] || {

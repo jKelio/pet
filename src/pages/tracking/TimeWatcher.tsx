@@ -59,12 +59,18 @@ const TimeWatcher: React.FC = () => {
         incrementCounter,
         decrementCounter,
         formatTime,
-        stopTimer
+        stopTimer,
+        setWasteTrackingActive,
+        saveWasteTime
     } = useTimerContext();
     const history = useHistory();
 
     const currentDrill = drills[currentDrillIndex];
     const enabledActions = currentDrill?.actionButtons.filter(action => action.enabled) || [];
+
+    useEffect(() => {
+        setWasteTrackingActive(true);
+    }, []);
 
     // Ensure drills are initialized and currentDrillIndex is correct
     useEffect(() => {
@@ -72,7 +78,7 @@ const TimeWatcher: React.FC = () => {
             // Drills haven't been created yet, create them now
             initDrills(practiceInfo.drillsNumber);
         }
-        
+
         // Ensure currentDrillIndex is within valid range
         if (drills.length > 0 && (currentDrillIndex >= drills.length || currentDrillIndex < 0)) {
             setCurrentDrillIndex(0);
@@ -81,22 +87,24 @@ const TimeWatcher: React.FC = () => {
 
     const goToNextDrill = () => {
         if (currentDrillIndex < drills.length - 1) {
+            saveWasteTime(wasteTime);
             setCurrentDrillIndex(currentDrillIndex + 1);
         }
     };
 
     const finishTraining = () => {
-        // Alle laufenden Timer stoppen
         Object.keys(timers).forEach((id) => {
             if (timers[id]?.isRunning) {
                 stopTimer(id);
             }
         });
+        saveWasteTime(wasteTime);
         history.push('/page/results');
     };
 
     const goToPrevDrill = () => {
         if (currentDrillIndex > 0) {
+            saveWasteTime(wasteTime);
             setCurrentDrillIndex(currentDrillIndex - 1);
         }
     };
