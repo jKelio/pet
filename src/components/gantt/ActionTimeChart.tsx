@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
     BarChart,
     Bar,
     XAxis,
     YAxis,
     Tooltip,
-    ResponsiveContainer,
     Cell,
 } from 'recharts';
 import { ACTION_COLORS } from './ganttUtils';
@@ -33,6 +32,23 @@ const ActionTimeChart: React.FC<ActionTimeChartProps> = ({
     data,
     height = 300,
 }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [width, setWidth] = useState(0);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                setWidth(entry.contentRect.width);
+            }
+        });
+
+        resizeObserver.observe(container);
+        return () => resizeObserver.disconnect();
+    }, []);
+
     if (data.length === 0) {
         return null;
     }
@@ -41,39 +57,43 @@ const ActionTimeChart: React.FC<ActionTimeChartProps> = ({
     const sortedData = [...data].sort((a, b) => b.totalTime - a.totalTime);
 
     return (
-        <ResponsiveContainer width="100%" height={height}>
-            <BarChart
-                layout="vertical"
-                data={sortedData}
-                margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
-            >
-                <XAxis
-                    type="number"
-                    tickFormatter={formatTime}
-                    stroke="#666"
-                    fontSize={12}
-                />
-                <YAxis
-                    type="category"
-                    dataKey="actionLabel"
-                    stroke="#666"
-                    fontSize={12}
-                    width={90}
-                />
-                <Tooltip
-                    formatter={(value: number) => formatTime(value)}
-                    labelFormatter={(label) => label}
-                />
-                <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
-                    {sortedData.map((entry) => (
-                        <Cell
-                            key={entry.actionId}
-                            fill={ACTION_COLORS[entry.actionId] || '#999999'}
-                        />
-                    ))}
-                </Bar>
-            </BarChart>
-        </ResponsiveContainer>
+        <div ref={containerRef} style={{ width: '100%' }}>
+            {width > 0 && (
+                <BarChart
+                    layout="vertical"
+                    data={sortedData}
+                    width={width}
+                    height={height}
+                    margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
+                >
+                    <XAxis
+                        type="number"
+                        tickFormatter={formatTime}
+                        stroke="#666"
+                        fontSize={12}
+                    />
+                    <YAxis
+                        type="category"
+                        dataKey="actionLabel"
+                        stroke="#666"
+                        fontSize={12}
+                        width={90}
+                    />
+                    <Tooltip
+                        formatter={(value: number) => formatTime(value)}
+                        labelFormatter={(label) => label}
+                    />
+                    <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
+                        {sortedData.map((entry) => (
+                            <Cell
+                                key={entry.actionId}
+                                fill={ACTION_COLORS[entry.actionId] || '#999999'}
+                            />
+                        ))}
+                    </Bar>
+                </BarChart>
+            )}
+        </div>
     );
 };
 

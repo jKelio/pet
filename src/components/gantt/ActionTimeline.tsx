@@ -47,14 +47,17 @@ const ActionTimeline: React.FC<ActionTimelineProps> = ({
     const [width, setWidth] = useState(0);
 
     useEffect(() => {
-        const updateWidth = () => {
-            if (containerRef.current) {
-                setWidth(containerRef.current.offsetWidth);
+        const container = containerRef.current;
+        if (!container) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                setWidth(entry.contentRect.width);
             }
-        };
-        updateWidth();
-        window.addEventListener('resize', updateWidth);
-        return () => window.removeEventListener('resize', updateWidth);
+        });
+
+        resizeObserver.observe(container);
+        return () => resizeObserver.disconnect();
     }, []);
 
     // Debug: Log received data

@@ -28,8 +28,9 @@ import {
     homeOutline
 } from 'ionicons/icons';
 import { useTrackingContext } from './TrackingContextProvider';
-import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
 import ActionTimeChart from '../../components/gantt/ActionTimeChart';
+import { useContainerWidth } from '../../hooks/useContainerWidth';
 import ActionTimeline from '../../components/gantt/ActionTimeline';
 import { aggregateTimeByAction, extractTimelineSegments } from '../../components/gantt/ganttUtils';
 
@@ -37,6 +38,7 @@ const Results: React.FC = () => {
     const { t } = useTranslation('pet');
     const history = useHistory();
     const { drills } = useTrackingContext();
+    const [pieContainerRef, pieWidth] = useContainerWidth<HTMLDivElement>();
 
     // Hilfsfunktionen
     const formatTime = (ms: number) => {
@@ -207,24 +209,26 @@ const Results: React.FC = () => {
                                             <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
                                                 {t('results.timeDistributionPerDrill') || 'Zeitverteilung pro Drill'}
                                             </h3>
-                                            <ResponsiveContainer width="100%" height={250}>
-                                                <PieChart>
-                                                    <Pie
-                                                        data={drillPieData}
-                                                        dataKey="value"
-                                                        nameKey="name"
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        outerRadius={80}
-                                                    >
-                                                        {drillPieData.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={DRILL_COLORS[index % DRILL_COLORS.length]} />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
-                                                    <Legend />
-                                                </PieChart>
-                                            </ResponsiveContainer>
+                                            <div ref={pieContainerRef} style={{ width: '100%' }}>
+                                                {pieWidth > 0 && (
+                                                    <PieChart width={pieWidth} height={250}>
+                                                        <Pie
+                                                            data={drillPieData}
+                                                            dataKey="value"
+                                                            nameKey="name"
+                                                            cx="50%"
+                                                            cy="50%"
+                                                            outerRadius={80}
+                                                        >
+                                                            {drillPieData.map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={DRILL_COLORS[index % DRILL_COLORS.length]} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
+                                                        <Legend />
+                                                    </PieChart>
+                                                )}
+                                            </div>
                                         </IonCol>
                                     </IonRow>
                                 </IonCardContent>
