@@ -85,7 +85,9 @@ const resources = {
                 "timePerAction": "Time per Action",
                 "actionTimeline": "Action Timeline",
                 "unitMinutes": "min",
-                "unitHours": "h"
+                "unitHours": "h",
+                "exportPdf": "Export as PDF",
+                "exporting": "Exporting..."
             }
         },
         menu: {
@@ -266,7 +268,9 @@ const resources = {
                 "timePerAction": "Zeit pro Aktion",
                 "actionTimeline": "Aktions-Timeline",
                 "unitMinutes": "Min",
-                "unitHours": "Std"
+                "unitHours": "Std",
+                "exportPdf": "Als PDF exportieren",
+                "exporting": "Exportiere..."
             }
         },
         menu: {
@@ -447,7 +451,9 @@ const resources = {
                 timePerAction: "Время по действиям",
                 actionTimeline: "Таймлайн действий",
                 unitMinutes: "мин",
-                unitHours: "ч"
+                unitHours: "ч",
+                exportPdf: "Экспорт в PDF",
+                exporting: "Экспорт..."
             }
         },
         menu: {

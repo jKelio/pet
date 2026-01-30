@@ -17,3 +17,12 @@
 .results-header-title ion-icon {
     vertical-align: middle;
 }
+
+.results-button-container {
+    padding: 16px;
+    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
