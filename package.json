@@ -2,7 +2,7 @@
   "name": "pet",
   "version": "0.0.1",
   "private": true,
-  "homepage": ".",
+  "homepage": "https://jkelio.github.io/pet",
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
     "@capacitor/app": "4.1.1",
