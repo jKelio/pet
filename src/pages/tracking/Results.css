@@ -9,8 +9,11 @@
 }
 
 .results-header-title {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
+}
+
+.results-header-title ion-icon {
+    vertical-align: middle;
 }
