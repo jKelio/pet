@@ -49,7 +49,7 @@ const Glossary: React.FC = () => {
                       {includes && includes !== `${key}.includes` && <p style={{marginBottom:0}}>{includes}</p>}
                       {Array.isArray(list) && list.length > 0 && (
                         <ul style={{marginTop:0}}>
-                          {list.map((item: string, idx: number) => (
+                          {(list as string[]).map((item, idx) => (
                             <li key={idx}>{item}</li>
                           ))}
                         </ul>

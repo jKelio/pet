@@ -80,7 +80,7 @@ const ActionTimeChart: React.FC<ActionTimeChartProps> = ({
                         width={90}
                     />
                     <Tooltip
-                        formatter={(value: number) => formatTime(value)}
+                        formatter={(value) => formatTime(value as number)}
                         labelFormatter={(label) => label}
                     />
                     <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
