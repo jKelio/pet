@@ -10,6 +10,13 @@ import {callbackUri} from "./auth.config";
 import TrackingContextProvider from "./pages/tracking/TrackingContextProvider";
 import TimerContextProvider from "./pages/tracking/TimerContextProvider";
 
+import Language from "./pages/language/Language";
+import Feedback from "./pages/feedback/Feedback";
+import Tracking from "./pages/tracking/tracking";
+import TimeWatcher from "./pages/tracking/TimeWatcher";
+import Results from "./pages/tracking/Results";
+import Glossary from "./pages/language/Glossary";
+
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
 
@@ -26,14 +33,19 @@ import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 
+/**
+ * Ionic Dark Mode
+ * -----------------------------------------------------
+ * For more info, please see:
+ * https://ionicframework.com/docs/theming/dark-mode
+ */
+
+/* import '@ionic/react/css/palettes/dark.always.css'; */
+/* import '@ionic/react/css/palettes/dark.class.css'; */
+import '@ionic/react/css/palettes/dark.system.css';
+
 /* Theme variables */
 import './theme/variables.css';
-import Language from "./pages/language/Language";
-import Feedback from "./pages/feedback/Feedback";
-import Tracking from "./pages/tracking/tracking";
-import TimeWatcher from "./pages/tracking/TimeWatcher";
-import Results from "./pages/tracking/Results";
-import Glossary from "./pages/language/Glossary";
 
 setupIonicReact();
 
@@ -68,7 +80,7 @@ const AppContent: React.FC = () => {
 
   return (
     <IonApp>
-      <IonReactRouter basename={process.env.PUBLIC_URL}>
+      <IonReactRouter basename={import.meta.env.BASE_URL}>
         <IonSplitPane contentId="main">
           <Menu />
           <IonRouterOutlet id="main">
