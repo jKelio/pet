@@ -16,8 +16,6 @@ import {
     IonGrid,
     IonRow,
     IonCol,
-    IonButtons,
-    IonBackButton,
 } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
@@ -173,9 +171,6 @@ const Results: React.FC = () => {
         <IonPage>
             <IonHeader>
                 <IonToolbar>
-                    <IonButtons slot="start">
-                        <IonBackButton defaultHref="/page/tracking" />
-                    </IonButtons>
                     <IonTitle>
                         <span className="results-header-title">
                             <IonIcon icon={trophyOutline} />

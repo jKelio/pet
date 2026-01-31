@@ -1,6 +1,6 @@
 import { IonApp, IonRouterOutlet, IonSplitPane, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { Redirect, Route } from 'react-router-dom';
+import { Redirect, Route, useLocation } from 'react-router-dom';
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -60,6 +60,47 @@ const AuthRedirect: React.FC = () => {
   return <Redirect to={isAuthenticated ? "/page/tracking" : "/page/language"} />;
 };
 
+// Separate Komponente für Routes, um useLocation nutzen zu können
+const AppRoutes: React.FC = () => {
+  const location = useLocation();
+  const isResultsPage = location.pathname === '/page/results';
+
+  // Results-Seite ohne Menü/SplitPane
+  if (isResultsPage) {
+    return <Results />;
+  }
+
+  // Alle anderen Seiten mit Menü
+  return (
+    <IonSplitPane contentId="main">
+      <Menu />
+      <IonRouterOutlet id="main">
+        <Route path="/" exact={true}>
+          <AuthRedirect />
+        </Route>
+        <Route path="/page/language" exact={true}>
+          <Language />
+        </Route>
+        <Route path="/page/tracking" exact={true}>
+          <Tracking />
+        </Route>
+        <Route path="/page/timeWatcher" exact={true}>
+          <TimeWatcher />
+        </Route>
+        <Route path="/page/results" exact={true}>
+          <Results />
+        </Route>
+        <Route path="/page/feedback" exact={true}>
+          <Feedback />
+        </Route>
+        <Route path="/page/glossary" exact={true}>
+          <Glossary />
+        </Route>
+      </IonRouterOutlet>
+    </IonSplitPane>
+  );
+};
+
 const AppContent: React.FC = () => {
   const { handleRedirectCallback } = useAuth0();
 
@@ -81,32 +122,7 @@ const AppContent: React.FC = () => {
   return (
     <IonApp>
       <IonReactRouter basename={import.meta.env.BASE_URL}>
-        <IonSplitPane contentId="main">
-          <Menu />
-          <IonRouterOutlet id="main">
-            <Route path="/" exact={true}>
-              <AuthRedirect />
-            </Route>
-            <Route path="/page/language" exact={true}>
-              <Language />
-            </Route>
-            <Route path="/page/tracking" exact={true}>
-              <Tracking />
-            </Route>
-            <Route path="/page/timeWatcher" exact={true}>
-              <TimeWatcher />
-            </Route>
-            <Route path="/page/results" exact={true}>
-              <Results />
-            </Route>
-            <Route path="/page/feedback" exact={true}>
-              <Feedback />
-            </Route>
-            <Route path="/page/glossary" exact={true}>
-              <Glossary />
-            </Route>
-          </IonRouterOutlet>
-        </IonSplitPane>
+        <AppRoutes />
       </IonReactRouter>
     </IonApp>
   );

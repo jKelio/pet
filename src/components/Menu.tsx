@@ -36,6 +36,11 @@ const Menu: React.FC = () => {
     const {isAuthenticated, user} = useAuth0();
     const {t} = useTranslation('menu');
 
+    // Menü auf Results-Seite komplett ausblenden
+    if (location.pathname === '/page/results') {
+        return null;
+    }
+
     const appPages: AppPage[] = [
         {
             title: t('tracking'),

@@ -68,20 +68,6 @@ const ActionTimeline: React.FC<ActionTimelineProps> = ({
         return () => resizeObserver.disconnect();
     }, []);
 
-    // Debug: Log received data
-    console.log('ActionTimeline data:', {
-        segmentsCount: segments.length,
-        counterEventsCount: counterEvents.length,
-        drillBoundariesCount: drillBoundaries.length,
-        segments: segments.map(s => ({
-            action: s.actionId,
-            start: s.startOffset,
-            end: s.endOffset,
-            duration: s.duration
-        })),
-        actionLabels
-    });
-
     if ((segments.length === 0 && counterEvents.length === 0) || actionLabels.length === 0) {
         return null;
     }
