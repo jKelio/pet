@@ -87,7 +87,14 @@ const resources = {
                 "unitMinutes": "min",
                 "unitHours": "h",
                 "exportPdf": "Export as PDF",
-                "exporting": "Exporting..."
+                "exporting": "Exporting...",
+                "rawDataTable": "Raw Tracking Data",
+                "action": "Action",
+                "segments": "Segments",
+                "count": "Count",
+                "timerData": "Timer Data",
+                "counterData": "Counter Data",
+                "noData": "No data recorded"
             }
         },
         menu: {
@@ -270,7 +277,14 @@ const resources = {
                 "unitMinutes": "Min",
                 "unitHours": "Std",
                 "exportPdf": "Als PDF exportieren",
-                "exporting": "Exportiere..."
+                "exporting": "Exportiere...",
+                "rawDataTable": "Rohdaten",
+                "action": "Aktion",
+                "segments": "Segmente",
+                "count": "Anzahl",
+                "timerData": "Timer-Daten",
+                "counterData": "Zähler-Daten",
+                "noData": "Keine Daten aufgezeichnet"
             }
         },
         menu: {
@@ -453,7 +467,14 @@ const resources = {
                 unitMinutes: "мин",
                 unitHours: "ч",
                 exportPdf: "Экспорт в PDF",
-                exporting: "Экспорт..."
+                exporting: "Экспорт...",
+                rawDataTable: "Исходные данные",
+                action: "Действие",
+                segments: "Сегменты",
+                count: "Количество",
+                timerData: "Данные таймера",
+                counterData: "Данные счётчика",
+                noData: "Данные не записаны"
             }
         },
         menu: {

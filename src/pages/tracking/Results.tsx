@@ -25,7 +25,8 @@ import {
     trophyOutline,
     homeOutline,
     downloadOutline,
-    informationCircleOutline
+    informationCircleOutline,
+    listOutline
 } from 'ionicons/icons';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -329,6 +330,103 @@ const Results: React.FC = () => {
                             </PieChart>
                         </div>
                     </div>
+
+                    {/* Raw Data Table for PDF */}
+                    <div className="pdf-chart-section">
+                        <h3>{t('results.rawDataTable') || 'Raw Tracking Data'}</h3>
+                        <table className="pdf-raw-data-table">
+                            <thead>
+                                <tr>
+                                    <th>{t('results.drill')}</th>
+                                    <th>{t('results.action')}</th>
+                                    <th>{t('results.totalTime')}</th>
+                                    <th>{t('results.segments')}</th>
+                                    <th>{t('results.count')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {drills.map((drill) => {
+                                    const timerEntries = Object.entries(drill.timerData || {}).filter(
+                                        ([, data]) => data.totalTime > 0
+                                    );
+                                    const counterEntries = Object.entries(drill.counterData || {}).filter(
+                                        ([, data]) => data.count > 0
+                                    );
+                                    const hasWasteTime = (drill.wasteTime || 0) > 0;
+                                    const hasData = timerEntries.length > 0 || counterEntries.length > 0 || hasWasteTime;
+
+                                    let tagString = '';
+                                    if (drill.tags && drill.tags.size > 0) {
+                                        tagString = Array.from(drill.tags)
+                                            .map(tag => t('drills.' + tag) || tag)
+                                            .join(', ');
+                                    }
+
+                                    return (
+                                        <React.Fragment key={`pdf-drill-${drill.id}`}>
+                                            <tr className="drill-header">
+                                                <td colSpan={5}>
+                                                    {t('results.drill')} {drill.id}
+                                                    {tagString && ` (${tagString})`}
+                                                </td>
+                                            </tr>
+                                            {!hasData && (
+                                                <tr>
+                                                    <td></td>
+                                                    <td colSpan={4} style={{ color: '#999', fontStyle: 'italic' }}>
+                                                        {t('results.noData')}
+                                                    </td>
+                                                </tr>
+                                            )}
+                                            {timerEntries.length > 0 && (
+                                                <>
+                                                    <tr className="section-header">
+                                                        <td></td>
+                                                        <td colSpan={4}>{t('results.timerData')}</td>
+                                                    </tr>
+                                                    {timerEntries.map(([actionId, data]) => (
+                                                        <tr key={`pdf-timer-${drill.id}-${actionId}`}>
+                                                            <td></td>
+                                                            <td>{t(`actions.${actionId}`) || actionId}</td>
+                                                            <td>{formatTime(data.totalTime)}</td>
+                                                            <td>{data.timeSegments?.length || 0}</td>
+                                                            <td>-</td>
+                                                        </tr>
+                                                    ))}
+                                                </>
+                                            )}
+                                            {counterEntries.length > 0 && (
+                                                <>
+                                                    <tr className="section-header">
+                                                        <td></td>
+                                                        <td colSpan={4}>{t('results.counterData')}</td>
+                                                    </tr>
+                                                    {counterEntries.map(([actionId, data]) => (
+                                                        <tr key={`pdf-counter-${drill.id}-${actionId}`}>
+                                                            <td></td>
+                                                            <td>{t(`actions.${actionId}`) || actionId}</td>
+                                                            <td>-</td>
+                                                            <td>-</td>
+                                                            <td>{data.count}</td>
+                                                        </tr>
+                                                    ))}
+                                                </>
+                                            )}
+                                            {hasWasteTime && (
+                                                <tr className="waste-time-row">
+                                                    <td></td>
+                                                    <td>{t('results.wasteTime')}</td>
+                                                    <td>{formatTime(drill.wasteTime)}</td>
+                                                    <td>-</td>
+                                                    <td>-</td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 {/* Visible content */}
@@ -525,6 +623,115 @@ const Results: React.FC = () => {
                                             </div>
                                         </IonCol>
                                     </IonRow>
+                                </IonCardContent>
+                            </IonCard>
+                        </IonCol>
+                    </IonRow>
+
+                    {/* Raw Tracking Data Table */}
+                    <IonRow>
+                        <IonCol>
+                            <IonCard>
+                                <IonCardHeader>
+                                    <IonCardTitle className="results-card-title">
+                                        <IonIcon icon={listOutline} size="large" />
+                                        {t('results.rawDataTable') || 'Raw Tracking Data'}
+                                    </IonCardTitle>
+                                </IonCardHeader>
+                                <IonCardContent>
+                                    <table className="raw-data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>{t('results.drill')}</th>
+                                                <th>{t('results.action')}</th>
+                                                <th>{t('results.totalTime')}</th>
+                                                <th>{t('results.segments')}</th>
+                                                <th>{t('results.count')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {drills.map((drill) => {
+                                                const timerEntries = Object.entries(drill.timerData || {}).filter(
+                                                    ([, data]) => data.totalTime > 0
+                                                );
+                                                const counterEntries = Object.entries(drill.counterData || {}).filter(
+                                                    ([, data]) => data.count > 0
+                                                );
+                                                const hasWasteTime = (drill.wasteTime || 0) > 0;
+                                                const hasData = timerEntries.length > 0 || counterEntries.length > 0 || hasWasteTime;
+
+                                                // Get drill tags for display
+                                                let tagString = '';
+                                                if (drill.tags && drill.tags.size > 0) {
+                                                    tagString = Array.from(drill.tags)
+                                                        .map(tag => t('drills.' + tag) || tag)
+                                                        .join(', ');
+                                                }
+
+                                                return (
+                                                    <React.Fragment key={`drill-${drill.id}`}>
+                                                        <tr className="drill-header">
+                                                            <td colSpan={5}>
+                                                                {t('results.drill')} {drill.id}
+                                                                {tagString && ` (${tagString})`}
+                                                            </td>
+                                                        </tr>
+                                                        {!hasData && (
+                                                            <tr>
+                                                                <td></td>
+                                                                <td colSpan={4} className="no-data">
+                                                                    {t('results.noData')}
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                        {timerEntries.length > 0 && (
+                                                            <>
+                                                                <tr className="section-header">
+                                                                    <td></td>
+                                                                    <td colSpan={4}>{t('results.timerData')}</td>
+                                                                </tr>
+                                                                {timerEntries.map(([actionId, data]) => (
+                                                                    <tr key={`timer-${drill.id}-${actionId}`}>
+                                                                        <td></td>
+                                                                        <td>{t(`actions.${actionId}`) || actionId}</td>
+                                                                        <td>{formatTime(data.totalTime)}</td>
+                                                                        <td>{data.timeSegments?.length || 0}</td>
+                                                                        <td>-</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </>
+                                                        )}
+                                                        {counterEntries.length > 0 && (
+                                                            <>
+                                                                <tr className="section-header">
+                                                                    <td></td>
+                                                                    <td colSpan={4}>{t('results.counterData')}</td>
+                                                                </tr>
+                                                                {counterEntries.map(([actionId, data]) => (
+                                                                    <tr key={`counter-${drill.id}-${actionId}`}>
+                                                                        <td></td>
+                                                                        <td>{t(`actions.${actionId}`) || actionId}</td>
+                                                                        <td>-</td>
+                                                                        <td>-</td>
+                                                                        <td>{data.count}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </>
+                                                        )}
+                                                        {hasWasteTime && (
+                                                            <tr className="waste-time-row">
+                                                                <td></td>
+                                                                <td>{t('results.wasteTime')}</td>
+                                                                <td>{formatTime(drill.wasteTime)}</td>
+                                                                <td>-</td>
+                                                                <td>-</td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </IonCardContent>
                             </IonCard>
                         </IonCol>

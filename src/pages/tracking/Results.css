@@ -135,3 +135,92 @@
     font-size: 16px;
     color: #333;
 }
+
+/* Raw Data Table Styles */
+.raw-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.raw-data-table th,
+.raw-data-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--ion-color-light-shade, #d7d8da);
+}
+
+.raw-data-table th {
+    background: var(--ion-color-light, #f4f5f8);
+    font-weight: 600;
+    color: var(--ion-color-dark, #222428);
+}
+
+.raw-data-table tr:hover {
+    background: var(--ion-color-light, #f4f5f8);
+}
+
+.raw-data-table .drill-header {
+    background: var(--ion-color-primary, #3880ff);
+    color: white;
+    font-weight: 600;
+}
+
+.raw-data-table .drill-header td {
+    border-bottom: none;
+}
+
+.raw-data-table .section-header {
+    background: var(--ion-color-light-tint, #f5f6f9);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--ion-color-medium, #92949c);
+}
+
+.raw-data-table .waste-time-row {
+    font-style: italic;
+    color: var(--ion-color-warning-shade, #e0a500);
+}
+
+.raw-data-table .no-data {
+    color: var(--ion-color-medium, #92949c);
+    font-style: italic;
+}
+
+/* PDF Export Table Styles */
+.pdf-raw-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    font-size: 12px;
+}
+
+.pdf-raw-data-table th,
+.pdf-raw-data-table td {
+    padding: 6px 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+.pdf-raw-data-table th {
+    background: #f0f0f0;
+    font-weight: 600;
+}
+
+.pdf-raw-data-table .drill-header {
+    background: #3880ff;
+    color: white;
+    font-weight: 600;
+}
+
+.pdf-raw-data-table .section-header {
+    background: #f8f8f8;
+    font-weight: 500;
+    color: #666;
+}
+
+.pdf-raw-data-table .waste-time-row {
+    font-style: italic;
+    color: #b8860b;
+}
