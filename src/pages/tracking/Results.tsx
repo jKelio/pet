@@ -39,7 +39,7 @@ import './Results.css';
 const Results: React.FC = () => {
     const { t } = useTranslation('pet');
     const history = useHistory();
-    const { drills } = useTrackingContext();
+    const { drills, resetAllData } = useTrackingContext();
     const [pieContainerRef, pieWidth] = useContainerWidth<HTMLDivElement>();
     const exportRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
@@ -108,6 +108,7 @@ const Results: React.FC = () => {
     const { segments: timelineSegments, counterEvents, drillBoundaries, actionLabels } = extractTimelineSegments(drills, t);
 
     const goHome = () => {
+        resetAllData();
         history.push('/page/language');
     };
 

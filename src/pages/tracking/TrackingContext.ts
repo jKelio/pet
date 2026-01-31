@@ -139,6 +139,24 @@ export const useTrackingContext = () => {
         ]);
     };
 
+    const resetAllData = () => {
+        setPracticeInfo({
+            clubName: '',
+            teamName: '',
+            date: new Date().toISOString(),
+            coachName: '',
+            evaluation: 0,
+            athletesNumber: 0,
+            coachesNumber: 0,
+            totalTime: 0,
+            trackedPlayerName: '',
+            drillsNumber: 0,
+        });
+        setDrills([]);
+        setCurrentDrillIndex(0);
+        setMode('practiceInfo');
+    };
+
     return {
         practiceInfo,
         setPracticeInfo,
@@ -153,6 +171,7 @@ export const useTrackingContext = () => {
         initDrills,
         getCurrentDrill,
         updateCurrentDrill,
-        updateDrillAction
+        updateDrillAction,
+        resetAllData
     };
 };

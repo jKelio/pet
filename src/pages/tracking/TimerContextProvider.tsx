@@ -58,7 +58,28 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         }));
     }, [currentDrillIndex, setDrills]);
 
+    // Reset all timer data when drills array becomes empty
     useEffect(() => {
+        if (drills.length === 0) {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+            if (wasteTimeIntervalRef.current) {
+                clearInterval(wasteTimeIntervalRef.current);
+                wasteTimeIntervalRef.current = null;
+            }
+            setTimers({});
+            setCounters({});
+            setCurrentTimer(null);
+            setWasteTime(0);
+            setWasteTrackingActive(false);
+        }
+    }, [drills.length]);
+
+    useEffect(() => {
+        if (drills.length === 0) return;
+
         isInitializingRef.current = true;
 
         const drill = drillsRef.current[currentDrillIndex];
@@ -94,7 +115,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         setTimeout(() => {
             isInitializingRef.current = false;
         }, 0);
-    }, [currentDrillIndex]);
+    }, [currentDrillIndex, drills.length]);
 
     useEffect(() => {
         if (!currentTimer) {
