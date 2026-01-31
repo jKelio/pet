@@ -1,6 +1,6 @@
 {
-  "short_name": "PET",
-  "name": "Practice Efficiency Tracking",
+  "short_name": "PROTRACK",
+  "name": "PROTRACK Hockey",
   "icons": [
     {
       "src": "assets/icon/favicon.png",
@@ -16,6 +16,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff"
+  "theme_color": "#05173D;",
+  "background_color": "#05173D;"
 }
