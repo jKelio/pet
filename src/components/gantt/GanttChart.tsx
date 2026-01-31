@@ -38,10 +38,23 @@ function calculateTicks(maxTime: number): number[] {
     return ticks;
 }
 
+// Recharts axis map type - scale is a D3 scale function with additional methods
+interface AxisScale {
+    (value: number): number;
+    bandwidth?: () => number;
+    domain?: () => number[];
+}
+
+interface AxisMap {
+    scale: AxisScale;
+    width?: number;
+    height?: number;
+}
+
 // Custom renderer component for Gantt bars
 const GanttBarsRenderer: React.FC<{
-    xAxisMap?: Record<number, any>;
-    yAxisMap?: Record<number, any>;
+    xAxisMap?: Record<number, AxisMap>;
+    yAxisMap?: Record<number, AxisMap>;
     segments: GanttSegment[];
     barHeight: number;
     drillLabels: string[];
@@ -182,7 +195,7 @@ const GanttChart: React.FC<GanttChartProps> = ({
                     }}
                 />
                 <Customized
-                    component={(props: any) => (
+                    component={(props: Record<string, unknown>) => (
                         <GanttBarsRenderer
                             {...props}
                             segments={segments}

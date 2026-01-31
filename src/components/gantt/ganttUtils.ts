@@ -256,11 +256,7 @@ export function extractTimelineSegments(
     const drillBoundaries: DrillBoundary[] = [];
     const drillStartTimes = new Map<number, number>();
 
-    // Find earliest timestamp for each drill
-    rawSegments.forEach(seg => {
-        // We need to find which drill this segment belongs to
-        // Since we don't have drillId in rawSegments, we need to re-iterate drills
-    });
+    // Note: rawSegments iteration removed - drill boundaries calculated below
 
     // Re-iterate to properly calculate drill boundaries
     drills.forEach((drill) => {

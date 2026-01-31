@@ -14,7 +14,7 @@ import {useTranslation} from "react-i18next";
 import { useHistory } from "react-router-dom";
 import PracticeInfoForm from "../../components/practiceInfoForm/PracticeInfoForm";
 import DrillsForm from "../../components/drillsForm/DrillsForm";
-import { useTrackingContext } from "./TrackingContextProvider";
+import { useTrackingContext } from "./TrackingContext";
 import DrillSegments from "../../components/DrillSegments";
 
 const Tracking: React.FC = () => {

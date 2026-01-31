@@ -10,7 +10,7 @@ import {
 } from "@ionic/react";
 import React, {useCallback} from "react";
 import {useTranslation} from "react-i18next";
-import {useTrackingContext} from "../../pages/tracking/TrackingContextProvider";
+import {useTrackingContext} from "../../pages/tracking/TrackingContext";
 
 const PracticeInfoForm: React.FC = () => {
     const {t} = useTranslation('pet');

@@ -9,7 +9,7 @@ import {
 } from "@ionic/react";
 import React from "react";
 import {useTranslation} from "react-i18next";
-import {useTrackingContext} from "../../pages/tracking/TrackingContextProvider";
+import {useTrackingContext} from "../../pages/tracking/TrackingContext";
 import {
     DndContext,
     closestCenter,

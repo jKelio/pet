@@ -30,7 +30,7 @@ import {
 } from 'ionicons/icons';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { useTrackingContext } from './TrackingContextProvider';
+import { useTrackingContext } from './TrackingContext';
 import { PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
 import ActionTimeChart from '../../components/gantt/ActionTimeChart';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
@@ -75,7 +75,7 @@ const Results: React.FC = () => {
     };
 
     // Zeitverteilung pro Drill berechnen
-    const drillPieData = drills.map((drill, idx) => {
+    const drillPieData = drills.map((drill) => {
         const drillTimerTime = Object.values(drill.timerData || {}).reduce((s, t) => s + (t.totalTime || 0), 0);
         const drillTotal = drillTimerTime + (drill.wasteTime || 0);
         // Kategorie-Tags als String, übersetzt

@@ -1,6 +1,6 @@
 import React, {useCallback} from "react";
 import {IonSegment, IonSegmentButton} from "@ionic/react";
-import {useTrackingContext} from "../pages/tracking/TrackingContextProvider";
+import {useTrackingContext} from "../pages/tracking/TrackingContext";
 
 const DrillSegments: React.FC = () => {
     const { drills, currentDrillIndex, setCurrentDrillIndex } = useTrackingContext();

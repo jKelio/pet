@@ -1,50 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
-import { useTrackingContext } from './TrackingContextProvider';
-
-interface TimerState {
-    isRunning: boolean;
-    startTime: number | null;
-    elapsedTime: number;
-    totalTime: number;
-    timeSegments: Array<{
-        startTime: number;
-        endTime: number | null;
-        duration: number;
-    }>;
-}
-
-interface CounterState {
-    count: number;
-    timestamps: number[];
-}
-
-interface TimerContextType {
-    timers: Record<string, TimerState>;
-    counters: Record<string, CounterState>;
-    currentTimer: string | null;
-    wasteTime: number;
-    wasteTrackingActive: boolean;
-    setWasteTrackingActive: (active: boolean) => void;
-    startTimer: (actionId: string) => void;
-    pauseTimer: (actionId: string) => void;
-    stopTimer: (actionId: string) => void;
-    incrementCounter: (actionId: string) => void;
-    decrementCounter: (actionId: string) => void;
-    formatTime: (milliseconds: number) => string;
-    saveTimerData: (actionId: string, timerData: any) => void;
-    saveCounterData: (actionId: string, count: number) => void;
-    saveWasteTime: (wasteTime: number) => void;
-}
-
-const TimerContext = createContext<TimerContextType | undefined>(undefined);
-
-export const useTimerContext = () => {
-    const context = useContext(TimerContext);
-    if (!context) {
-        throw new Error('useTimerContext must be used within a TimerContextProvider');
-    }
-    return context;
-};
+import React, { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
+import { useTrackingContext } from './TrackingContext';
+import { TimerContext, TimerState, CounterState, TimerData, CounterData } from './TimerContext';
 
 interface TimerContextProviderProps {
     children: ReactNode;
@@ -52,13 +8,13 @@ interface TimerContextProviderProps {
 
 const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children }) => {
     const { drills, currentDrillIndex, setDrills } = useTrackingContext();
-    
+
     const [timers, setTimers] = useState<Record<string, TimerState>>({});
     const [counters, setCounters] = useState<Record<string, CounterState>>({});
     const [currentTimer, setCurrentTimer] = useState<string | null>(null);
     const [wasteTime, setWasteTime] = useState<number>(0);
     const [wasteTrackingActive, setWasteTrackingActive] = useState<boolean>(false);
-    
+
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const wasteTimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -70,7 +26,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
 
     const isInitializingRef = useRef(false);
 
-    const saveTimerData = useCallback((actionId: string, timerData: any) => {
+    const saveTimerData = useCallback((actionId: string, timerData: TimerData) => {
         setDrills(prevDrills => prevDrills.map((drill, idx) => {
             if (idx !== currentDrillIndex) return drill;
             return {
@@ -83,7 +39,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         }));
     }, [currentDrillIndex, setDrills]);
 
-    const saveCounterData = useCallback((actionId: string, countOrData: any) => {
+    const saveCounterData = useCallback((actionId: string, countOrData: number | CounterData) => {
         setDrills(prevDrills => prevDrills.map((drill, idx) => {
             if (idx !== currentDrillIndex) return drill;
             let counterData;
@@ -352,7 +308,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
         const tenths = Math.floor((milliseconds % 1000) / 100);
-        
+
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}`;
     };
 
@@ -366,7 +322,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         }));
     };
 
-    const value: TimerContextType = {
+    const value = {
         timers,
         counters,
         currentTimer,
@@ -391,4 +347,4 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
     );
 };
 
-export default TimerContextProvider; 
+export default TimerContextProvider;

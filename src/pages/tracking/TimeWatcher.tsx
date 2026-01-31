@@ -22,8 +22,8 @@ import {
 } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
-import { useTrackingContext } from './TrackingContextProvider';
-import { useTimerContext } from './TimerContextProvider';
+import { useTrackingContext } from './TrackingContext';
+import { useTimerContext } from './TimerContext';
 import {
     play,
     pause,
