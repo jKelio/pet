@@ -1,2 +1,247 @@
 /* For information on how to create your own theme, please refer to:
 http://ionicframework.com/docs/theming/ */
+
+/**
+ * PET Custom Theme
+ * Basierend auf #05173D (Dark Navy Blue)
+ * Light Mode: Helle Variante mit Navy-Akzenten
+ * Dark Mode: #05173D Hintergrund
+ */
+
+:root {
+  /* ========================================
+     LIGHT MODE - Navy Blue Akzente
+     ======================================== */
+
+  /* Primary - Das Navy Blue als Hauptfarbe */
+  --ion-color-primary: #05173d;
+  --ion-color-primary-rgb: 5, 23, 61;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #041436;
+  --ion-color-primary-tint: #1e2e50;
+
+  /* Secondary - Mittleres Blau */
+  --ion-color-secondary: #3171e0;
+  --ion-color-secondary-rgb: 49, 113, 224;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #2b63c5;
+  --ion-color-secondary-tint: #467fe3;
+
+  /* Tertiary - Helleres Blau */
+  --ion-color-tertiary: #5260ff;
+  --ion-color-tertiary-rgb: 82, 96, 255;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #4854e0;
+  --ion-color-tertiary-tint: #6370ff;
+
+  /* Success */
+  --ion-color-success: #2dd36f;
+  --ion-color-success-rgb: 45, 211, 111;
+  --ion-color-success-contrast: #000000;
+  --ion-color-success-contrast-rgb: 0, 0, 0;
+  --ion-color-success-shade: #28ba62;
+  --ion-color-success-tint: #42d77d;
+
+  /* Warning */
+  --ion-color-warning: #ffc409;
+  --ion-color-warning-rgb: 255, 196, 9;
+  --ion-color-warning-contrast: #000000;
+  --ion-color-warning-contrast-rgb: 0, 0, 0;
+  --ion-color-warning-shade: #e0ac08;
+  --ion-color-warning-tint: #ffca22;
+
+  /* Danger */
+  --ion-color-danger: #eb445a;
+  --ion-color-danger-rgb: 235, 68, 90;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #cf3c4f;
+  --ion-color-danger-tint: #ed576b;
+
+  /* Light */
+  --ion-color-light: #f4f5f8;
+  --ion-color-light-rgb: 244, 245, 248;
+  --ion-color-light-contrast: #000000;
+  --ion-color-light-contrast-rgb: 0, 0, 0;
+  --ion-color-light-shade: #d7d8da;
+  --ion-color-light-tint: #f5f6f9;
+
+  /* Medium */
+  --ion-color-medium: #92949c;
+  --ion-color-medium-rgb: 146, 148, 156;
+  --ion-color-medium-contrast: #000000;
+  --ion-color-medium-contrast-rgb: 0, 0, 0;
+  --ion-color-medium-shade: #808289;
+  --ion-color-medium-tint: #9d9fa6;
+
+  /* Dark */
+  --ion-color-dark: #222428;
+  --ion-color-dark-rgb: 34, 36, 40;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #1e2023;
+  --ion-color-dark-tint: #383a3e;
+
+  /* Light Mode Hintergrund - Sehr helles Blau-Grau */
+  --ion-background-color: #f0f4f8;
+  --ion-background-color-rgb: 240, 244, 248;
+
+  /* Light Mode Text - Dunkles Navy */
+  --ion-text-color: #05173d;
+  --ion-text-color-rgb: 5, 23, 61;
+
+  /* Card und Surface - Weiß */
+  --ion-card-background: #ffffff;
+  --ion-item-background: #ffffff;
+
+  /* Toolbar - Leichter Navy-Ton */
+  --ion-toolbar-background: #e8eef5;
+
+  /* Tab Bar */
+  --ion-tab-bar-background: #e8eef5;
+
+  /* Border */
+  --ion-border-color: #c5d0de;
+}
+
+/* iOS Light Mode */
+.ios body {
+  --ion-background-color: #f0f4f8;
+  --ion-background-color-rgb: 240, 244, 248;
+  --ion-text-color: #05173d;
+  --ion-text-color-rgb: 5, 23, 61;
+  --ion-toolbar-background: #e8eef5;
+  --ion-card-background: #ffffff;
+  --ion-item-background: #ffffff;
+}
+
+/* Material Design Light Mode */
+.md body {
+  --ion-background-color: #f0f4f8;
+  --ion-background-color-rgb: 240, 244, 248;
+  --ion-text-color: #05173d;
+  --ion-text-color-rgb: 5, 23, 61;
+  --ion-toolbar-background: #e8eef5;
+  --ion-card-background: #ffffff;
+  --ion-item-background: #ffffff;
+}
+
+/**
+ * ==========================================
+ * DARK MODE - #05173D Hintergrund
+ * ==========================================
+ *
+ * Windows: Einstellungen → Personalisierung → Farben → "Dunkel"
+ * macOS: Systemeinstellungen → Erscheinungsbild → "Dunkel"
+ * iOS: Einstellungen → Anzeige & Helligkeit → "Dunkel"
+ * Android: Einstellungen → Display → Dunkles Design
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Primary - Helleres Blau für besseren Kontrast */
+    --ion-color-primary: #4d9fff;
+    --ion-color-primary-rgb: 77, 159, 255;
+    --ion-color-primary-contrast: #ffffff;
+    --ion-color-primary-contrast-rgb: 255, 255, 255;
+    --ion-color-primary-shade: #448ce0;
+    --ion-color-primary-tint: #5fa9ff;
+
+    /* Secondary */
+    --ion-color-secondary: #6a7eff;
+    --ion-color-secondary-rgb: 106, 126, 255;
+    --ion-color-secondary-contrast: #ffffff;
+    --ion-color-secondary-contrast-rgb: 255, 255, 255;
+    --ion-color-secondary-shade: #5d6fe0;
+    --ion-color-secondary-tint: #798bff;
+
+    /* Tertiary */
+    --ion-color-tertiary: #8482ff;
+    --ion-color-tertiary-rgb: 132, 130, 255;
+    --ion-color-tertiary-contrast: #ffffff;
+    --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+    --ion-color-tertiary-shade: #7472e0;
+    --ion-color-tertiary-tint: #908fff;
+
+    /* Dark/Light invertiert */
+    --ion-color-dark: #f4f5f8;
+    --ion-color-dark-rgb: 244, 245, 248;
+    --ion-color-dark-contrast: #000000;
+    --ion-color-dark-contrast-rgb: 0, 0, 0;
+    --ion-color-dark-shade: #d7d8da;
+    --ion-color-dark-tint: #f5f6f9;
+
+    --ion-color-light: #0a2352;
+    --ion-color-light-rgb: 10, 35, 82;
+    --ion-color-light-contrast: #ffffff;
+    --ion-color-light-contrast-rgb: 255, 255, 255;
+    --ion-color-light-shade: #091f48;
+    --ion-color-light-tint: #233963;
+
+    /* Hintergrundfarben basierend auf #05173D */
+    --ion-background-color: #05173d;
+    --ion-background-color-rgb: 5, 23, 61;
+
+    /* Textfarben */
+    --ion-text-color: #ffffff;
+    --ion-text-color-rgb: 255, 255, 255;
+
+    /* Card und Surface Farben */
+    --ion-card-background: #0a2352;
+    --ion-item-background: #0a2352;
+
+    /* Toolbar Farben */
+    --ion-toolbar-background: #031029;
+
+    /* Tab Bar */
+    --ion-tab-bar-background: #031029;
+
+    /* Border Farben */
+    --ion-border-color: #1a3a6e;
+
+    /* Step Colors für verschiedene Helligkeitsstufen */
+    --ion-color-step-50: #0f2149;
+    --ion-color-step-100: #192b55;
+    --ion-color-step-150: #233561;
+    --ion-color-step-200: #2d3f6d;
+    --ion-color-step-250: #374979;
+    --ion-color-step-300: #415385;
+    --ion-color-step-350: #4b5d91;
+    --ion-color-step-400: #55679d;
+    --ion-color-step-450: #5f71a9;
+    --ion-color-step-500: #697bb5;
+    --ion-color-step-550: #7a89be;
+    --ion-color-step-600: #8b97c7;
+    --ion-color-step-650: #9ca5d0;
+    --ion-color-step-700: #adb3d9;
+    --ion-color-step-750: #bec1e2;
+    --ion-color-step-800: #cfcfeb;
+    --ion-color-step-850: #e0ddf4;
+    --ion-color-step-900: #f1ebfd;
+    --ion-color-step-950: #f8f5fe;
+  }
+
+  /* iOS Dark Mode */
+  .ios body {
+    --ion-background-color: #05173d;
+    --ion-background-color-rgb: 5, 23, 61;
+    --ion-text-color: #ffffff;
+    --ion-text-color-rgb: 255, 255, 255;
+    --ion-toolbar-background: #031029;
+    --ion-card-background: #0a2352;
+    --ion-item-background: #0a2352;
+  }
+
+  /* Material Design Dark Mode */
+  .md body {
+    --ion-background-color: #05173d;
+    --ion-background-color-rgb: 5, 23, 61;
+    --ion-text-color: #ffffff;
+    --ion-text-color-rgb: 255, 255, 255;
+    --ion-toolbar-background: #031029;
+    --ion-card-background: #0a2352;
+    --ion-item-background: #0a2352;
+  }
+}
