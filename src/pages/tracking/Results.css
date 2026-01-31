@@ -50,6 +50,36 @@
     color: #333;
 }
 
+.pdf-practice-info {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f0f4f8;
+    border-radius: 8px;
+    border-left: 4px solid #3880ff;
+}
+
+.pdf-practice-info h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #333;
+    font-weight: 600;
+}
+
+.pdf-practice-info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 32px;
+}
+
+.pdf-practice-info-item {
+    font-size: 14px;
+    color: #444;
+}
+
+.pdf-practice-info-item strong {
+    color: #333;
+}
+
 .pdf-summary-row {
     display: flex;
     justify-content: space-around;

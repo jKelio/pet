@@ -24,7 +24,8 @@ import {
     timeOutline,
     trophyOutline,
     homeOutline,
-    downloadOutline
+    downloadOutline,
+    informationCircleOutline
 } from 'ionicons/icons';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -39,13 +40,22 @@ import './Results.css';
 const Results: React.FC = () => {
     const { t } = useTranslation('pet');
     const history = useHistory();
-    const { drills, resetAllData } = useTrackingContext();
+    const { drills, practiceInfo, resetAllData } = useTrackingContext();
     const [pieContainerRef, pieWidth] = useContainerWidth<HTMLDivElement>();
     const exportRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
     const PDF_EXPORT_WIDTH = 1200;
 
     // Hilfsfunktionen
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        } catch {
+            return dateString;
+        }
+    };
+
     const formatTime = (ms: number) => {
         const totalSeconds = Math.floor(ms / 1000);
         const hours = Math.floor(totalSeconds / 3600);
@@ -144,20 +154,60 @@ const Results: React.FC = () => {
 
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({
-                orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+                orientation: 'portrait',
                 unit: 'mm',
             });
 
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
+            const margin = 10;
+            const usableHeight = pdfHeight - 2 * margin;
 
-            const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-            const imgX = (pdfWidth - imgWidth * ratio) / 2;
-            const imgY = 10;
+            // Scale image to fit page width
+            const scaledWidth = pdfWidth - 2 * margin;
+            const scaledHeight = (canvas.height * scaledWidth) / canvas.width;
 
-            pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+            // Check if content fits on one page or needs multiple pages
+            if (scaledHeight <= usableHeight) {
+                // Content fits on one page
+                const imgX = margin;
+                const imgY = margin;
+                pdf.addImage(imgData, 'PNG', imgX, imgY, scaledWidth, scaledHeight);
+            } else {
+                // Content needs multiple pages - split the canvas
+                const pageHeightInCanvas = (usableHeight * canvas.width) / scaledWidth;
+                let remainingHeight = canvas.height;
+                let sourceY = 0;
+
+                while (remainingHeight > 0) {
+                    const sliceHeight = Math.min(pageHeightInCanvas, remainingHeight);
+
+                    // Create a temporary canvas for this page slice
+                    const pageCanvas = document.createElement('canvas');
+                    pageCanvas.width = canvas.width;
+                    pageCanvas.height = sliceHeight;
+                    const ctx = pageCanvas.getContext('2d');
+                    if (ctx) {
+                        ctx.drawImage(
+                            canvas,
+                            0, sourceY, canvas.width, sliceHeight,
+                            0, 0, canvas.width, sliceHeight
+                        );
+                    }
+
+                    const pageImgData = pageCanvas.toDataURL('image/png');
+                    const pageScaledHeight = (sliceHeight * scaledWidth) / canvas.width;
+
+                    pdf.addImage(pageImgData, 'PNG', margin, margin, scaledWidth, pageScaledHeight);
+
+                    remainingHeight -= sliceHeight;
+                    sourceY += sliceHeight;
+
+                    if (remainingHeight > 0) {
+                        pdf.addPage();
+                    }
+                }
+            }
 
             const date = new Date().toISOString().split('T')[0];
             pdf.save(`training-results-${date}.pdf`);
@@ -187,6 +237,46 @@ const Results: React.FC = () => {
                     <div className="pdf-export-header">
                         <h1>{t('results.title') || 'Training Results'}</h1>
                     </div>
+
+                    {/* Practice Info for PDF */}
+                    {(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
+                        <div className="pdf-practice-info">
+                            <h3>{t('general.infoHeader')}</h3>
+                            <div className="pdf-practice-info-row">
+                                {practiceInfo.clubName && (
+                                    <div className="pdf-practice-info-item">
+                                        <strong>{t('general.clubLabel')}:</strong> {practiceInfo.clubName}
+                                    </div>
+                                )}
+                                {practiceInfo.teamName && (
+                                    <div className="pdf-practice-info-item">
+                                        <strong>{t('general.teamLabel')}:</strong> {practiceInfo.teamName}
+                                    </div>
+                                )}
+                                {practiceInfo.date && (
+                                    <div className="pdf-practice-info-item">
+                                        <strong>{t('general.dateLabel')}:</strong> {formatDate(practiceInfo.date)}
+                                    </div>
+                                )}
+                                {practiceInfo.coachName && (
+                                    <div className="pdf-practice-info-item">
+                                        <strong>{t('general.coachLabel')}:</strong> {practiceInfo.coachName}
+                                    </div>
+                                )}
+                                {practiceInfo.athletesNumber > 0 && (
+                                    <div className="pdf-practice-info-item">
+                                        <strong>{t('practice.athletesNumberLabel')}:</strong> {practiceInfo.athletesNumber}
+                                    </div>
+                                )}
+                                {practiceInfo.coachesNumber > 0 && (
+                                    <div className="pdf-practice-info-item">
+                                        <strong>{t('practice.coachesNumberLabel')}:</strong> {practiceInfo.coachesNumber}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="pdf-summary-row">
                         <div className="pdf-summary-item">
                             <h3>{t('results.totalDrills') || 'Total Drills'}</h3>
@@ -243,6 +333,87 @@ const Results: React.FC = () => {
 
                 {/* Visible content */}
                 <IonGrid>
+                    {/* Practice Info Card - only show if at least one field has data */}
+                    {(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
+                        <IonRow>
+                            <IonCol>
+                                <IonCard>
+                                    <IonCardHeader>
+                                        <IonCardTitle className="results-card-title">
+                                            <IonIcon icon={informationCircleOutline} size="large" />
+                                            {t('general.infoHeader')}
+                                        </IonCardTitle>
+                                    </IonCardHeader>
+                                    <IonCardContent>
+                                        <IonRow>
+                                            {practiceInfo.clubName && (
+                                                <IonCol size="6">
+                                                    <IonItem>
+                                                        <IonLabel>
+                                                            <h3>{t('general.clubLabel')}</h3>
+                                                            <p>{practiceInfo.clubName}</p>
+                                                        </IonLabel>
+                                                    </IonItem>
+                                                </IonCol>
+                                            )}
+                                            {practiceInfo.teamName && (
+                                                <IonCol size="6">
+                                                    <IonItem>
+                                                        <IonLabel>
+                                                            <h3>{t('general.teamLabel')}</h3>
+                                                            <p>{practiceInfo.teamName}</p>
+                                                        </IonLabel>
+                                                    </IonItem>
+                                                </IonCol>
+                                            )}
+                                            {practiceInfo.date && (
+                                                <IonCol size="6">
+                                                    <IonItem>
+                                                        <IonLabel>
+                                                            <h3>{t('general.dateLabel')}</h3>
+                                                            <p>{formatDate(practiceInfo.date)}</p>
+                                                        </IonLabel>
+                                                    </IonItem>
+                                                </IonCol>
+                                            )}
+                                            {practiceInfo.coachName && (
+                                                <IonCol size="6">
+                                                    <IonItem>
+                                                        <IonLabel>
+                                                            <h3>{t('general.coachLabel')}</h3>
+                                                            <p>{practiceInfo.coachName}</p>
+                                                        </IonLabel>
+                                                    </IonItem>
+                                                </IonCol>
+                                            )}
+                                            {practiceInfo.athletesNumber > 0 && (
+                                                <IonCol size="6">
+                                                    <IonItem>
+                                                        <IonLabel>
+                                                            <h3>{t('practice.athletesNumberLabel')}</h3>
+                                                            <p>{practiceInfo.athletesNumber}</p>
+                                                        </IonLabel>
+                                                    </IonItem>
+                                                </IonCol>
+                                            )}
+                                            {practiceInfo.coachesNumber > 0 && (
+                                                <IonCol size="6">
+                                                    <IonItem>
+                                                        <IonLabel>
+                                                            <h3>{t('practice.coachesNumberLabel')}</h3>
+                                                            <p>{practiceInfo.coachesNumber}</p>
+                                                        </IonLabel>
+                                                    </IonItem>
+                                                </IonCol>
+                                            )}
+                                        </IonRow>
+                                    </IonCardContent>
+                                </IonCard>
+                            </IonCol>
+                        </IonRow>
+                    )}
+
+                    {/* Training Summary Card */}
                     <IonRow>
                         <IonCol>
                             <IonCard>
