@@ -225,14 +225,14 @@ const Results: React.FC = () => {
                         </div>
                         <div className="pdf-chart-col">
                             <h3>{t('results.timeDistributionPerDrill') || 'Time Distribution per Drill'}</h3>
-                            <PieChart width={500} height={300}>
+                            <PieChart width={500} height={chartHeight}>
                                 <Pie
                                     data={drillPieData}
                                     dataKey="value"
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
-                                    outerRadius={100}
+                                    outerRadius={Math.min(100, (chartHeight - 80) / 2)}
                                 >
                                     {drillPieData.map((entry, index) => (
                                         <Cell key={`cell-export-${index}`} fill={DRILL_COLORS[index % DRILL_COLORS.length]} />
@@ -338,14 +338,14 @@ const Results: React.FC = () => {
                                             </h3>
                                             <div ref={pieContainerRef} style={{ width: '100%' }}>
                                                 {pieWidth > 0 && (
-                                                    <PieChart width={pieWidth} height={250}>
+                                                    <PieChart width={pieWidth} height={chartHeight}>
                                                         <Pie
                                                             data={drillPieData}
                                                             dataKey="value"
                                                             nameKey="name"
                                                             cx="50%"
                                                             cy="50%"
-                                                            outerRadius={80}
+                                                            outerRadius={Math.min(80, (chartHeight - 80) / 2)}
                                                         >
                                                             {drillPieData.map((entry, index) => (
                                                                 <Cell key={`cell-${index}`} fill={DRILL_COLORS[index % DRILL_COLORS.length]} />
