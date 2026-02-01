@@ -151,20 +151,6 @@ const Results: React.FC = () => {
             // Wait for charts to render
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            const canvas = await html2canvas(container, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            });
-
-            // Hide container again
-            container.style.position = 'absolute';
-            container.style.left = '-9999px';
-            container.style.zIndex = '';
-            container.style.opacity = '';
-
-            const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
@@ -173,53 +159,66 @@ const Results: React.FC = () => {
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
             const margin = 10;
+            const usableWidth = pdfWidth - 2 * margin;
             const usableHeight = pdfHeight - 2 * margin;
 
-            // Scale image to fit page width
-            const scaledWidth = pdfWidth - 2 * margin;
-            const scaledHeight = (canvas.height * scaledWidth) / canvas.width;
+            // Find all sections to render separately
+            const headerSection = container.querySelector('.pdf-export-header');
+            const practiceInfoSection = container.querySelector('.pdf-practice-info');
+            const summarySection = container.querySelector('.pdf-summary-row');
+            const drillSections = container.querySelectorAll('.pdf-drill-section');
 
-            // Check if content fits on one page or needs multiple pages
-            if (scaledHeight <= usableHeight) {
-                // Content fits on one page
-                const imgX = margin;
-                const imgY = margin;
-                pdf.addImage(imgData, 'PNG', imgX, imgY, scaledWidth, scaledHeight);
-            } else {
-                // Content needs multiple pages - split the canvas
-                const pageHeightInCanvas = (usableHeight * canvas.width) / scaledWidth;
-                let remainingHeight = canvas.height;
-                let sourceY = 0;
+            // Helper function to render element to canvas and add to PDF
+            const renderAndAddToPdf = async (element: Element, currentY: number): Promise<number> => {
+                const canvas = await html2canvas(element as HTMLElement, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
 
-                while (remainingHeight > 0) {
-                    const sliceHeight = Math.min(pageHeightInCanvas, remainingHeight);
+                const scaledWidth = usableWidth;
+                const scaledHeight = (canvas.height * scaledWidth) / canvas.width;
 
-                    // Create a temporary canvas for this page slice
-                    const pageCanvas = document.createElement('canvas');
-                    pageCanvas.width = canvas.width;
-                    pageCanvas.height = sliceHeight;
-                    const ctx = pageCanvas.getContext('2d');
-                    if (ctx) {
-                        ctx.drawImage(
-                            canvas,
-                            0, sourceY, canvas.width, sliceHeight,
-                            0, 0, canvas.width, sliceHeight
-                        );
-                    }
-
-                    const pageImgData = pageCanvas.toDataURL('image/png');
-                    const pageScaledHeight = (sliceHeight * scaledWidth) / canvas.width;
-
-                    pdf.addImage(pageImgData, 'PNG', margin, margin, scaledWidth, pageScaledHeight);
-
-                    remainingHeight -= sliceHeight;
-                    sourceY += sliceHeight;
-
-                    if (remainingHeight > 0) {
-                        pdf.addPage();
-                    }
+                // Check if element fits on current page
+                if (currentY + scaledHeight > usableHeight && currentY > 0) {
+                    pdf.addPage();
+                    currentY = 0;
                 }
+
+                const imgData = canvas.toDataURL('image/png');
+                pdf.addImage(imgData, 'PNG', margin, margin + currentY, scaledWidth, scaledHeight);
+
+                return currentY + scaledHeight + 5; // 5mm spacing between sections
+            };
+
+            let currentY = 0;
+
+            // Render header
+            if (headerSection) {
+                currentY = await renderAndAddToPdf(headerSection, currentY);
             }
+
+            // Render practice info
+            if (practiceInfoSection) {
+                currentY = await renderAndAddToPdf(practiceInfoSection, currentY);
+            }
+
+            // Render summary
+            if (summarySection) {
+                currentY = await renderAndAddToPdf(summarySection, currentY);
+            }
+
+            // Render each drill section on its own (starts new page if doesn't fit)
+            for (const drillSection of drillSections) {
+                currentY = await renderAndAddToPdf(drillSection, currentY);
+            }
+
+            // Hide container again
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.zIndex = '';
+            container.style.opacity = '';
 
             const date = new Date().toISOString().split('T')[0];
             pdf.save(`training-results-${date}.pdf`);
