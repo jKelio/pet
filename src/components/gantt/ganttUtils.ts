@@ -348,3 +348,147 @@ export function aggregateTimeByAction(
             totalTime,
         }));
 }
+
+// Aggregiert Gesamtzeit pro Aktionstyp für einen einzelnen Drill
+export function aggregateTimeByActionForDrill(
+    drill: Drill,
+    t: TFunction
+): Array<{ actionId: string; actionLabel: string; totalTime: number }> {
+    const result: Array<{ actionId: string; actionLabel: string; totalTime: number }> = [];
+
+    Object.entries(drill.timerData || {}).forEach(([actionId, timerData]) => {
+        if (timerData.totalTime > 0) {
+            result.push({
+                actionId,
+                actionLabel: t(`actions.${actionId}`) || actionId,
+                totalTime: timerData.totalTime,
+            });
+        }
+    });
+
+    // Add waste time if present
+    if (drill.wasteTime > 0) {
+        result.push({
+            actionId: 'wasteTime',
+            actionLabel: t('results.wasteTime') || 'Waste Time',
+            totalTime: drill.wasteTime,
+        });
+    }
+
+    return result;
+}
+
+// Extrahiert Timeline-Segmente für einen einzelnen Drill
+export function extractTimelineSegmentsForDrill(
+    drill: Drill,
+    t: TFunction
+): {
+    segments: Array<{
+        actionId: string;
+        actionLabel: string;
+        startOffset: number;
+        endOffset: number;
+        duration: number;
+    }>;
+    counterEvents: CounterEvent[];
+    actionLabels: Array<{ actionId: string; actionLabel: string }>;
+} {
+    const rawSegments: Array<{
+        actionId: string;
+        startTime: number;
+        endTime: number;
+        duration: number;
+    }> = [];
+
+    const rawCounterEvents: Array<{
+        actionId: string;
+        timestamp: number;
+    }> = [];
+
+    // Timer segments
+    Object.entries(drill.timerData || {}).forEach(([actionId, timerData]) => {
+        if (!timerData.timeSegments || timerData.timeSegments.length === 0) return;
+
+        timerData.timeSegments.forEach((segment) => {
+            if (segment.startTime && segment.endTime) {
+                rawSegments.push({
+                    actionId,
+                    startTime: segment.startTime,
+                    endTime: segment.endTime,
+                    duration: segment.duration,
+                });
+            }
+        });
+    });
+
+    // Counter events
+    Object.entries(drill.counterData || {}).forEach(([actionId, counterData]) => {
+        if (!counterData.timestamps || counterData.timestamps.length === 0) return;
+
+        counterData.timestamps.forEach((ts) => {
+            rawCounterEvents.push({
+                actionId,
+                timestamp: ts,
+            });
+        });
+    });
+
+    // Collect all timestamps to find min time
+    const allTimestamps: number[] = [
+        ...rawSegments.map(s => s.startTime),
+        ...rawSegments.map(s => s.endTime),
+        ...rawCounterEvents.map(e => e.timestamp),
+    ];
+
+    if (allTimestamps.length === 0) {
+        return { segments: [], counterEvents: [], actionLabels: [] };
+    }
+
+    // Find earliest start time
+    const minStartTime = Math.min(...allTimestamps);
+
+    // Convert timer segments to relative offsets
+    const segments = rawSegments.map(seg => ({
+        actionId: seg.actionId,
+        actionLabel: t(`actions.${seg.actionId}`) || seg.actionId,
+        startOffset: seg.startTime - minStartTime,
+        endOffset: seg.endTime - minStartTime,
+        duration: seg.duration,
+    }));
+
+    // Convert counter events to relative offsets
+    const counterEvents: CounterEvent[] = rawCounterEvents.map(evt => ({
+        actionId: evt.actionId,
+        actionLabel: t(`actions.${evt.actionId}`) || evt.actionId,
+        timestamp: evt.timestamp - minStartTime,
+        drillId: drill.id,
+    }));
+
+    // Get unique action labels (timers first, then counters)
+    const seenActions = new Set<string>();
+    const actionLabels: Array<{ actionId: string; actionLabel: string }> = [];
+
+    // Add timer actions first
+    segments.forEach(seg => {
+        if (!seenActions.has(seg.actionId)) {
+            seenActions.add(seg.actionId);
+            actionLabels.push({
+                actionId: seg.actionId,
+                actionLabel: seg.actionLabel,
+            });
+        }
+    });
+
+    // Then add counter actions
+    counterEvents.forEach(evt => {
+        if (!seenActions.has(evt.actionId)) {
+            seenActions.add(evt.actionId);
+            actionLabels.push({
+                actionId: evt.actionId,
+                actionLabel: evt.actionLabel,
+            });
+        }
+    });
+
+    return { segments, counterEvents, actionLabels };
+}

@@ -224,3 +224,21 @@
     font-style: italic;
     color: #b8860b;
 }
+
+/* PDF Drill Section Styles */
+.pdf-drill-section {
+    margin-bottom: 32px;
+    padding: 20px;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    page-break-inside: avoid;
+}
+
+.pdf-drill-title {
+    margin: 0 0 20px 0;
+    padding-bottom: 12px;
+    font-size: 20px;
+    color: #333;
+    border-bottom: 2px solid #3880ff;
+}

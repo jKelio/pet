@@ -35,7 +35,7 @@ import { PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
 import ActionTimeChart from '../../components/gantt/ActionTimeChart';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
 import ActionTimeline from '../../components/gantt/ActionTimeline';
-import { aggregateTimeByAction, extractTimelineSegments } from '../../components/gantt/ganttUtils';
+import { extractTimelineSegmentsForDrill, aggregateTimeByActionForDrill, ACTION_COLORS } from '../../components/gantt/ganttUtils';
 import './Results.css';
 
 const Results: React.FC = () => {
@@ -83,25 +83,6 @@ const Results: React.FC = () => {
         }
     };
 
-    // Zeitverteilung pro Drill berechnen
-    const drillPieData = drills.map((drill) => {
-        const drillTimerTime = Object.values(drill.timerData || {}).reduce((s, t) => s + (t.totalTime || 0), 0);
-        const drillTotal = drillTimerTime + (drill.wasteTime || 0);
-        // Kategorie-Tags als String, übersetzt
-        let tagString = '';
-        if (drill.tags && drill.tags.size > 0) {
-            tagString = Array.from(drill.tags)
-                .map(tag => t('drills.' + tag) || tag)
-                .join(', ');
-        }
-        return {
-            name: `${t('results.drill')} ${drill.id}${tagString ? ' (' + tagString + ')' : ''}`,
-            value: drillTotal,
-            label: `${t('results.drill')} ${drill.id}${tagString ? ' (' + tagString + ')' : ''}: ${formatDuration(drillTotal)}`
-        };
-    });
-    const DRILL_COLORS = ['#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE', '#FF6699', '#33CC99', '#FF6666', '#66B3FF', '#FFCC99'];
-
     // Daten berechnen
     const totalDrills = drills.length;
     const totalWasteTime = drills.reduce((sum, drill) => sum + (drill.wasteTime || 0), 0);
@@ -111,12 +92,40 @@ const Results: React.FC = () => {
     const totalTime = totalTimerTime + totalWasteTime;
     const wastePercent = totalTime > 0 ? Math.round((totalWasteTime / totalTime) * 100) : 0;
 
-    // Action time chart data (aggregated)
-    const actionTimeData = aggregateTimeByAction(drills, t);
-    const chartHeight = Math.max(200, actionTimeData.length * 40 + 50);
+    // Helper function to get drill tag string
+    const getDrillTagString = (drill: typeof drills[0]) => {
+        if (drill.tags && drill.tags.size > 0) {
+            return Array.from(drill.tags)
+                .map(tag => t('drills.' + tag) || tag)
+                .join(', ');
+        }
+        return '';
+    };
 
-    // Timeline data (individual segments, counter events, drill boundaries)
-    const { segments: timelineSegments, counterEvents, drillBoundaries, actionLabels } = extractTimelineSegments(drills, t);
+    // Helper function to create pie data for a single drill (time distribution per action)
+    const getDrillActionPieData = (drill: typeof drills[0]) => {
+        const data: Array<{ name: string; value: number; actionId: string }> = [];
+
+        Object.entries(drill.timerData || {}).forEach(([actionId, timerData]) => {
+            if (timerData.totalTime > 0) {
+                data.push({
+                    name: t(`actions.${actionId}`) || actionId,
+                    value: timerData.totalTime,
+                    actionId,
+                });
+            }
+        });
+
+        if (drill.wasteTime > 0) {
+            data.push({
+                name: t('results.wasteTime') || 'Waste Time',
+                value: drill.wasteTime,
+                actionId: 'wasteTime',
+            });
+        }
+
+        return data;
+    };
 
     const goHome = () => {
         resetAllData();
@@ -292,141 +301,127 @@ const Results: React.FC = () => {
                             <p>{formatTime(totalWasteTime)} ({wastePercent}%)</p>
                         </div>
                     </div>
-                    <div className="pdf-chart-section">
-                        <h3>{t('results.actionTimeline') || 'Action Timeline'}</h3>
-                        {(timelineSegments.length > 0 || counterEvents.length > 0) && (
-                            <ActionTimeline
-                                segments={timelineSegments}
-                                counterEvents={counterEvents}
-                                drillBoundaries={drillBoundaries}
-                                actionLabels={actionLabels}
-                            />
-                        )}
-                    </div>
-                    <div className="pdf-charts-row">
-                        <div className="pdf-chart-col">
-                            <h3>{t('results.timePerAction') || 'Time per Action'}</h3>
-                            {actionTimeData.length > 0 && (
-                                <ActionTimeChart data={actionTimeData} height={chartHeight} />
-                            )}
-                        </div>
-                        <div className="pdf-chart-col">
-                            <h3>{t('results.timeDistributionPerDrill') || 'Time Distribution per Drill'}</h3>
-                            <PieChart width={500} height={chartHeight}>
-                                <Pie
-                                    data={drillPieData}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={Math.min(100, (chartHeight - 80) / 2)}
-                                >
-                                    {drillPieData.map((entry, index) => (
-                                        <Cell key={`cell-export-${index}`} fill={DRILL_COLORS[index % DRILL_COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
-                                <Legend />
-                            </PieChart>
-                        </div>
-                    </div>
+                    {/* Per-Drill Details for PDF */}
+                    {drills.map((drill) => {
+                        const tagString = getDrillTagString(drill);
+                        const drillTimelineData = extractTimelineSegmentsForDrill(drill, t);
+                        const drillActionTimeData = aggregateTimeByActionForDrill(drill, t);
+                        const drillPieData = getDrillActionPieData(drill);
+                        const drillChartHeight = Math.max(200, drillActionTimeData.length * 40 + 50);
 
-                    {/* Raw Data Table for PDF */}
-                    <div className="pdf-chart-section">
-                        <h3>{t('results.rawDataTable') || 'Raw Tracking Data'}</h3>
-                        <table className="pdf-raw-data-table">
-                            <thead>
-                                <tr>
-                                    <th>{t('results.drill')}</th>
-                                    <th>{t('results.action')}</th>
-                                    <th>{t('results.totalTime')}</th>
-                                    <th>{t('results.segments')}</th>
-                                    <th>{t('results.count')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {drills.map((drill) => {
-                                    const timerEntries = Object.entries(drill.timerData || {}).filter(
-                                        ([, data]) => data.totalTime > 0
-                                    );
-                                    const counterEntries = Object.entries(drill.counterData || {}).filter(
-                                        ([, data]) => data.count > 0
-                                    );
-                                    const hasWasteTime = (drill.wasteTime || 0) > 0;
-                                    const hasData = timerEntries.length > 0 || counterEntries.length > 0 || hasWasteTime;
+                        const timerEntries = Object.entries(drill.timerData || {}).filter(
+                            ([, data]) => data.totalTime > 0
+                        );
+                        const counterEntries = Object.entries(drill.counterData || {}).filter(
+                            ([, data]) => data.count > 0
+                        );
+                        const hasWasteTime = (drill.wasteTime || 0) > 0;
+                        const hasData = timerEntries.length > 0 || counterEntries.length > 0 || hasWasteTime;
 
-                                    let tagString = '';
-                                    if (drill.tags && drill.tags.size > 0) {
-                                        tagString = Array.from(drill.tags)
-                                            .map(tag => t('drills.' + tag) || tag)
-                                            .join(', ');
-                                    }
+                        return (
+                            <div key={`pdf-drill-section-${drill.id}`} className="pdf-drill-section">
+                                <h2 className="pdf-drill-title">
+                                    {t('results.drill')} {drill.id}
+                                    {tagString && ` (${tagString})`}
+                                </h2>
 
-                                    return (
-                                        <React.Fragment key={`pdf-drill-${drill.id}`}>
-                                            <tr className="drill-header">
-                                                <td colSpan={5}>
-                                                    {t('results.drill')} {drill.id}
-                                                    {tagString && ` (${tagString})`}
-                                                </td>
+                                {/* Timeline */}
+                                {(drillTimelineData.segments.length > 0 || drillTimelineData.counterEvents.length > 0) && (
+                                    <div className="pdf-chart-section">
+                                        <h3>{t('results.actionTimeline') || 'Action Timeline'}</h3>
+                                        <ActionTimeline
+                                            segments={drillTimelineData.segments}
+                                            counterEvents={drillTimelineData.counterEvents}
+                                            actionLabels={drillTimelineData.actionLabels}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Charts Row */}
+                                <div className="pdf-charts-row">
+                                    <div className="pdf-chart-col">
+                                        <h3>{t('results.timePerAction') || 'Time per Action'}</h3>
+                                        {drillActionTimeData.length > 0 ? (
+                                            <ActionTimeChart data={drillActionTimeData} height={drillChartHeight} />
+                                        ) : (
+                                            <p style={{ color: '#999', fontStyle: 'italic' }}>{t('results.noTimeData')}</p>
+                                        )}
+                                    </div>
+                                    <div className="pdf-chart-col">
+                                        <h3>{t('results.timeDistributionPerAction') || 'Time Distribution per Action'}</h3>
+                                        {drillPieData.length > 0 ? (
+                                            <PieChart width={500} height={drillChartHeight}>
+                                                <Pie
+                                                    data={drillPieData}
+                                                    dataKey="value"
+                                                    nameKey="name"
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    outerRadius={Math.min(100, (drillChartHeight - 80) / 2)}
+                                                >
+                                                    {drillPieData.map((entry) => (
+                                                        <Cell key={`cell-export-${drill.id}-${entry.actionId}`} fill={ACTION_COLORS[entry.actionId] || '#999999'} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
+                                                <Legend />
+                                            </PieChart>
+                                        ) : (
+                                            <p style={{ color: '#999', fontStyle: 'italic' }}>{t('results.noTimeData')}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Raw Data Table */}
+                                <div className="pdf-chart-section">
+                                    <h3>{t('results.rawDataTable') || 'Raw Tracking Data'}</h3>
+                                    <table className="pdf-raw-data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>{t('results.action')}</th>
+                                                <th>{t('results.totalTime')}</th>
+                                                <th>{t('results.segments')}</th>
+                                                <th>{t('results.count')}</th>
                                             </tr>
+                                        </thead>
+                                        <tbody>
                                             {!hasData && (
                                                 <tr>
-                                                    <td></td>
                                                     <td colSpan={4} style={{ color: '#999', fontStyle: 'italic' }}>
                                                         {t('results.noData')}
                                                     </td>
                                                 </tr>
                                             )}
-                                            {timerEntries.length > 0 && (
-                                                <>
-                                                    <tr className="section-header">
-                                                        <td></td>
-                                                        <td colSpan={4}>{t('results.timerData')}</td>
-                                                    </tr>
-                                                    {timerEntries.map(([actionId, data]) => (
-                                                        <tr key={`pdf-timer-${drill.id}-${actionId}`}>
-                                                            <td></td>
-                                                            <td>{t(`actions.${actionId}`) || actionId}</td>
-                                                            <td>{formatTime(data.totalTime)}</td>
-                                                            <td>{data.timeSegments?.length || 0}</td>
-                                                            <td>-</td>
-                                                        </tr>
-                                                    ))}
-                                                </>
-                                            )}
-                                            {counterEntries.length > 0 && (
-                                                <>
-                                                    <tr className="section-header">
-                                                        <td></td>
-                                                        <td colSpan={4}>{t('results.counterData')}</td>
-                                                    </tr>
-                                                    {counterEntries.map(([actionId, data]) => (
-                                                        <tr key={`pdf-counter-${drill.id}-${actionId}`}>
-                                                            <td></td>
-                                                            <td>{t(`actions.${actionId}`) || actionId}</td>
-                                                            <td>-</td>
-                                                            <td>-</td>
-                                                            <td>{data.count}</td>
-                                                        </tr>
-                                                    ))}
-                                                </>
-                                            )}
+                                            {timerEntries.map(([actionId, data]) => (
+                                                <tr key={`pdf-timer-${drill.id}-${actionId}`}>
+                                                    <td>{t(`actions.${actionId}`) || actionId}</td>
+                                                    <td>{formatTime(data.totalTime)}</td>
+                                                    <td>{data.timeSegments?.length || 0}</td>
+                                                    <td>-</td>
+                                                </tr>
+                                            ))}
+                                            {counterEntries.map(([actionId, data]) => (
+                                                <tr key={`pdf-counter-${drill.id}-${actionId}`}>
+                                                    <td>{t(`actions.${actionId}`) || actionId}</td>
+                                                    <td>-</td>
+                                                    <td>-</td>
+                                                    <td>{data.count}</td>
+                                                </tr>
+                                            ))}
                                             {hasWasteTime && (
                                                 <tr className="waste-time-row">
-                                                    <td></td>
                                                     <td>{t('results.wasteTime')}</td>
                                                     <td>{formatTime(drill.wasteTime)}</td>
                                                     <td>-</td>
                                                     <td>-</td>
                                                 </tr>
                                             )}
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Visible content */}
@@ -545,197 +540,157 @@ const Results: React.FC = () => {
                         </IonCol>
                     </IonRow>
 
-                    <IonRow>
-                        <IonCol>
-                            <IonCard>
-                                <IonCardHeader>
-                                    <IonCardTitle className="results-card-title">
-                                        <IonIcon icon={timeOutline} size="large" />
-                                        {t('results.detailedResults') || 'Detailed Results'}
-                                    </IonCardTitle>
-                                </IonCardHeader>
-                                <IonCardContent>
-                                    {/* Timeline - einzelne Segmente */}
-                                    <div style={{ marginBottom: 24 }}>
-                                        <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
-                                            {t('results.actionTimeline') || 'Aktions-Timeline'}
-                                        </h3>
-                                        {(timelineSegments.length > 0 || counterEvents.length > 0) ? (
-                                            <ActionTimeline
-                                                segments={timelineSegments}
-                                                counterEvents={counterEvents}
-                                                drillBoundaries={drillBoundaries}
-                                                actionLabels={actionLabels}
-                                            />
-                                        ) : (
-                                            <IonItem>
-                                                <IonLabel>
-                                                    <p>{t('results.noTimeData') || 'No timing data recorded.'}</p>
-                                                </IonLabel>
-                                            </IonItem>
-                                        )}
-                                    </div>
+                    {/* Per-Drill Detailed Results */}
+                    {drills.map((drill) => {
+                        const tagString = getDrillTagString(drill);
+                        const drillTimelineData = extractTimelineSegmentsForDrill(drill, t);
+                        const drillActionTimeData = aggregateTimeByActionForDrill(drill, t);
+                        const drillPieData = getDrillActionPieData(drill);
+                        const drillChartHeight = Math.max(200, drillActionTimeData.length * 40 + 50);
 
-                                    <IonRow>
-                                        {/* Zeit pro Aktion (Summe) */}
-                                        <IonCol size="12" sizeMd="6">
-                                            <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
-                                                {t('results.timePerAction') || 'Zeit pro Aktion'}
-                                            </h3>
-                                            {actionTimeData.length > 0 ? (
-                                                <ActionTimeChart
-                                                    data={actionTimeData}
-                                                    height={chartHeight}
-                                                />
-                                            ) : (
-                                                <IonItem>
-                                                    <IonLabel>
-                                                        <p>{t('results.noTimeData') || 'No timing data recorded.'}</p>
-                                                    </IonLabel>
-                                                </IonItem>
+                        const timerEntries = Object.entries(drill.timerData || {}).filter(
+                            ([, data]) => data.totalTime > 0
+                        );
+                        const counterEntries = Object.entries(drill.counterData || {}).filter(
+                            ([, data]) => data.count > 0
+                        );
+                        const hasWasteTime = (drill.wasteTime || 0) > 0;
+                        const hasData = timerEntries.length > 0 || counterEntries.length > 0 || hasWasteTime;
+
+                        return (
+                            <IonRow key={`drill-details-${drill.id}`}>
+                                <IonCol>
+                                    <IonCard>
+                                        <IonCardHeader>
+                                            <IonCardTitle className="results-card-title">
+                                                <IonIcon icon={timeOutline} size="large" />
+                                                {t('results.drill')} {drill.id}
+                                                {tagString && ` (${tagString})`}
+                                            </IonCardTitle>
+                                        </IonCardHeader>
+                                        <IonCardContent>
+                                            {/* Timeline */}
+                                            {(drillTimelineData.segments.length > 0 || drillTimelineData.counterEvents.length > 0) && (
+                                                <div style={{ marginBottom: 24 }}>
+                                                    <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                                        {t('results.actionTimeline') || 'Action Timeline'}
+                                                    </h3>
+                                                    <ActionTimeline
+                                                        segments={drillTimelineData.segments}
+                                                        counterEvents={drillTimelineData.counterEvents}
+                                                        actionLabels={drillTimelineData.actionLabels}
+                                                    />
+                                                </div>
                                             )}
-                                        </IonCol>
 
-                                        {/* Kreisdiagramm für Zeitverteilung pro Drill */}
-                                        <IonCol size="12" sizeMd="6">
-                                            <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
-                                                {t('results.timeDistributionPerDrill') || 'Zeitverteilung pro Drill'}
-                                            </h3>
-                                            <div ref={pieContainerRef} style={{ width: '100%' }}>
-                                                {pieWidth > 0 && (
-                                                    <PieChart width={pieWidth} height={chartHeight}>
-                                                        <Pie
-                                                            data={drillPieData}
-                                                            dataKey="value"
-                                                            nameKey="name"
-                                                            cx="50%"
-                                                            cy="50%"
-                                                            outerRadius={Math.min(80, (chartHeight - 80) / 2)}
-                                                        >
-                                                            {drillPieData.map((entry, index) => (
-                                                                <Cell key={`cell-${index}`} fill={DRILL_COLORS[index % DRILL_COLORS.length]} />
-                                                            ))}
-                                                        </Pie>
-                                                        <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
-                                                        <Legend />
-                                                    </PieChart>
-                                                )}
-                                            </div>
-                                        </IonCol>
-                                    </IonRow>
-                                </IonCardContent>
-                            </IonCard>
-                        </IonCol>
-                    </IonRow>
+                                            {/* Charts Row */}
+                                            <IonRow>
+                                                <IonCol size="12" sizeMd="6">
+                                                    <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                                        {t('results.timePerAction') || 'Time per Action'}
+                                                    </h3>
+                                                    {drillActionTimeData.length > 0 ? (
+                                                        <ActionTimeChart
+                                                            data={drillActionTimeData}
+                                                            height={drillChartHeight}
+                                                        />
+                                                    ) : (
+                                                        <IonItem>
+                                                            <IonLabel>
+                                                                <p>{t('results.noTimeData') || 'No timing data recorded.'}</p>
+                                                            </IonLabel>
+                                                        </IonItem>
+                                                    )}
+                                                </IonCol>
 
-                    {/* Raw Tracking Data Table */}
-                    <IonRow>
-                        <IonCol>
-                            <IonCard>
-                                <IonCardHeader>
-                                    <IonCardTitle className="results-card-title">
-                                        <IonIcon icon={listOutline} size="large" />
-                                        {t('results.rawDataTable') || 'Raw Tracking Data'}
-                                    </IonCardTitle>
-                                </IonCardHeader>
-                                <IonCardContent>
-                                    <table className="raw-data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>{t('results.drill')}</th>
-                                                <th>{t('results.action')}</th>
-                                                <th>{t('results.totalTime')}</th>
-                                                <th>{t('results.segments')}</th>
-                                                <th>{t('results.count')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {drills.map((drill) => {
-                                                const timerEntries = Object.entries(drill.timerData || {}).filter(
-                                                    ([, data]) => data.totalTime > 0
-                                                );
-                                                const counterEntries = Object.entries(drill.counterData || {}).filter(
-                                                    ([, data]) => data.count > 0
-                                                );
-                                                const hasWasteTime = (drill.wasteTime || 0) > 0;
-                                                const hasData = timerEntries.length > 0 || counterEntries.length > 0 || hasWasteTime;
+                                                <IonCol size="12" sizeMd="6">
+                                                    <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                                        {t('results.timeDistributionPerAction') || 'Time Distribution per Action'}
+                                                    </h3>
+                                                    <div ref={pieContainerRef} style={{ width: '100%' }}>
+                                                        {pieWidth > 0 && drillPieData.length > 0 ? (
+                                                            <PieChart width={pieWidth} height={drillChartHeight}>
+                                                                <Pie
+                                                                    data={drillPieData}
+                                                                    dataKey="value"
+                                                                    nameKey="name"
+                                                                    cx="50%"
+                                                                    cy="50%"
+                                                                    outerRadius={Math.min(80, (drillChartHeight - 80) / 2)}
+                                                                >
+                                                                    {drillPieData.map((entry) => (
+                                                                        <Cell key={`cell-${drill.id}-${entry.actionId}`} fill={ACTION_COLORS[entry.actionId] || '#999999'} />
+                                                                    ))}
+                                                                </Pie>
+                                                                <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
+                                                                <Legend />
+                                                            </PieChart>
+                                                        ) : (
+                                                            <IonItem>
+                                                                <IonLabel>
+                                                                    <p>{t('results.noTimeData') || 'No timing data recorded.'}</p>
+                                                                </IonLabel>
+                                                            </IonItem>
+                                                        )}
+                                                    </div>
+                                                </IonCol>
+                                            </IonRow>
 
-                                                // Get drill tags for display
-                                                let tagString = '';
-                                                if (drill.tags && drill.tags.size > 0) {
-                                                    tagString = Array.from(drill.tags)
-                                                        .map(tag => t('drills.' + tag) || tag)
-                                                        .join(', ');
-                                                }
-
-                                                return (
-                                                    <React.Fragment key={`drill-${drill.id}`}>
-                                                        <tr className="drill-header">
-                                                            <td colSpan={5}>
-                                                                {t('results.drill')} {drill.id}
-                                                                {tagString && ` (${tagString})`}
-                                                            </td>
+                                            {/* Raw Data Table */}
+                                            <div style={{ marginTop: 24 }}>
+                                                <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                                    {t('results.rawDataTable') || 'Raw Tracking Data'}
+                                                </h3>
+                                                <table className="raw-data-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>{t('results.action')}</th>
+                                                            <th>{t('results.totalTime')}</th>
+                                                            <th>{t('results.segments')}</th>
+                                                            <th>{t('results.count')}</th>
                                                         </tr>
+                                                    </thead>
+                                                    <tbody>
                                                         {!hasData && (
                                                             <tr>
-                                                                <td></td>
                                                                 <td colSpan={4} className="no-data">
                                                                     {t('results.noData')}
                                                                 </td>
                                                             </tr>
                                                         )}
-                                                        {timerEntries.length > 0 && (
-                                                            <>
-                                                                <tr className="section-header">
-                                                                    <td></td>
-                                                                    <td colSpan={4}>{t('results.timerData')}</td>
-                                                                </tr>
-                                                                {timerEntries.map(([actionId, data]) => (
-                                                                    <tr key={`timer-${drill.id}-${actionId}`}>
-                                                                        <td></td>
-                                                                        <td>{t(`actions.${actionId}`) || actionId}</td>
-                                                                        <td>{formatTime(data.totalTime)}</td>
-                                                                        <td>{data.timeSegments?.length || 0}</td>
-                                                                        <td>-</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </>
-                                                        )}
-                                                        {counterEntries.length > 0 && (
-                                                            <>
-                                                                <tr className="section-header">
-                                                                    <td></td>
-                                                                    <td colSpan={4}>{t('results.counterData')}</td>
-                                                                </tr>
-                                                                {counterEntries.map(([actionId, data]) => (
-                                                                    <tr key={`counter-${drill.id}-${actionId}`}>
-                                                                        <td></td>
-                                                                        <td>{t(`actions.${actionId}`) || actionId}</td>
-                                                                        <td>-</td>
-                                                                        <td>-</td>
-                                                                        <td>{data.count}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </>
-                                                        )}
+                                                        {timerEntries.map(([actionId, data]) => (
+                                                            <tr key={`timer-${drill.id}-${actionId}`}>
+                                                                <td>{t(`actions.${actionId}`) || actionId}</td>
+                                                                <td>{formatTime(data.totalTime)}</td>
+                                                                <td>{data.timeSegments?.length || 0}</td>
+                                                                <td>-</td>
+                                                            </tr>
+                                                        ))}
+                                                        {counterEntries.map(([actionId, data]) => (
+                                                            <tr key={`counter-${drill.id}-${actionId}`}>
+                                                                <td>{t(`actions.${actionId}`) || actionId}</td>
+                                                                <td>-</td>
+                                                                <td>-</td>
+                                                                <td>{data.count}</td>
+                                                            </tr>
+                                                        ))}
                                                         {hasWasteTime && (
                                                             <tr className="waste-time-row">
-                                                                <td></td>
                                                                 <td>{t('results.wasteTime')}</td>
                                                                 <td>{formatTime(drill.wasteTime)}</td>
                                                                 <td>-</td>
                                                                 <td>-</td>
                                                             </tr>
                                                         )}
-                                                    </React.Fragment>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </IonCardContent>
-                            </IonCard>
-                        </IonCol>
-                    </IonRow>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </IonCardContent>
+                                    </IonCard>
+                                </IonCol>
+                            </IonRow>
+                        );
+                    })}
                 </IonGrid>
 
                 <div className="results-button-container">
