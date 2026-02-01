@@ -25,8 +25,7 @@ import {
     trophyOutline,
     homeOutline,
     downloadOutline,
-    informationCircleOutline,
-    listOutline
+    informationCircleOutline
 } from 'ionicons/icons';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
