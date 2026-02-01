@@ -240,7 +240,7 @@ const Results: React.FC = () => {
                     </div>
 
                     {/* Practice Info for PDF */}
-                    {(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
+                    {!!(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
                         <div className="pdf-practice-info">
                             <h3>{t('general.infoHeader')}</h3>
                             <div className="pdf-practice-info-row">
@@ -432,7 +432,7 @@ const Results: React.FC = () => {
                 {/* Visible content */}
                 <IonGrid>
                     {/* Practice Info Card - only show if at least one field has data */}
-                    {(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
+                    {!!(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
                         <IonRow>
                             <IonCol>
                                 <IonCard>
