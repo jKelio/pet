@@ -62,8 +62,6 @@ const initialActionButtons: ActionButton[] = [
     { id: 'explanation', type: 'timer', enabled: true },
     { id: 'demonstration', type: 'timer', enabled: true },
     { id: 'feedbackteam', type: 'timer', enabled: true },
-    { id: 'changesideone', type: 'timer', enabled: true },
-    { id: 'changesidetwo', type: 'timer', enabled: true },
     { id: 'timemoving', type: 'timer', enabled: true },
     { id: 'repetition', type: 'counter', enabled: true },
     { id: 'feedbackplayers', type: 'counter', enabled: true },
