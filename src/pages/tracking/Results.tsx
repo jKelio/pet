@@ -141,12 +141,16 @@ const Results: React.FC = () => {
         try {
             const container = exportRef.current;
 
-            // Temporarily make container visible for rendering
+            // Make container renderable but keep it off-screen
+            // Use a wrapper technique: position at origin but clip from view
+            const originalStyles = {
+                position: container.style.position,
+                left: container.style.left,
+                top: container.style.top,
+            };
             container.style.position = 'fixed';
             container.style.left = '0';
-            container.style.top = '0';
-            container.style.zIndex = '-1';
-            container.style.opacity = '1';
+            container.style.top = `-${container.scrollHeight + 100}px`;
 
             // Wait for charts to render
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -214,11 +218,10 @@ const Results: React.FC = () => {
                 currentY = await renderAndAddToPdf(drillSection, currentY);
             }
 
-            // Hide container again
-            container.style.position = 'absolute';
-            container.style.left = '-9999px';
-            container.style.zIndex = '';
-            container.style.opacity = '';
+            // Restore container to original hidden state
+            container.style.position = originalStyles.position || 'absolute';
+            container.style.left = originalStyles.left || '-9999px';
+            container.style.top = originalStyles.top || '0';
 
             const date = new Date().toISOString().split('T')[0];
             pdf.save(`training-results-${date}.pdf`);
