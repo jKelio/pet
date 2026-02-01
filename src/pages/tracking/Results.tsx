@@ -30,7 +30,7 @@ import {
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useTrackingContext } from './TrackingContext';
-import { PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import ActionTimeChart from '../../components/gantt/ActionTimeChart';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
 import ActionTimeline from '../../components/gantt/ActionTimeline';
@@ -97,6 +97,26 @@ const Results: React.FC = () => {
 
     // Drill durations for overview timeline
     const drillDurations = extractDrillDurations(drills, t);
+
+    // Drill time data for bar chart and pie chart (total time per drill)
+    const DRILL_COLORS = ['#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE', '#FF6699', '#33CC99', '#FF6666', '#66B3FF', '#FFCC99'];
+    const drillTimeData = drills.map((drill, index) => {
+        const drillTimerTime = Object.values(drill.timerData || {}).reduce((s, td) => s + (td.totalTime || 0), 0);
+        const drillTotal = drillTimerTime + (drill.wasteTime || 0);
+        let tagString = '';
+        if (drill.tags && drill.tags.size > 0) {
+            tagString = Array.from(drill.tags)
+                .map(tag => t('drills.' + tag) || tag)
+                .join(', ');
+        }
+        return {
+            drillId: drill.id,
+            name: `${t('results.drill')} ${drill.id}${tagString ? ' (' + tagString + ')' : ''}`,
+            totalTime: drillTotal,
+            color: DRILL_COLORS[index % DRILL_COLORS.length],
+        };
+    }).filter(d => d.totalTime > 0);
+    const drillChartHeight = Math.max(200, drillTimeData.length * 40 + 50);
 
     // Helper function to get drill tag string
     const getDrillTagString = (drill: typeof drills[0]) => {
@@ -315,6 +335,61 @@ const Results: React.FC = () => {
                         <div className="pdf-chart-section">
                             <h3>{t('results.drillOverview') || 'Drill Overview'}</h3>
                             <DrillOverviewTimeline drillDurations={drillDurations} />
+                        </div>
+                    )}
+
+                    {/* Drill Time Charts for PDF */}
+                    {drillTimeData.length > 0 && (
+                        <div className="pdf-charts-row">
+                            <div className="pdf-chart-col">
+                                <h3>{t('results.timePerDrill') || 'Time per Drill'}</h3>
+                                <BarChart
+                                    layout="vertical"
+                                    data={drillTimeData}
+                                    width={500}
+                                    height={drillChartHeight}
+                                    margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
+                                >
+                                    <XAxis
+                                        type="number"
+                                        tickFormatter={(value) => formatDuration(value)}
+                                        stroke="#666"
+                                        fontSize={12}
+                                    />
+                                    <YAxis
+                                        type="category"
+                                        dataKey="name"
+                                        stroke="#666"
+                                        fontSize={11}
+                                        width={90}
+                                    />
+                                    <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                    <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
+                                        {drillTimeData.map((entry, index) => (
+                                            <Cell key={`cell-pdf-drill-bar-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </div>
+                            <div className="pdf-chart-col">
+                                <h3>{t('results.timeDistributionPerDrill') || 'Time Distribution per Drill'}</h3>
+                                <PieChart width={500} height={drillChartHeight}>
+                                    <Pie
+                                        data={drillTimeData}
+                                        dataKey="totalTime"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={Math.min(100, (drillChartHeight - 80) / 2)}
+                                    >
+                                        {drillTimeData.map((entry, index) => (
+                                            <Cell key={`cell-pdf-drill-pie-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                    <Legend />
+                                </PieChart>
+                            </div>
                         </div>
                     )}
 
@@ -561,6 +636,73 @@ const Results: React.FC = () => {
                                             </h3>
                                             <DrillOverviewTimeline drillDurations={drillDurations} />
                                         </div>
+                                    )}
+
+                                    {/* Drill Time Charts */}
+                                    {drillTimeData.length > 0 && (
+                                        <IonRow style={{ marginTop: 24 }}>
+                                            {/* Bar Chart - Time per Drill */}
+                                            <IonCol size="12" sizeMd="6">
+                                                <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                                    {t('results.timePerDrill') || 'Time per Drill'}
+                                                </h3>
+                                                <ResponsiveContainer width="100%" height={drillChartHeight}>
+                                                    <BarChart
+                                                        layout="vertical"
+                                                        data={drillTimeData}
+                                                        margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
+                                                    >
+                                                        <XAxis
+                                                            type="number"
+                                                            tickFormatter={(value) => formatDuration(value)}
+                                                            stroke="#666"
+                                                            fontSize={12}
+                                                        />
+                                                        <YAxis
+                                                            type="category"
+                                                            dataKey="name"
+                                                            stroke="#666"
+                                                            fontSize={11}
+                                                            width={90}
+                                                            tick={{ fontSize: 10 }}
+                                                        />
+                                                        <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                                        <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
+                                                            {drillTimeData.map((entry, index) => (
+                                                                <Cell key={`cell-drill-bar-${index}`} fill={entry.color} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </IonCol>
+
+                                            {/* Pie Chart - Time Distribution per Drill */}
+                                            <IonCol size="12" sizeMd="6">
+                                                <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                                    {t('results.timeDistributionPerDrill') || 'Time Distribution per Drill'}
+                                                </h3>
+                                                <div ref={pieContainerRef} style={{ width: '100%' }}>
+                                                    {pieWidth > 0 && (
+                                                        <PieChart width={pieWidth} height={drillChartHeight}>
+                                                            <Pie
+                                                                data={drillTimeData}
+                                                                dataKey="totalTime"
+                                                                nameKey="name"
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                outerRadius={Math.min(80, (drillChartHeight - 80) / 2)}
+                                                            >
+                                                                {drillTimeData.map((entry, index) => (
+                                                                    <Cell key={`cell-drill-pie-${index}`} fill={entry.color} />
+                                                                ))}
+                                                            </Pie>
+                                                            <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                                            <Legend />
+                                                        </PieChart>
+                                                    )}
+                                                </div>
+                                            </IonCol>
+                                        </IonRow>
                                     )}
                                 </IonCardContent>
                             </IonCard>
