@@ -1,0 +1,21 @@
+.drill-overview-timeline-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.drill-overview-timeline-svg {
+    display: block;
+}
+
+.drill-overview-timeline-label {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    padding-right: 8px;
+    font-size: 12px;
+    color: #333;
+    text-align: right;
+    line-height: 1.2;
+    word-break: break-word;
+}

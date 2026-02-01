@@ -326,6 +326,91 @@ export function extractTimelineSegments(
     return { segments, counterEvents, drillBoundaries, actionLabels };
 }
 
+// Berechnet Start- und Endzeiten für jeden Drill (für Übersichts-Timeline)
+export interface DrillDuration {
+    drillId: number;
+    drillLabel: string;
+    startOffset: number;  // ms from training start
+    endOffset: number;
+    duration: number;
+    tags: string[];
+}
+
+export function extractDrillDurations(
+    drills: Drill[],
+    t: TFunction
+): DrillDuration[] {
+    const drillTimes: Array<{
+        drillId: number;
+        startTime: number;
+        endTime: number;
+        tags: Set<string>;
+    }> = [];
+
+    drills.forEach((drill) => {
+        let earliestTime = Infinity;
+        let latestTime = -Infinity;
+
+        // Check timer segments for start/end times
+        Object.values(drill.timerData || {}).forEach((timerData) => {
+            timerData.timeSegments?.forEach((segment) => {
+                if (segment.startTime && segment.startTime < earliestTime) {
+                    earliestTime = segment.startTime;
+                }
+                if (segment.endTime && segment.endTime > latestTime) {
+                    latestTime = segment.endTime;
+                }
+            });
+        });
+
+        // Check counter events
+        Object.values(drill.counterData || {}).forEach((counterData) => {
+            counterData.timestamps?.forEach((ts) => {
+                if (ts < earliestTime) {
+                    earliestTime = ts;
+                }
+                if (ts > latestTime) {
+                    latestTime = ts;
+                }
+            });
+        });
+
+        if (earliestTime !== Infinity && latestTime !== -Infinity) {
+            drillTimes.push({
+                drillId: drill.id,
+                startTime: earliestTime,
+                endTime: latestTime,
+                tags: drill.tags || new Set(),
+            });
+        }
+    });
+
+    if (drillTimes.length === 0) {
+        return [];
+    }
+
+    // Find earliest time as reference
+    const minStartTime = Math.min(...drillTimes.map(d => d.startTime));
+
+    // Convert to relative offsets and sort by start time
+    return drillTimes
+        .map(d => {
+            const tagArray = Array.from(d.tags);
+            const tagString = tagArray.length > 0
+                ? ` (${tagArray.map(tag => t('drills.' + tag) || tag).join(', ')})`
+                : '';
+            return {
+                drillId: d.drillId,
+                drillLabel: `${t('results.drill')} ${d.drillId}${tagString}`,
+                startOffset: d.startTime - minStartTime,
+                endOffset: d.endTime - minStartTime,
+                duration: d.endTime - d.startTime,
+                tags: tagArray,
+            };
+        })
+        .sort((a, b) => a.startOffset - b.startOffset);
+}
+
 // Aggregiert Gesamtzeit pro Aktionstyp aus allen Drills
 export function aggregateTimeByAction(
     drills: Drill[],

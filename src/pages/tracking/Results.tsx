@@ -34,7 +34,8 @@ import { PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
 import ActionTimeChart from '../../components/gantt/ActionTimeChart';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
 import ActionTimeline from '../../components/gantt/ActionTimeline';
-import { extractTimelineSegmentsForDrill, aggregateTimeByActionForDrill, ACTION_COLORS } from '../../components/gantt/ganttUtils';
+import DrillOverviewTimeline from '../../components/gantt/DrillOverviewTimeline';
+import { extractTimelineSegmentsForDrill, aggregateTimeByActionForDrill, extractDrillDurations, ACTION_COLORS } from '../../components/gantt/ganttUtils';
 import './Results.css';
 
 const Results: React.FC = () => {
@@ -93,6 +94,9 @@ const Results: React.FC = () => {
     }, 0);
     const totalTime = totalTimerTime + totalWasteTime;
     const wastePercent = totalTime > 0 ? Math.round((totalWasteTime / totalTime) * 100) : 0;
+
+    // Drill durations for overview timeline
+    const drillDurations = extractDrillDurations(drills, t);
 
     // Helper function to get drill tag string
     const getDrillTagString = (drill: typeof drills[0]) => {
@@ -305,6 +309,15 @@ const Results: React.FC = () => {
                             <p>{formatTime(totalWasteTime)} ({wastePercent}%)</p>
                         </div>
                     </div>
+
+                    {/* Drill Overview Timeline for PDF */}
+                    {drillDurations.length > 0 && (
+                        <div className="pdf-chart-section">
+                            <h3>{t('results.drillOverview') || 'Drill Overview'}</h3>
+                            <DrillOverviewTimeline drillDurations={drillDurations} />
+                        </div>
+                    )}
+
                     {/* Per-Drill Details for PDF */}
                     {drills.map((drill) => {
                         const tagString = getDrillTagString(drill);
@@ -539,6 +552,16 @@ const Results: React.FC = () => {
                                             <p>{formatTime(totalWasteTime)} ({wastePercent}%)</p>
                                         </IonLabel>
                                     </IonItem>
+
+                                    {/* Drill Overview Timeline */}
+                                    {drillDurations.length > 0 && (
+                                        <div style={{ marginTop: 16 }}>
+                                            <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
+                                                {t('results.drillOverview') || 'Drill Overview'}
+                                            </h3>
+                                            <DrillOverviewTimeline drillDurations={drillDurations} />
+                                        </div>
+                                    )}
                                 </IonCardContent>
                             </IonCard>
                         </IonCol>
