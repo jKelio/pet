@@ -70,15 +70,18 @@ const Results: React.FC = () => {
         return `${time} ${t('results.unitMinutes')}`;
     };
 
-    // Zeitformatierung für Diagramm-Labels (Minuten oder Stunden)
+    // Zeitformatierung für Diagramm-Labels (Sekunden, Minuten oder Stunden)
     const formatDuration = (ms: number) => {
         const totalSeconds = Math.floor(ms / 1000);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
         if (hours > 0) {
             return `${hours}h ${minutes}min`;
+        } else if (minutes > 0) {
+            return `${minutes}min ${seconds}s`;
         } else {
-            return `${minutes}min`;
+            return `${seconds}s`;
         }
     };
 
@@ -362,7 +365,7 @@ const Results: React.FC = () => {
                                                         <Cell key={`cell-export-${drill.id}-${entry.actionId}`} fill={ACTION_COLORS[entry.actionId] || '#999999'} />
                                                     ))}
                                                 </Pie>
-                                                <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
+                                                <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
                                                 <Legend />
                                             </PieChart>
                                         ) : (
@@ -621,7 +624,7 @@ const Results: React.FC = () => {
                                                                         <Cell key={`cell-${drill.id}-${entry.actionId}`} fill={ACTION_COLORS[entry.actionId] || '#999999'} />
                                                                     ))}
                                                                 </Pie>
-                                                                <Tooltip formatter={(value) => formatDuration(typeof value === 'number' ? value : 0)} />
+                                                                <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
                                                                 <Legend />
                                                             </PieChart>
                                                         ) : (
