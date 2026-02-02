@@ -870,6 +870,7 @@ const Results: React.FC = () => {
                                                 <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
                                                     {t('results.rawDataTable') || 'Raw Tracking Data'}
                                                 </h3>
+                                                <div className="raw-data-table-container">
                                                 <table className="raw-data-table">
                                                     <thead>
                                                         <tr>
@@ -913,6 +914,7 @@ const Results: React.FC = () => {
                                                         )}
                                                     </tbody>
                                                 </table>
+                                                </div>
                                             </div>
                                         </IonCardContent>
                                     </IonCard>

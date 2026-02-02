@@ -136,11 +136,32 @@
     color: #333;
 }
 
+/* Raw Data Table Container - enables horizontal scroll on mobile */
+.raw-data-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 8px;
+}
+
+/* Scroll indicator shadow on right side when content overflows */
+.raw-data-table-container.has-overflow {
+    background:
+        linear-gradient(to right, white 30%, transparent),
+        linear-gradient(to left, white 30%, transparent),
+        linear-gradient(to right, rgba(0, 0, 0, 0.1), transparent 15px),
+        linear-gradient(to left, rgba(0, 0, 0, 0.1), transparent 15px);
+    background-position: left center, right center, left center, right center;
+    background-repeat: no-repeat;
+    background-size: 20px 100%, 20px 100%, 15px 100%, 15px 100%;
+    background-attachment: local, local, scroll, scroll;
+}
+
 /* Raw Data Table Styles */
 .raw-data-table {
     width: 100%;
+    min-width: 400px;
     border-collapse: collapse;
-    margin-top: 8px;
     font-size: 14px;
 }
 
