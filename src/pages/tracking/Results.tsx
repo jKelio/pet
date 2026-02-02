@@ -165,8 +165,11 @@ const Results: React.FC = () => {
         try {
             const container = exportRef.current;
 
+            // Detect mobile device for optimized settings
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const canvasScale = isMobile ? 1.2 : 2; // Lower scale for mobile to prevent memory issues
+
             // Make container renderable but keep it off-screen
-            // Use a wrapper technique: position at origin but clip from view
             const originalStyles = {
                 position: container.style.position,
                 left: container.style.left,
@@ -176,8 +179,8 @@ const Results: React.FC = () => {
             container.style.left = '0';
             container.style.top = `-${container.scrollHeight + 100}px`;
 
-            // Wait for charts to render
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Wait for charts to render - longer wait for mobile
+            await new Promise(resolve => setTimeout(resolve, isMobile ? 1000 : 500));
 
             const pdf = new jsPDF({
                 orientation: 'portrait',
@@ -194,15 +197,20 @@ const Results: React.FC = () => {
             const headerSection = container.querySelector('.pdf-export-header');
             const practiceInfoSection = container.querySelector('.pdf-practice-info');
             const summarySection = container.querySelector('.pdf-summary-row');
+            const drillOverviewSection = container.querySelector('.pdf-chart-section');
+            const drillChartsSection = container.querySelector('.pdf-charts-row');
             const drillSections = container.querySelectorAll('.pdf-drill-section');
 
             // Helper function to render element to canvas and add to PDF
             const renderAndAddToPdf = async (element: Element, currentY: number): Promise<number> => {
                 const canvas = await html2canvas(element as HTMLElement, {
-                    scale: 2,
+                    scale: canvasScale,
                     useCORS: true,
                     logging: false,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    // Optimize for mobile
+                    imageTimeout: 0,
+                    removeContainer: true,
                 });
 
                 const scaledWidth = usableWidth;
@@ -214,8 +222,24 @@ const Results: React.FC = () => {
                     currentY = 0;
                 }
 
-                const imgData = canvas.toDataURL('image/png');
-                pdf.addImage(imgData, 'PNG', margin, margin + currentY, scaledWidth, scaledHeight);
+                // Use JPEG for mobile (smaller file size, faster processing)
+                const imgFormat = isMobile ? 'JPEG' : 'PNG';
+                const imgQuality = isMobile ? 0.85 : 1.0;
+                const imgData = canvas.toDataURL(`image/${imgFormat.toLowerCase()}`, imgQuality);
+                pdf.addImage(imgData, imgFormat, margin, margin + currentY, scaledWidth, scaledHeight);
+
+                // Help garbage collection by clearing canvas
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+                canvas.width = 0;
+                canvas.height = 0;
+
+                // Small delay between sections to prevent memory pressure on mobile
+                if (isMobile) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
 
                 return currentY + scaledHeight + 5; // 5mm spacing between sections
             };
@@ -237,6 +261,16 @@ const Results: React.FC = () => {
                 currentY = await renderAndAddToPdf(summarySection, currentY);
             }
 
+            // Render drill overview (timeline)
+            if (drillOverviewSection) {
+                currentY = await renderAndAddToPdf(drillOverviewSection, currentY);
+            }
+
+            // Render drill charts (bar + pie)
+            if (drillChartsSection) {
+                currentY = await renderAndAddToPdf(drillChartsSection, currentY);
+            }
+
             // Render each drill section on its own (starts new page if doesn't fit)
             for (const drillSection of drillSections) {
                 currentY = await renderAndAddToPdf(drillSection, currentY);
@@ -248,7 +282,33 @@ const Results: React.FC = () => {
             container.style.top = originalStyles.top || '0';
 
             const date = new Date().toISOString().split('T')[0];
-            pdf.save(`training-results-${date}.pdf`);
+            const filename = `training-results-${date}.pdf`;
+
+            // Mobile-friendly download approach
+            if (isMobile) {
+                // Use data URL approach for mobile browsers
+                const pdfBlob = pdf.output('blob');
+                const blobUrl = URL.createObjectURL(pdfBlob);
+
+                // Create and click a link - works better on mobile
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+
+                // Use a slight delay for mobile browsers
+                await new Promise(resolve => setTimeout(resolve, 100));
+                link.click();
+
+                // Cleanup after a delay
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(blobUrl);
+                }, 1000);
+            } else {
+                pdf.save(filename);
+            }
         } catch (error) {
             console.error('PDF export failed:', error);
         } finally {
