@@ -30,7 +30,7 @@ import {
     informationCircleOutline
 } from 'ionicons/icons';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { domToPng } from 'modern-screenshot';
 import { useTrackingContext } from './TrackingContext';
 import { PieChart, Pie, Cell, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import ActionTimeChart from '../../components/gantt/ActionTimeChart';
@@ -49,7 +49,7 @@ const Results: React.FC = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [exportProgress, setExportProgress] = useState({ current: 0, total: 0, status: '' });
     const [toastMessage, setToastMessage] = useState<{ message: string; color: 'success' | 'danger' | 'warning' } | null>(null);
-    const PDF_EXPORT_WIDTH = 1200;
+    const PDF_EXPORT_WIDTH = 800;
 
     // Hilfsfunktionen
     const formatDate = (dateString: string) => {
@@ -166,48 +166,26 @@ const Results: React.FC = () => {
         if (!exportRef.current) return;
 
         setIsExporting(true);
-        const failedSections: string[] = [];
 
         try {
             const container = exportRef.current;
-
-            // Detect mobile device for optimized settings
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            const canvasScale = isMobile ? 1.0 : 2; // Lower scale for mobile to prevent memory issues
-            const sectionDelay = isMobile ? 300 : 50; // Longer delay for mobile
 
-            // Make container renderable but keep it off-screen
-            const originalStyles = {
-                position: container.style.position,
-                left: container.style.left,
-                top: container.style.top,
-            };
+            // Make container visible for rendering
             container.style.position = 'fixed';
             container.style.left = '0';
-            container.style.top = `-${container.scrollHeight + 100}px`;
+            container.style.top = '0';
+            container.style.zIndex = '-9999';
+            container.style.opacity = '1';
 
-            // Count total sections for progress indicator
-            const headerSection = container.querySelector('.pdf-export-header');
-            const practiceInfoSection = container.querySelector('.pdf-practice-info');
-            const summarySection = container.querySelector('.pdf-summary-row');
-            const drillOverviewSection = container.querySelector('.pdf-chart-section');
-            const drillChartsSection = container.querySelector('.pdf-charts-row');
-            const drillSections = container.querySelectorAll('.pdf-drill-section');
+            // Wait for render
+            await new Promise(resolve => setTimeout(resolve, isMobile ? 500 : 200));
 
-            const sections: { element: Element | null; name: string }[] = [
-                { element: headerSection, name: 'Header' },
-                { element: practiceInfoSection, name: 'Practice Info' },
-                { element: summarySection, name: 'Summary' },
-                { element: drillOverviewSection, name: 'Drill Overview' },
-                { element: drillChartsSection, name: 'Drill Charts' },
-                ...Array.from(drillSections).map((el, i) => ({ element: el, name: `Drill ${i + 1}` })),
-            ].filter(s => s.element !== null);
-
+            // Get all sections to render
+            const sections = container.querySelectorAll('.pdf-section');
             const totalSections = sections.length;
-            setExportProgress({ current: 0, total: totalSections, status: t('results.preparingExport') });
 
-            // Wait for charts to render - longer wait for mobile
-            await new Promise(resolve => setTimeout(resolve, isMobile ? 1500 : 500));
+            setExportProgress({ current: 0, total: totalSections, status: t('results.preparingExport') });
 
             const pdf = new jsPDF({
                 orientation: 'portrait',
@@ -220,151 +198,88 @@ const Results: React.FC = () => {
             const usableWidth = pdfWidth - 2 * margin;
             const usableHeight = pdfHeight - 2 * margin;
 
-            // Helper function to render element to canvas and add to PDF
-            const renderAndAddToPdf = async (element: Element, currentY: number, sectionName: string): Promise<number> => {
-                try {
-                    const canvas = await html2canvas(element as HTMLElement, {
-                        scale: canvasScale,
-                        useCORS: true,
-                        logging: false,
-                        backgroundColor: '#ffffff',
-                        imageTimeout: 0,
-                        removeContainer: true,
-                    });
-
-                    const scaledWidth = usableWidth;
-                    const scaledHeight = (canvas.height * scaledWidth) / canvas.width;
-
-                    // Check if element fits on current page
-                    if (currentY + scaledHeight > usableHeight && currentY > 0) {
-                        pdf.addPage();
-                        currentY = 0;
-                    }
-
-                    // Use JPEG for mobile (smaller file size, faster processing)
-                    const imgFormat = isMobile ? 'JPEG' : 'PNG';
-                    const imgQuality = isMobile ? 0.8 : 1.0;
-                    const imgData = canvas.toDataURL(`image/${imgFormat.toLowerCase()}`, imgQuality);
-                    pdf.addImage(imgData, imgFormat, margin, margin + currentY, scaledWidth, scaledHeight);
-
-                    // Help garbage collection by clearing canvas
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    }
-                    canvas.width = 0;
-                    canvas.height = 0;
-
-                    // Delay between sections to prevent memory pressure
-                    await new Promise(resolve => setTimeout(resolve, sectionDelay));
-
-                    return currentY + scaledHeight + 5; // 5mm spacing between sections
-                } catch (error) {
-                    console.error(`Failed to render section "${sectionName}":`, error);
-                    failedSections.push(sectionName);
-                    // Continue with next section, return same Y position
-                    return currentY;
-                }
-            };
-
             let currentY = 0;
+            let isFirstSection = true;
 
-            // Render each section with progress updates
+            // Render each section with modern-screenshot
             for (let i = 0; i < sections.length; i++) {
-                const section = sections[i];
+                const section = sections[i] as HTMLElement;
+
                 setExportProgress({
                     current: i + 1,
                     total: totalSections,
                     status: t('results.exportProgress', { current: i + 1, total: totalSections }),
                 });
 
-                if (section.element) {
-                    currentY = await renderAndAddToPdf(section.element, currentY, section.name);
+                try {
+                    // Use modern-screenshot - much faster than html2canvas
+                    const dataUrl = await domToPng(section, {
+                        scale: isMobile ? 1.5 : 2,
+                        quality: 0.92,
+                        backgroundColor: '#ffffff',
+                    });
+
+                    // Get image dimensions
+                    const img = new Image();
+                    await new Promise<void>((resolve, reject) => {
+                        img.onload = () => resolve();
+                        img.onerror = reject;
+                        img.src = dataUrl;
+                    });
+
+                    const scaledWidth = usableWidth;
+                    const scaledHeight = (img.height * scaledWidth) / img.width;
+
+                    // Check if we need a new page
+                    if (!isFirstSection && currentY + scaledHeight > usableHeight) {
+                        pdf.addPage();
+                        currentY = 0;
+                    }
+
+                    pdf.addImage(dataUrl, 'PNG', margin, margin + currentY, scaledWidth, scaledHeight);
+                    currentY += scaledHeight + 5;
+                    isFirstSection = false;
+
+                    // Small delay to prevent memory pressure on mobile
+                    if (isMobile) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                } catch (sectionError) {
+                    console.warn(`Failed to render section ${i}:`, sectionError);
                 }
             }
 
-            // Restore container to original hidden state
-            container.style.position = originalStyles.position || 'absolute';
-            container.style.left = originalStyles.left || '-9999px';
-            container.style.top = originalStyles.top || '0';
+            // Hide container again
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.opacity = '0';
 
             setExportProgress({ current: totalSections, total: totalSections, status: t('results.finalizingExport') });
 
+            // Download
             const date = new Date().toISOString().split('T')[0];
             const filename = `training-results-${date}.pdf`;
 
-            // Download with multiple fallback approaches
-            let downloadSuccessful = false;
-
-            // Approach 1: Blob URL with link click (works best on most mobile browsers)
             try {
                 const pdfBlob = pdf.output('blob');
                 const blobUrl = URL.createObjectURL(pdfBlob);
-
                 const link = document.createElement('a');
                 link.href = blobUrl;
                 link.download = filename;
-                link.style.display = 'none';
                 document.body.appendChild(link);
-
-                // Longer delay for mobile browsers to process the blob
-                await new Promise(resolve => setTimeout(resolve, isMobile ? 500 : 100));
                 link.click();
-
-                // Cleanup after a delay
                 setTimeout(() => {
-                    if (document.body.contains(link)) {
-                        document.body.removeChild(link);
-                    }
+                    document.body.removeChild(link);
                     URL.revokeObjectURL(blobUrl);
-                }, 2000);
-
-                downloadSuccessful = true;
-            } catch (downloadError) {
-                console.warn('Blob URL download failed, trying fallback:', downloadError);
+                }, 1000);
+            } catch {
+                pdf.save(filename);
             }
 
-            // Approach 2: Direct pdf.save() as fallback
-            if (!downloadSuccessful) {
-                try {
-                    pdf.save(filename);
-                    downloadSuccessful = true;
-                } catch (saveError) {
-                    console.warn('pdf.save() failed, trying data URL:', saveError);
-                }
-            }
-
-            // Approach 3: Open in new window/tab as last resort
-            if (!downloadSuccessful) {
-                try {
-                    const pdfDataUrl = pdf.output('dataurlstring');
-                    const newWindow = window.open(pdfDataUrl, '_blank');
-                    if (newWindow) {
-                        downloadSuccessful = true;
-                    }
-                } catch (dataUrlError) {
-                    console.error('All download methods failed:', dataUrlError);
-                }
-            }
-
-            // Show appropriate toast message
-            if (failedSections.length > 0) {
-                setToastMessage({
-                    message: t('results.exportFailedSection', { section: failedSections.join(', ') }) +
-                        ' ' + t('results.exportContinuing'),
-                    color: 'warning',
-                });
-            } else if (downloadSuccessful) {
-                setToastMessage({
-                    message: t('results.exportComplete'),
-                    color: 'success',
-                });
-            } else {
-                setToastMessage({
-                    message: t('results.exportFailed'),
-                    color: 'danger',
-                });
-            }
+            setToastMessage({
+                message: t('results.exportComplete'),
+                color: 'success',
+            });
         } catch (error) {
             console.error('PDF export failed:', error);
             setToastMessage({
@@ -391,157 +306,113 @@ const Results: React.FC = () => {
             </IonHeader>
 
             <IonContent>
-                {/* Hidden container for PDF export with horizontal summary layout */}
-                <div ref={exportRef} className="pdf-export-container" style={{ width: PDF_EXPORT_WIDTH }}>
-                    <div className="pdf-export-header">
-                        <h1>{t('results.title') || 'Training Results'}</h1>
+                {/* Hidden container for PDF export - uses modern-screenshot */}
+                <div
+                    ref={exportRef}
+                    className="pdf-export-container"
+                    style={{
+                        position: 'absolute',
+                        left: '-9999px',
+                        width: PDF_EXPORT_WIDTH,
+                        backgroundColor: '#ffffff',
+                        opacity: 0,
+                    }}
+                >
+                    {/* Header Section */}
+                    <div className="pdf-section pdf-export-header">
+                        <h1 style={{ textAlign: 'center', margin: '20px 0' }}>{t('results.title') || 'Training Results'}</h1>
+                        <p style={{ textAlign: 'center', color: '#666' }}>{new Date().toLocaleDateString()}</p>
                     </div>
 
-                    {/* Practice Info for PDF */}
+                    {/* Practice Info Section */}
                     {!!(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
-                        <div className="pdf-practice-info">
-                            <h3>{t('general.infoHeader')}</h3>
-                            <div className="pdf-practice-info-row">
-                                {practiceInfo.clubName && (
-                                    <div className="pdf-practice-info-item">
-                                        <strong>{t('general.clubLabel')}:</strong> {practiceInfo.clubName}
-                                    </div>
-                                )}
-                                {practiceInfo.teamName && (
-                                    <div className="pdf-practice-info-item">
-                                        <strong>{t('general.teamLabel')}:</strong> {practiceInfo.teamName}
-                                    </div>
-                                )}
-                                {practiceInfo.date && (
-                                    <div className="pdf-practice-info-item">
-                                        <strong>{t('general.dateLabel')}:</strong> {formatDate(practiceInfo.date)}
-                                    </div>
-                                )}
-                                {practiceInfo.coachName && (
-                                    <div className="pdf-practice-info-item">
-                                        <strong>{t('general.coachLabel')}:</strong> {practiceInfo.coachName}
-                                    </div>
-                                )}
-                                {practiceInfo.athletesNumber > 0 && (
-                                    <div className="pdf-practice-info-item">
-                                        <strong>{t('practice.athletesNumberLabel')}:</strong> {practiceInfo.athletesNumber}
-                                    </div>
-                                )}
-                                {practiceInfo.coachesNumber > 0 && (
-                                    <div className="pdf-practice-info-item">
-                                        <strong>{t('practice.coachesNumberLabel')}:</strong> {practiceInfo.coachesNumber}
-                                    </div>
-                                )}
+                        <div className="pdf-section pdf-practice-info" style={{ padding: '15px', margin: '10px' }}>
+                            <h3 style={{ marginBottom: '10px' }}>{t('general.infoHeader')}</h3>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+                                {practiceInfo.clubName && <div><strong>{t('general.clubLabel')}:</strong> {practiceInfo.clubName}</div>}
+                                {practiceInfo.teamName && <div><strong>{t('general.teamLabel')}:</strong> {practiceInfo.teamName}</div>}
+                                {practiceInfo.date && <div><strong>{t('general.dateLabel')}:</strong> {formatDate(practiceInfo.date)}</div>}
+                                {practiceInfo.coachName && <div><strong>{t('general.coachLabel')}:</strong> {practiceInfo.coachName}</div>}
+                                {practiceInfo.athletesNumber > 0 && <div><strong>{t('practice.athletesNumberLabel')}:</strong> {practiceInfo.athletesNumber}</div>}
+                                {practiceInfo.coachesNumber > 0 && <div><strong>{t('practice.coachesNumberLabel')}:</strong> {practiceInfo.coachesNumber}</div>}
                             </div>
                         </div>
                     )}
 
-                    <div className="pdf-summary-row">
-                        <div className="pdf-summary-item">
-                            <h3>{t('results.totalDrills') || 'Total Drills'}</h3>
-                            <p>{totalDrills} Drills</p>
-                        </div>
-                        <div className="pdf-summary-item">
-                            <h3>{t('results.totalTime') || 'Total Time'}</h3>
-                            <p>{formatTime(totalTime)}</p>
-                        </div>
-                        <div className="pdf-summary-item">
-                            <h3>{t('results.wasteTime') || 'Waste Time'}</h3>
-                            <p>{formatTime(totalWasteTime)} ({wastePercent}%)</p>
+                    {/* Summary Section */}
+                    <div className="pdf-section pdf-summary" style={{ padding: '15px', margin: '10px', backgroundColor: '#f8f9fa' }}>
+                        <h3 style={{ marginBottom: '15px' }}>{t('results.summary') || 'Training Summary'}</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
+                            <div>
+                                <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalDrills}</div>
+                                <div style={{ color: '#666' }}>{t('results.totalDrills')}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{formatTime(totalTime)}</div>
+                                <div style={{ color: '#666' }}>{t('results.totalTime')}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc3545' }}>{formatTime(totalWasteTime)}</div>
+                                <div style={{ color: '#666' }}>{t('results.wasteTime')} ({wastePercent}%)</div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Drill Overview Timeline for PDF */}
+                    {/* Drill Overview Timeline */}
                     {drillDurations.length > 0 && (
-                        <div className="pdf-chart-section">
-                            <h3>{t('results.drillOverview') || 'Drill Overview'}</h3>
+                        <div className="pdf-section" style={{ padding: '15px', margin: '10px' }}>
+                            <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>{t('results.drillOverview') || 'Drill Overview'}</h3>
                             <DrillOverviewTimeline drillDurations={drillDurations} />
                         </div>
                     )}
 
-                    {/* Drill Time Charts for PDF */}
+                    {/* Drill Time Charts */}
                     {drillTimeData.length > 0 && (
-                        <div className="pdf-charts-row">
-                            <div className="pdf-chart-col">
-                                <h3>{t('results.timePerDrill') || 'Time per Drill'}</h3>
+                        <div className="pdf-section" style={{ padding: '15px', margin: '10px' }}>
+                            <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>{t('results.timePerDrill') || 'Time per Drill'}</h3>
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
                                 <BarChart
                                     layout="vertical"
                                     data={drillTimeData}
-                                    width={500}
+                                    width={PDF_EXPORT_WIDTH - 100}
                                     height={drillChartHeight}
-                                    margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
+                                    margin={{ top: 10, right: 80, left: 150, bottom: 10 }}
                                 >
-                                    <XAxis
-                                        type="number"
-                                        tickFormatter={(value) => formatDuration(value)}
-                                        stroke="#666"
-                                        fontSize={12}
-                                    />
-                                    <YAxis
-                                        type="category"
-                                        dataKey="name"
-                                        stroke="#666"
-                                        fontSize={11}
-                                        width={90}
-                                    />
+                                    <XAxis type="number" tickFormatter={(value) => formatDuration(value)} stroke="#666" fontSize={12} />
+                                    <YAxis type="category" dataKey="name" stroke="#666" fontSize={11} width={140} />
                                     <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
                                     <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
                                         {drillTimeData.map((entry, index) => (
-                                            <Cell key={`cell-pdf-drill-bar-${index}`} fill={entry.color} />
+                                            <Cell key={`cell-pdf-bar-${index}`} fill={entry.color} />
                                         ))}
                                     </Bar>
                                 </BarChart>
                             </div>
-                            <div className="pdf-chart-col">
-                                <h3>{t('results.timeDistributionPerDrill') || 'Time Distribution per Drill'}</h3>
-                                <PieChart width={500} height={drillChartHeight}>
-                                    <Pie
-                                        data={drillTimeData}
-                                        dataKey="totalTime"
-                                        nameKey="name"
-                                        cx="50%"
-                                        cy="50%"
-                                        outerRadius={Math.min(100, (drillChartHeight - 80) / 2)}
-                                    >
-                                        {drillTimeData.map((entry, index) => (
-                                            <Cell key={`cell-pdf-drill-pie-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
-                                    <Legend />
-                                </PieChart>
-                            </div>
                         </div>
                     )}
 
-                    {/* Per-Drill Details for PDF */}
+                    {/* Per-Drill Details */}
                     {drills.map((drill) => {
                         const tagString = getDrillTagString(drill);
                         const drillTimelineData = extractTimelineSegmentsForDrill(drill, t);
                         const drillActionTimeData = aggregateTimeByActionForDrill(drill, t);
                         const drillPieData = getDrillActionPieData(drill);
-                        const drillChartHeight = Math.max(200, drillActionTimeData.length * 40 + 50);
+                        const chartHeight = Math.max(180, drillActionTimeData.length * 35 + 40);
 
-                        const timerEntries = Object.entries(drill.timerData || {}).filter(
-                            ([, data]) => data.totalTime > 0
-                        );
-                        const counterEntries = Object.entries(drill.counterData || {}).filter(
-                            ([, data]) => data.count > 0
-                        );
+                        const timerEntries = Object.entries(drill.timerData || {}).filter(([, data]) => data.totalTime > 0);
+                        const counterEntries = Object.entries(drill.counterData || {}).filter(([, data]) => data.count > 0);
                         const hasWasteTime = (drill.wasteTime || 0) > 0;
-                        const hasData = timerEntries.length > 0 || counterEntries.length > 0 || hasWasteTime;
 
                         return (
-                            <div key={`pdf-drill-section-${drill.id}`} className="pdf-drill-section">
-                                <h2 className="pdf-drill-title">
-                                    {t('results.drill')} {drill.id}
-                                    {tagString && ` (${tagString})`}
+                            <div key={`pdf-drill-${drill.id}`} className="pdf-section" style={{ padding: '15px', margin: '10px', borderTop: '2px solid #ddd' }}>
+                                <h2 style={{ marginBottom: '15px' }}>
+                                    {t('results.drill')} {drill.id}{tagString ? ` (${tagString})` : ''}
                                 </h2>
 
                                 {/* Timeline */}
                                 {(drillTimelineData.segments.length > 0 || drillTimelineData.counterEvents.length > 0) && (
-                                    <div className="pdf-chart-section">
-                                        <h3>{t('results.actionTimeline') || 'Action Timeline'}</h3>
+                                    <div style={{ marginBottom: '20px' }}>
+                                        <h4 style={{ marginBottom: '8px' }}>{t('results.actionTimeline') || 'Action Timeline'}</h4>
                                         <ActionTimeline
                                             segments={drillTimelineData.segments}
                                             counterEvents={drillTimelineData.counterEvents}
@@ -550,94 +421,72 @@ const Results: React.FC = () => {
                                     </div>
                                 )}
 
-                                {/* Charts Row */}
-                                <div className="pdf-charts-row">
-                                    <div className="pdf-chart-col">
-                                        <h3>{t('results.timePerAction') || 'Time per Action'}</h3>
-                                        {drillActionTimeData.length > 0 ? (
-                                            <ActionTimeChart data={drillActionTimeData} height={drillChartHeight} />
-                                        ) : (
-                                            <p style={{ color: '#999', fontStyle: 'italic' }}>{t('results.noTimeData')}</p>
-                                        )}
-                                    </div>
-                                    <div className="pdf-chart-col">
-                                        <h3>{t('results.timeDistributionPerAction') || 'Time Distribution per Action'}</h3>
-                                        {drillPieData.length > 0 ? (
-                                            <PieChart width={500} height={drillChartHeight}>
-                                                <Pie
-                                                    data={drillPieData}
-                                                    dataKey="value"
-                                                    nameKey="name"
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    outerRadius={Math.min(100, (drillChartHeight - 80) / 2)}
-                                                >
+                                {/* Charts */}
+                                <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                                    {drillActionTimeData.length > 0 && (
+                                        <div style={{ flex: 1 }}>
+                                            <h4 style={{ textAlign: 'center', marginBottom: '8px' }}>{t('results.timePerAction')}</h4>
+                                            <ActionTimeChart data={drillActionTimeData} height={chartHeight} />
+                                        </div>
+                                    )}
+                                    {drillPieData.length > 0 && (
+                                        <div style={{ flex: 1 }}>
+                                            <h4 style={{ textAlign: 'center', marginBottom: '8px' }}>{t('results.timeDistributionPerAction')}</h4>
+                                            <PieChart width={350} height={chartHeight}>
+                                                <Pie data={drillPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70}>
                                                     {drillPieData.map((entry) => (
-                                                        <Cell key={`cell-export-${drill.id}-${entry.actionId}`} fill={ACTION_COLORS[entry.actionId] || '#999999'} />
+                                                        <Cell key={`cell-pdf-pie-${drill.id}-${entry.actionId}`} fill={ACTION_COLORS[entry.actionId] || '#999'} />
                                                     ))}
                                                 </Pie>
                                                 <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
                                                 <Legend />
                                             </PieChart>
-                                        ) : (
-                                            <p style={{ color: '#999', fontStyle: 'italic' }}>{t('results.noTimeData')}</p>
-                                        )}
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Raw Data Table */}
-                                <div className="pdf-chart-section">
-                                    <h3>{t('results.rawDataTable') || 'Raw Tracking Data'}</h3>
-                                    <table className="pdf-raw-data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>{t('results.action')}</th>
-                                                <th>{t('results.totalTime')}</th>
-                                                <th>{t('results.segments')}</th>
-                                                <th>{t('results.count')}</th>
+                                {/* Data Table */}
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                                    <thead>
+                                        <tr style={{ backgroundColor: '#5bc0de', color: 'white' }}>
+                                            <th style={{ padding: '8px', textAlign: 'left' }}>{t('results.action')}</th>
+                                            <th style={{ padding: '8px', textAlign: 'left' }}>{t('results.totalTime')}</th>
+                                            <th style={{ padding: '8px', textAlign: 'left' }}>{t('results.segments')}</th>
+                                            <th style={{ padding: '8px', textAlign: 'left' }}>{t('results.count')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {timerEntries.map(([actionId, data], idx) => (
+                                            <tr key={`pdf-t-${drill.id}-${actionId}`} style={{ backgroundColor: idx % 2 ? '#f9f9f9' : 'white' }}>
+                                                <td style={{ padding: '6px' }}>{t(`actions.${actionId}`) || actionId}</td>
+                                                <td style={{ padding: '6px' }}>{formatTime(data.totalTime)}</td>
+                                                <td style={{ padding: '6px' }}>{data.timeSegments?.length || 0}</td>
+                                                <td style={{ padding: '6px' }}>-</td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {!hasData && (
-                                                <tr>
-                                                    <td colSpan={4} style={{ color: '#999', fontStyle: 'italic' }}>
-                                                        {t('results.noData')}
-                                                    </td>
-                                                </tr>
-                                            )}
-                                            {timerEntries.map(([actionId, data]) => (
-                                                <tr key={`pdf-timer-${drill.id}-${actionId}`}>
-                                                    <td>{t(`actions.${actionId}`) || actionId}</td>
-                                                    <td>{formatTime(data.totalTime)}</td>
-                                                    <td>{data.timeSegments?.length || 0}</td>
-                                                    <td>-</td>
-                                                </tr>
-                                            ))}
-                                            {counterEntries.map(([actionId, data]) => (
-                                                <tr key={`pdf-counter-${drill.id}-${actionId}`}>
-                                                    <td>{t(`actions.${actionId}`) || actionId}</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>{data.count}</td>
-                                                </tr>
-                                            ))}
-                                            {hasWasteTime && (
-                                                <tr className="waste-time-row">
-                                                    <td>{t('results.wasteTime')}</td>
-                                                    <td>{formatTime(drill.wasteTime)}</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        ))}
+                                        {counterEntries.map(([actionId, data], idx) => (
+                                            <tr key={`pdf-c-${drill.id}-${actionId}`} style={{ backgroundColor: (timerEntries.length + idx) % 2 ? '#f9f9f9' : 'white' }}>
+                                                <td style={{ padding: '6px' }}>{t(`actions.${actionId}`) || actionId}</td>
+                                                <td style={{ padding: '6px' }}>-</td>
+                                                <td style={{ padding: '6px' }}>-</td>
+                                                <td style={{ padding: '6px' }}>{data.count}</td>
+                                            </tr>
+                                        ))}
+                                        {hasWasteTime && (
+                                            <tr style={{ backgroundColor: '#fff3cd' }}>
+                                                <td style={{ padding: '6px' }}>{t('results.wasteTime')}</td>
+                                                <td style={{ padding: '6px' }}>{formatTime(drill.wasteTime)}</td>
+                                                <td style={{ padding: '6px' }}>-</td>
+                                                <td style={{ padding: '6px' }}>-</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         );
                     })}
                 </div>
 
-                {/* Visible content */}
                 <IonGrid>
                     {/* Practice Info Card - only show if at least one field has data */}
                     {!!(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
