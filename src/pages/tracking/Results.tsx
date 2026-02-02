@@ -16,6 +16,8 @@ import {
     IonGrid,
     IonRow,
     IonCol,
+    IonLoading,
+    IonToast,
 } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
@@ -45,6 +47,8 @@ const Results: React.FC = () => {
     const [pieContainerRef, pieWidth] = useContainerWidth<HTMLDivElement>();
     const exportRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
+    const [exportProgress, setExportProgress] = useState({ current: 0, total: 0, status: '' });
+    const [toastMessage, setToastMessage] = useState<{ message: string; color: 'success' | 'danger' | 'warning' } | null>(null);
     const PDF_EXPORT_WIDTH = 1200;
 
     // Hilfsfunktionen
@@ -162,12 +166,15 @@ const Results: React.FC = () => {
         if (!exportRef.current) return;
 
         setIsExporting(true);
+        const failedSections: string[] = [];
+
         try {
             const container = exportRef.current;
 
             // Detect mobile device for optimized settings
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            const canvasScale = isMobile ? 1.2 : 2; // Lower scale for mobile to prevent memory issues
+            const canvasScale = isMobile ? 1.0 : 2; // Lower scale for mobile to prevent memory issues
+            const sectionDelay = isMobile ? 300 : 50; // Longer delay for mobile
 
             // Make container renderable but keep it off-screen
             const originalStyles = {
@@ -179,8 +186,28 @@ const Results: React.FC = () => {
             container.style.left = '0';
             container.style.top = `-${container.scrollHeight + 100}px`;
 
+            // Count total sections for progress indicator
+            const headerSection = container.querySelector('.pdf-export-header');
+            const practiceInfoSection = container.querySelector('.pdf-practice-info');
+            const summarySection = container.querySelector('.pdf-summary-row');
+            const drillOverviewSection = container.querySelector('.pdf-chart-section');
+            const drillChartsSection = container.querySelector('.pdf-charts-row');
+            const drillSections = container.querySelectorAll('.pdf-drill-section');
+
+            const sections: { element: Element | null; name: string }[] = [
+                { element: headerSection, name: 'Header' },
+                { element: practiceInfoSection, name: 'Practice Info' },
+                { element: summarySection, name: 'Summary' },
+                { element: drillOverviewSection, name: 'Drill Overview' },
+                { element: drillChartsSection, name: 'Drill Charts' },
+                ...Array.from(drillSections).map((el, i) => ({ element: el, name: `Drill ${i + 1}` })),
+            ].filter(s => s.element !== null);
+
+            const totalSections = sections.length;
+            setExportProgress({ current: 0, total: totalSections, status: t('results.preparingExport') });
+
             // Wait for charts to render - longer wait for mobile
-            await new Promise(resolve => setTimeout(resolve, isMobile ? 1000 : 500));
+            await new Promise(resolve => setTimeout(resolve, isMobile ? 1500 : 500));
 
             const pdf = new jsPDF({
                 orientation: 'portrait',
@@ -193,87 +220,67 @@ const Results: React.FC = () => {
             const usableWidth = pdfWidth - 2 * margin;
             const usableHeight = pdfHeight - 2 * margin;
 
-            // Find all sections to render separately
-            const headerSection = container.querySelector('.pdf-export-header');
-            const practiceInfoSection = container.querySelector('.pdf-practice-info');
-            const summarySection = container.querySelector('.pdf-summary-row');
-            const drillOverviewSection = container.querySelector('.pdf-chart-section');
-            const drillChartsSection = container.querySelector('.pdf-charts-row');
-            const drillSections = container.querySelectorAll('.pdf-drill-section');
-
             // Helper function to render element to canvas and add to PDF
-            const renderAndAddToPdf = async (element: Element, currentY: number): Promise<number> => {
-                const canvas = await html2canvas(element as HTMLElement, {
-                    scale: canvasScale,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    // Optimize for mobile
-                    imageTimeout: 0,
-                    removeContainer: true,
-                });
+            const renderAndAddToPdf = async (element: Element, currentY: number, sectionName: string): Promise<number> => {
+                try {
+                    const canvas = await html2canvas(element as HTMLElement, {
+                        scale: canvasScale,
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff',
+                        imageTimeout: 0,
+                        removeContainer: true,
+                    });
 
-                const scaledWidth = usableWidth;
-                const scaledHeight = (canvas.height * scaledWidth) / canvas.width;
+                    const scaledWidth = usableWidth;
+                    const scaledHeight = (canvas.height * scaledWidth) / canvas.width;
 
-                // Check if element fits on current page
-                if (currentY + scaledHeight > usableHeight && currentY > 0) {
-                    pdf.addPage();
-                    currentY = 0;
+                    // Check if element fits on current page
+                    if (currentY + scaledHeight > usableHeight && currentY > 0) {
+                        pdf.addPage();
+                        currentY = 0;
+                    }
+
+                    // Use JPEG for mobile (smaller file size, faster processing)
+                    const imgFormat = isMobile ? 'JPEG' : 'PNG';
+                    const imgQuality = isMobile ? 0.8 : 1.0;
+                    const imgData = canvas.toDataURL(`image/${imgFormat.toLowerCase()}`, imgQuality);
+                    pdf.addImage(imgData, imgFormat, margin, margin + currentY, scaledWidth, scaledHeight);
+
+                    // Help garbage collection by clearing canvas
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                    canvas.width = 0;
+                    canvas.height = 0;
+
+                    // Delay between sections to prevent memory pressure
+                    await new Promise(resolve => setTimeout(resolve, sectionDelay));
+
+                    return currentY + scaledHeight + 5; // 5mm spacing between sections
+                } catch (error) {
+                    console.error(`Failed to render section "${sectionName}":`, error);
+                    failedSections.push(sectionName);
+                    // Continue with next section, return same Y position
+                    return currentY;
                 }
-
-                // Use JPEG for mobile (smaller file size, faster processing)
-                const imgFormat = isMobile ? 'JPEG' : 'PNG';
-                const imgQuality = isMobile ? 0.85 : 1.0;
-                const imgData = canvas.toDataURL(`image/${imgFormat.toLowerCase()}`, imgQuality);
-                pdf.addImage(imgData, imgFormat, margin, margin + currentY, scaledWidth, scaledHeight);
-
-                // Help garbage collection by clearing canvas
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                }
-                canvas.width = 0;
-                canvas.height = 0;
-
-                // Small delay between sections to prevent memory pressure on mobile
-                if (isMobile) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-
-                return currentY + scaledHeight + 5; // 5mm spacing between sections
             };
 
             let currentY = 0;
 
-            // Render header
-            if (headerSection) {
-                currentY = await renderAndAddToPdf(headerSection, currentY);
-            }
+            // Render each section with progress updates
+            for (let i = 0; i < sections.length; i++) {
+                const section = sections[i];
+                setExportProgress({
+                    current: i + 1,
+                    total: totalSections,
+                    status: t('results.exportProgress', { current: i + 1, total: totalSections }),
+                });
 
-            // Render practice info
-            if (practiceInfoSection) {
-                currentY = await renderAndAddToPdf(practiceInfoSection, currentY);
-            }
-
-            // Render summary
-            if (summarySection) {
-                currentY = await renderAndAddToPdf(summarySection, currentY);
-            }
-
-            // Render drill overview (timeline)
-            if (drillOverviewSection) {
-                currentY = await renderAndAddToPdf(drillOverviewSection, currentY);
-            }
-
-            // Render drill charts (bar + pie)
-            if (drillChartsSection) {
-                currentY = await renderAndAddToPdf(drillChartsSection, currentY);
-            }
-
-            // Render each drill section on its own (starts new page if doesn't fit)
-            for (const drillSection of drillSections) {
-                currentY = await renderAndAddToPdf(drillSection, currentY);
+                if (section.element) {
+                    currentY = await renderAndAddToPdf(section.element, currentY, section.name);
+                }
             }
 
             // Restore container to original hidden state
@@ -281,38 +288,92 @@ const Results: React.FC = () => {
             container.style.left = originalStyles.left || '-9999px';
             container.style.top = originalStyles.top || '0';
 
+            setExportProgress({ current: totalSections, total: totalSections, status: t('results.finalizingExport') });
+
             const date = new Date().toISOString().split('T')[0];
             const filename = `training-results-${date}.pdf`;
 
-            // Mobile-friendly download approach
-            if (isMobile) {
-                // Use data URL approach for mobile browsers
+            // Download with multiple fallback approaches
+            let downloadSuccessful = false;
+
+            // Approach 1: Blob URL with link click (works best on most mobile browsers)
+            try {
                 const pdfBlob = pdf.output('blob');
                 const blobUrl = URL.createObjectURL(pdfBlob);
 
-                // Create and click a link - works better on mobile
                 const link = document.createElement('a');
                 link.href = blobUrl;
                 link.download = filename;
                 link.style.display = 'none';
                 document.body.appendChild(link);
 
-                // Use a slight delay for mobile browsers
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Longer delay for mobile browsers to process the blob
+                await new Promise(resolve => setTimeout(resolve, isMobile ? 500 : 100));
                 link.click();
 
                 // Cleanup after a delay
                 setTimeout(() => {
-                    document.body.removeChild(link);
+                    if (document.body.contains(link)) {
+                        document.body.removeChild(link);
+                    }
                     URL.revokeObjectURL(blobUrl);
-                }, 1000);
+                }, 2000);
+
+                downloadSuccessful = true;
+            } catch (downloadError) {
+                console.warn('Blob URL download failed, trying fallback:', downloadError);
+            }
+
+            // Approach 2: Direct pdf.save() as fallback
+            if (!downloadSuccessful) {
+                try {
+                    pdf.save(filename);
+                    downloadSuccessful = true;
+                } catch (saveError) {
+                    console.warn('pdf.save() failed, trying data URL:', saveError);
+                }
+            }
+
+            // Approach 3: Open in new window/tab as last resort
+            if (!downloadSuccessful) {
+                try {
+                    const pdfDataUrl = pdf.output('dataurlstring');
+                    const newWindow = window.open(pdfDataUrl, '_blank');
+                    if (newWindow) {
+                        downloadSuccessful = true;
+                    }
+                } catch (dataUrlError) {
+                    console.error('All download methods failed:', dataUrlError);
+                }
+            }
+
+            // Show appropriate toast message
+            if (failedSections.length > 0) {
+                setToastMessage({
+                    message: t('results.exportFailedSection', { section: failedSections.join(', ') }) +
+                        ' ' + t('results.exportContinuing'),
+                    color: 'warning',
+                });
+            } else if (downloadSuccessful) {
+                setToastMessage({
+                    message: t('results.exportComplete'),
+                    color: 'success',
+                });
             } else {
-                pdf.save(filename);
+                setToastMessage({
+                    message: t('results.exportFailed'),
+                    color: 'danger',
+                });
             }
         } catch (error) {
             console.error('PDF export failed:', error);
+            setToastMessage({
+                message: t('results.exportFailed'),
+                color: 'danger',
+            });
         } finally {
             setIsExporting(false);
+            setExportProgress({ current: 0, total: 0, status: '' });
         }
     };
 
@@ -934,6 +995,23 @@ const Results: React.FC = () => {
                         {t('results.backToHome') || 'Back to Home'}
                     </IonButton>
                 </div>
+
+                {/* Progress indicator for PDF export */}
+                <IonLoading
+                    isOpen={isExporting}
+                    message={exportProgress.status || t('results.exporting')}
+                    spinner="crescent"
+                />
+
+                {/* Toast for export result feedback */}
+                <IonToast
+                    isOpen={toastMessage !== null}
+                    message={toastMessage?.message || ''}
+                    color={toastMessage?.color || 'primary'}
+                    duration={3000}
+                    onDidDismiss={() => setToastMessage(null)}
+                    position="bottom"
+                />
             </IonContent>
         </IonPage>
     );
