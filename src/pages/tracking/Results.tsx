@@ -366,27 +366,50 @@ const Results: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Drill Time Charts */}
+                    {/* Drill Time Charts - Bar and Pie side by side */}
                     {drillTimeData.length > 0 && (
                         <div className="pdf-section" style={{ padding: '15px', margin: '10px' }}>
-                            <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>{t('results.timePerDrill') || 'Time per Drill'}</h3>
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <BarChart
-                                    layout="vertical"
-                                    data={drillTimeData}
-                                    width={PDF_EXPORT_WIDTH - 100}
-                                    height={drillChartHeight}
-                                    margin={{ top: 10, right: 80, left: 150, bottom: 10 }}
-                                >
-                                    <XAxis type="number" tickFormatter={(value) => formatDuration(value)} stroke="#666" fontSize={12} />
-                                    <YAxis type="category" dataKey="name" stroke="#666" fontSize={11} width={140} />
-                                    <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
-                                    <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
-                                        {drillTimeData.map((entry, index) => (
-                                            <Cell key={`cell-pdf-bar-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                {/* Bar Chart - Time per Drill */}
+                                <div style={{ flex: '1' }}>
+                                    <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>{t('results.timePerDrill') || 'Time per Drill'}</h3>
+                                    <BarChart
+                                        layout="vertical"
+                                        data={drillTimeData}
+                                        width={380}
+                                        height={drillChartHeight}
+                                        margin={{ top: 10, right: 30, left: 120, bottom: 10 }}
+                                    >
+                                        <XAxis type="number" tickFormatter={(value) => formatDuration(value)} stroke="#666" fontSize={10} />
+                                        <YAxis type="category" dataKey="name" stroke="#666" fontSize={9} width={110} />
+                                        <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                        <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
+                                            {drillTimeData.map((entry, index) => (
+                                                <Cell key={`cell-pdf-bar-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </div>
+                                {/* Pie Chart - Time Distribution per Drill */}
+                                <div style={{ flex: '1' }}>
+                                    <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>{t('results.timeDistributionPerDrill') || 'Time Distribution per Drill'}</h3>
+                                    <PieChart width={380} height={drillChartHeight}>
+                                        <Pie
+                                            data={drillTimeData}
+                                            dataKey="totalTime"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={Math.min(70, (drillChartHeight - 80) / 2)}
+                                        >
+                                            {drillTimeData.map((entry, index) => (
+                                                <Cell key={`cell-pdf-pie-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                        <Legend />
+                                    </PieChart>
+                                </div>
                             </div>
                         </div>
                     )}
