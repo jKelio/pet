@@ -107,15 +107,9 @@ const Results: React.FC = () => {
     const drillTimeData = drills.map((drill, index) => {
         const drillTimerTime = Object.values(drill.timerData || {}).reduce((s, td) => s + (td.totalTime || 0), 0);
         const drillTotal = drillTimerTime + (drill.wasteTime || 0);
-        let tagString = '';
-        if (drill.tags && drill.tags.size > 0) {
-            tagString = Array.from(drill.tags)
-                .map(tag => t('drills.' + tag) || tag)
-                .join(', ');
-        }
         return {
             drillId: drill.id,
-            name: `${t('results.drill')} ${drill.id}${tagString ? ' (' + tagString + ')' : ''}`,
+            name: `${t('results.drill')} ${drill.id}`,
             totalTime: drillTotal,
             color: DRILL_COLORS[index % DRILL_COLORS.length],
         };

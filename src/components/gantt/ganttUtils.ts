@@ -396,12 +396,9 @@ export function extractDrillDurations(
     return drillTimes
         .map(d => {
             const tagArray = Array.from(d.tags);
-            const tagString = tagArray.length > 0
-                ? ` (${tagArray.map(tag => t('drills.' + tag) || tag).join(', ')})`
-                : '';
             return {
                 drillId: d.drillId,
-                drillLabel: `${t('results.drill')} ${d.drillId}${tagString}`,
+                drillLabel: `${t('results.drill')} ${d.drillId}`,
                 startOffset: d.startTime - minStartTime,
                 endOffset: d.endTime - minStartTime,
                 duration: d.endTime - d.startTime,
