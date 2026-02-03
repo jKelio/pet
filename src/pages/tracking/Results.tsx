@@ -325,7 +325,7 @@ const Results: React.FC = () => {
                     </div>
 
                     {/* Practice Info Section */}
-                    {!!(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
+                    {!!(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber || practiceInfo.evaluation || practiceInfo.trackedPlayerName) && (
                         <div className="pdf-section pdf-practice-info" style={{ padding: '15px', margin: '10px' }}>
                             <h3 style={{ marginBottom: '10px' }}>{t('general.infoHeader')}</h3>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
@@ -335,6 +335,8 @@ const Results: React.FC = () => {
                                 {practiceInfo.coachName && <div><strong>{t('general.coachLabel')}:</strong> {practiceInfo.coachName}</div>}
                                 {practiceInfo.athletesNumber > 0 && <div><strong>{t('practice.athletesNumberLabel')}:</strong> {practiceInfo.athletesNumber}</div>}
                                 {practiceInfo.coachesNumber > 0 && <div><strong>{t('practice.coachesNumberLabel')}:</strong> {practiceInfo.coachesNumber}</div>}
+                                {practiceInfo.evaluation > 0 && <div><strong>{t('general.evaluationLabel')}:</strong> {practiceInfo.evaluation}</div>}
+                                {practiceInfo.trackedPlayerName && <div><strong>{t('practice.trackedPlayerNameLabel')}:</strong> {practiceInfo.trackedPlayerName}</div>}
                             </div>
                         </div>
                     )}
@@ -512,7 +514,7 @@ const Results: React.FC = () => {
 
                 <IonGrid>
                     {/* Practice Info Card - only show if at least one field has data */}
-                    {!!(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber) && (
+                    {!!(practiceInfo.clubName || practiceInfo.teamName || practiceInfo.coachName || practiceInfo.athletesNumber || practiceInfo.coachesNumber || practiceInfo.evaluation || practiceInfo.trackedPlayerName) && (
                         <IonRow>
                             <IonCol>
                                 <IonCard>
@@ -580,6 +582,26 @@ const Results: React.FC = () => {
                                                         <IonLabel>
                                                             <h3>{t('practice.coachesNumberLabel')}</h3>
                                                             <p>{practiceInfo.coachesNumber}</p>
+                                                        </IonLabel>
+                                                    </IonItem>
+                                                </IonCol>
+                                            )}
+                                            {practiceInfo.evaluation > 0 && (
+                                                <IonCol size="6">
+                                                    <IonItem>
+                                                        <IonLabel>
+                                                            <h3>{t('general.evaluationLabel')}</h3>
+                                                            <p>{practiceInfo.evaluation}</p>
+                                                        </IonLabel>
+                                                    </IonItem>
+                                                </IonCol>
+                                            )}
+                                            {practiceInfo.trackedPlayerName && (
+                                                <IonCol size="6">
+                                                    <IonItem>
+                                                        <IonLabel>
+                                                            <h3>{t('practice.trackedPlayerNameLabel')}</h3>
+                                                            <p>{practiceInfo.trackedPlayerName}</p>
                                                         </IonLabel>
                                                     </IonItem>
                                                 </IonCol>
