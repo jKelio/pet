@@ -17,8 +17,7 @@ import {
     IonGrid,
     IonRow,
     IonCol,
-    IonFab,
-    IonFabButton
+    IonFooter,
 } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
@@ -32,9 +31,9 @@ import {
     hourglassOutline,
     addCircleOutline,
     removeCircleOutline,
-    checkmarkCircleOutline,
-    stopCircleOutline,
-    playCircleOutline
+    checkmarkOutline,
+    stopOutline,
+    playOutline
 } from 'ionicons/icons';
 
 const TimeWatcher: React.FC = () => {
@@ -173,36 +172,22 @@ const TimeWatcher: React.FC = () => {
                         </IonRow>
                     </IonGrid>
 
-                    <IonFab vertical="bottom" horizontal="center" slot="fixed">
-                        {showFinishButton ? (
-                            <IonFabButton onClick={handleFinishTraining} color="success">
-                                <IonIcon icon={checkmarkCircleOutline} />
-                            </IonFabButton>
-                        ) : (
-                            <IonFabButton onClick={handleStartDrill} color="primary">
-                                <IonIcon icon={playCircleOutline} />
-                            </IonFabButton>
-                        )}
-                    </IonFab>
-
-                    {/* Label below FAB */}
-                    <div style={{
-                        position: 'fixed',
-                        bottom: 16,
-                        left: 0,
-                        right: 0,
-                        textAlign: 'center',
-                        pointerEvents: 'none',
-                        paddingBottom: 'env(safe-area-inset-bottom)'
-                    }}>
-                        <span style={{ fontSize: '0.85rem', color: '#666', marginTop: 70, display: 'block' }}>
-                            {showFinishButton
-                                ? t('timeWatcher.finishTraining')
-                                : `${t('timeWatcher.startDrill')} ${nextDrillNumber}`
-                            }
-                        </span>
-                    </div>
                 </IonContent>
+                <IonFooter>
+                    <IonToolbar>
+                        {showFinishButton ? (
+                            <IonButton expand="block" color="success" onClick={handleFinishTraining}>
+                                <IonIcon slot="start" icon={checkmarkOutline} />
+                                {t('timeWatcher.finishTraining')}
+                            </IonButton>
+                        ) : (
+                            <IonButton expand="block" color="primary" onClick={handleStartDrill}>
+                                <IonIcon slot="start" icon={playOutline} />
+                                {t('timeWatcher.startDrill')} {nextDrillNumber}
+                            </IonButton>
+                        )}
+                    </IonToolbar>
+                </IonFooter>
             </IonPage>
         );
     }
@@ -370,26 +355,15 @@ const TimeWatcher: React.FC = () => {
                     </IonRow>
                 </IonGrid>
 
-                <IonFab vertical="bottom" horizontal="center" slot="fixed">
-                    <IonFabButton onClick={handleEndDrill} color="danger">
-                        <IonIcon icon={stopCircleOutline} />
-                    </IonFabButton>
-                </IonFab>
-
-                <div style={{
-                    position: 'fixed',
-                    bottom: 16,
-                    left: 0,
-                    right: 0,
-                    textAlign: 'center',
-                    pointerEvents: 'none',
-                    paddingBottom: 'env(safe-area-inset-bottom)'
-                }}>
-                    <span style={{ fontSize: '0.85rem', color: '#666', marginTop: 70, display: 'block' }}>
-                        {t('timeWatcher.endDrill')}
-                    </span>
-                </div>
             </IonContent>
+            <IonFooter>
+                <IonToolbar>
+                    <IonButton expand="block" color="danger" onClick={handleEndDrill}>
+                        <IonIcon slot="start" icon={stopOutline} />
+                        {t('timeWatcher.endDrill')}
+                    </IonButton>
+                </IonToolbar>
+            </IonFooter>
         </IonPage>
     );
 };
