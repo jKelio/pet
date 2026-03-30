@@ -1,0 +1,19 @@
+{
+  "name": "pet-v2",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "turbo run db:generate --filter=@pet/server",
+    "db:migrate": "turbo run db:migrate --filter=@pet/server"
+  },
+  "devDependencies": {
+    "turbo": "^2"
+  }
+}

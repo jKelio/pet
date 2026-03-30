@@ -1,0 +1,83 @@
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
+import fp from 'fastify-plugin';
+import diPlugin from './plugins/di.plugin.js';
+import authMiddlewarePlugin from './middleware/auth.middleware.js';
+import { registerAuthRoutes } from './routes/auth.routes.js';
+import { registerSessionRoutes } from './routes/session.routes.js';
+
+function getConfig() {
+  const required = ['DATABASE_URL', 'JWT_SECRET', 'RESEND_API_KEY', 'APP_BASE_URL', 'EMAIL_FROM'];
+  for (const key of required) {
+    if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
+  }
+
+  return {
+    databaseUrl: process.env.DATABASE_URL!,
+    jwtSecret: process.env.JWT_SECRET!,
+    resendApiKey: process.env.RESEND_API_KEY!,
+    emailFromAddress: process.env.EMAIL_FROM!,
+    appBaseUrl: process.env.APP_BASE_URL!,
+    isProduction: process.env.NODE_ENV === 'production',
+    port: parseInt(process.env.PORT ?? '3000', 10),
+    host: process.env.HOST ?? '0.0.0.0',
+    corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+    refreshTokenCookieName: 'pet_refresh_token',
+  };
+}
+
+async function build() {
+  const config = getConfig();
+
+  const fastify = Fastify({
+    logger: {
+      level: config.isProduction ? 'info' : 'debug',
+    },
+  });
+
+  // CORS
+  await fastify.register(cors, {
+    origin: config.corsOrigin,
+    credentials: true,
+  });
+
+  // Cookies
+  await fastify.register(cookie);
+
+  // Dependency Injection
+  await fastify.register(diPlugin, config);
+
+  // Auth middleware decorator
+  await fastify.register(fp(authMiddlewarePlugin), { tokenService: fastify.tokenService });
+
+  // Routes
+  registerAuthRoutes(fastify, {
+    sendMagicLink: fastify.useCases.sendMagicLink,
+    verifyMagicLink: fastify.useCases.verifyMagicLink,
+    refreshTokenCookieName: config.refreshTokenCookieName,
+    isProduction: config.isProduction,
+  });
+
+  registerSessionRoutes(fastify, {
+    syncSession: fastify.useCases.syncSession,
+    sessionRepository: fastify.repos.session,
+  });
+
+  // Health check
+  fastify.get('/health', async () => ({ status: 'ok' }));
+
+  return { fastify, config };
+}
+
+async function main() {
+  const { fastify, config } = await build();
+  try {
+    await fastify.listen({ port: config.port, host: config.host });
+  } catch (error) {
+    fastify.log.error(error);
+    process.exit(1);
+  }
+}
+
+main();
