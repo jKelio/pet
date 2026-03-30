@@ -46,7 +46,7 @@ interface Drill {
     tags: Set<string>;
     timerData: Record<string, TimerData>;
     counterData: Record<string, CounterData>;
-    wasteTime: number;
+    wasteTime: TimerData;
 }
 
 export interface CounterEvent {
@@ -338,7 +338,8 @@ export interface DrillDuration {
 
 export function extractDrillDurations(
     drills: Drill[],
-    t: TFunction
+    t: TFunction,
+    trainingStartTime?: number
 ): DrillDuration[] {
     const drillTimes: Array<{
         drillId: number;
@@ -389,8 +390,8 @@ export function extractDrillDurations(
         return [];
     }
 
-    // Find earliest time as reference
-    const minStartTime = Math.min(...drillTimes.map(d => d.startTime));
+    // Use training start time if provided, otherwise fall back to earliest drill action
+    const minStartTime = trainingStartTime ?? Math.min(...drillTimes.map(d => d.startTime));
 
     // Convert to relative offsets and sort by start time
     return drillTimes
@@ -449,11 +450,11 @@ export function aggregateTimeByActionForDrill(
     });
 
     // Add waste time if present
-    if (drill.wasteTime > 0) {
+    if ((drill.wasteTime?.totalTime || 0) > 0) {
         result.push({
             actionId: 'wasteTime',
             actionLabel: t('results.wasteTime') || 'Waste Time',
-            totalTime: drill.wasteTime,
+            totalTime: drill.wasteTime.totalTime,
         });
     }
 

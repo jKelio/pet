@@ -4,6 +4,7 @@ import './DrillOverviewTimeline.css';
 
 interface DrillOverviewTimelineProps {
     drillDurations: DrillDuration[];
+    totalDuration?: number;
 }
 
 const DRILL_COLORS = ['#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE', '#FF6699', '#33CC99', '#FF6666', '#66B3FF', '#FFCC99'];
@@ -30,7 +31,7 @@ function calculateTicks(maxTime: number): number[] {
     return ticks;
 }
 
-const DrillOverviewTimeline: React.FC<DrillOverviewTimelineProps> = ({ drillDurations }) => {
+const DrillOverviewTimeline: React.FC<DrillOverviewTimelineProps> = ({ drillDurations, totalDuration }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
 
@@ -56,7 +57,7 @@ const DrillOverviewTimeline: React.FC<DrillOverviewTimelineProps> = ({ drillDura
     const height = numRows * ROW_HEIGHT + PADDING.top + PADDING.bottom;
     const chartWidth = width - LABEL_WIDTH - PADDING.left - PADDING.right;
 
-    const maxTime = Math.max(...drillDurations.map(d => d.endOffset), 10000);
+    const maxTime = Math.max(...drillDurations.map(d => d.endOffset), totalDuration || 0, 10000);
     const ticks = calculateTicks(maxTime);
 
     const xScale = (time: number) => {

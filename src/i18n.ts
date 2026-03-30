@@ -66,7 +66,12 @@ const resources = {
                 "count": "Count",
                 "placeholder": "Ready to start tracking?",
                 "startButton": "Start TimeWatcher",
-                "wasteTime": "Waste Time"
+                "wasteTime": "Waste Time",
+                "pause": "Pause",
+                "gapTime": "Gap Time",
+                "startDrill": "Start Drill",
+                "endDrill": "End Drill",
+                "finishTraining": "Finish Training"
             },
             "results": {
                 "title": "Training Results",
@@ -266,7 +271,12 @@ const resources = {
                 "count": "Anzahl",
                 "placeholder": "Bereit zum Tracking?",
                 "startButton": "ZeitBeobachter starten",
-                "wasteTime": "Verschwendete Zeit"
+                "wasteTime": "Verschwendete Zeit",
+                "pause": "Pause",
+                "gapTime": "Pausenzeit",
+                "startDrill": "Drill starten",
+                "endDrill": "Drill beenden",
+                "finishTraining": "Training beenden"
             },
             "results": {
                 "title": "Trainingsergebnisse",
@@ -466,7 +476,12 @@ const resources = {
                 count: "Счёт",
                 placeholder: "Готовы начать отслеживание?",
                 startButton: "Запустить Тайм-Вочер",
-                wasteTime: "Время простоя"
+                wasteTime: "Время простоя",
+                pause: "Пауза",
+                gapTime: "Время паузы",
+                startDrill: "Начать упражнение",
+                endDrill: "Завершить упражнение",
+                finishTraining: "Завершить тренировку"
             },
             results: {
                 title: "Отчёт о тренировке",

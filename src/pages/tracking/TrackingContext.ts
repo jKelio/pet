@@ -11,6 +11,7 @@ export interface PracticeInfo {
     totalTime: number;
     trackedPlayerName: string;
     drillsNumber: number;
+    wasteTime: TimerData;
 }
 
 export interface TimerData {
@@ -33,7 +34,7 @@ export interface Drill {
     actionButtons: ActionButton[];
     timerData: Record<string, TimerData>;
     counterData: Record<string, CounterData>;
-    wasteTime: number;
+    wasteTime: TimerData;
 }
 
 export interface ActionButton {
@@ -76,7 +77,7 @@ export const createDrills = (drillsNumber: number): Drill[] => {
         actionButtons: initialActionButtons.map(a => ({ ...a })),
         timerData: {},
         counterData: {},
-        wasteTime: 0
+        wasteTime: { totalTime: 0, timeSegments: [] }
     }));
 };
 
@@ -92,6 +93,7 @@ export const TrackingContext = createContext<TrackingContextType>({
         totalTime: 0,
         trackedPlayerName: '',
         drillsNumber: 0,
+        wasteTime: { totalTime: 0, timeSegments: [] },
     },
     setPracticeInfo: () => {},
     drills: [],
@@ -149,6 +151,7 @@ export const useTrackingContext = () => {
             totalTime: 0,
             trackedPlayerName: '',
             drillsNumber: 0,
+            wasteTime: { totalTime: 0, timeSegments: [] },
         });
         setDrills([]);
         setCurrentDrillIndex(0);

@@ -37,7 +37,7 @@ import ActionTimeChart from '../../components/gantt/ActionTimeChart';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
 import ActionTimeline from '../../components/gantt/ActionTimeline';
 import DrillOverviewTimeline from '../../components/gantt/DrillOverviewTimeline';
-import { extractTimelineSegmentsForDrill, aggregateTimeByActionForDrill, extractDrillDurations, ACTION_COLORS } from '../../components/gantt/ganttUtils';
+import { extractTimelineSegmentsForDrill, aggregateTimeByActionForDrill, extractDrillDurations, ACTION_COLORS, formatRelativeTime } from '../../components/gantt/ganttUtils';
 import './Results.css';
 
 const Results: React.FC = () => {
@@ -75,24 +75,11 @@ const Results: React.FC = () => {
         return `${time} ${t('results.unitMinutes')}`;
     };
 
-    // Zeitformatierung für Diagramm-Labels (Sekunden, Minuten oder Stunden)
-    const formatDuration = (ms: number) => {
-        const totalSeconds = Math.floor(ms / 1000);
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        if (hours > 0) {
-            return `${hours}h ${minutes}min`;
-        } else if (minutes > 0) {
-            return `${minutes}min ${seconds}s`;
-        } else {
-            return `${seconds}s`;
-        }
-    };
 
     // Daten berechnen
     const totalDrills = drills.length;
-    const totalWasteTime = drills.reduce((sum, drill) => sum + (drill.wasteTime || 0), 0);
+    const totalWasteTime = drills.reduce((sum, drill) => sum + (drill.wasteTime?.totalTime || 0), 0)
+        + (practiceInfo.wasteTime?.totalTime || 0);
     const totalTimerTime = drills.reduce((sum, drill) => {
         return sum + Object.values(drill.timerData || {}).reduce((s, t) => s + (t.totalTime || 0), 0);
     }, 0);
@@ -100,13 +87,19 @@ const Results: React.FC = () => {
     const wastePercent = totalTime > 0 ? Math.round((totalWasteTime / totalTime) * 100) : 0;
 
     // Drill durations for overview timeline
-    const drillDurations = extractDrillDurations(drills, t);
+    const gapSegments = practiceInfo.wasteTime?.timeSegments || [];
+    const trainingStartTime = gapSegments[0]?.startTime;
+    const lastGapSegment = gapSegments[gapSegments.length - 1];
+    const totalTrainingDuration = trainingStartTime && lastGapSegment?.endTime
+        ? lastGapSegment.endTime - trainingStartTime
+        : undefined;
+    const drillDurations = extractDrillDurations(drills, t, trainingStartTime);
 
     // Drill time data for bar chart and pie chart (total time per drill)
     const DRILL_COLORS = ['#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE', '#FF6699', '#33CC99', '#FF6666', '#66B3FF', '#FFCC99'];
     const drillTimeData = drills.map((drill, index) => {
         const drillTimerTime = Object.values(drill.timerData || {}).reduce((s, td) => s + (td.totalTime || 0), 0);
-        const drillTotal = drillTimerTime + (drill.wasteTime || 0);
+        const drillTotal = drillTimerTime + (drill.wasteTime?.totalTime || 0);
         return {
             drillId: drill.id,
             name: `${t('results.drill')} ${drill.id}`,
@@ -140,10 +133,10 @@ const Results: React.FC = () => {
             }
         });
 
-        if (drill.wasteTime > 0) {
+        if ((drill.wasteTime?.totalTime || 0) > 0) {
             data.push({
                 name: t('results.wasteTime') || 'Waste Time',
-                value: drill.wasteTime,
+                value: drill.wasteTime.totalTime,
                 actionId: 'wasteTime',
             });
         }
@@ -358,7 +351,7 @@ const Results: React.FC = () => {
                     {drillDurations.length > 0 && (
                         <div className="pdf-section" style={{ padding: '15px', margin: '10px' }}>
                             <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>{t('results.drillOverview') || 'Drill Overview'}</h3>
-                            <DrillOverviewTimeline drillDurations={drillDurations} />
+                            <DrillOverviewTimeline drillDurations={drillDurations} totalDuration={totalTrainingDuration} />
                         </div>
                     )}
 
@@ -376,9 +369,9 @@ const Results: React.FC = () => {
                                         height={drillChartHeight}
                                         margin={{ top: 10, right: 30, left: 120, bottom: 10 }}
                                     >
-                                        <XAxis type="number" tickFormatter={(value) => formatDuration(value)} stroke="#666" fontSize={10} />
+                                        <XAxis type="number" tickFormatter={(value) => formatRelativeTime(value)} stroke="#666" fontSize={10} />
                                         <YAxis type="category" dataKey="name" stroke="#666" fontSize={9} width={110} />
-                                        <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                        <Tooltip formatter={(value) => formatRelativeTime(Number(value) || 0)} />
                                         <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
                                             {drillTimeData.map((entry, index) => (
                                                 <Cell key={`cell-pdf-bar-${index}`} fill={entry.color} />
@@ -402,7 +395,7 @@ const Results: React.FC = () => {
                                                 <Cell key={`cell-pdf-pie-${index}`} fill={entry.color} />
                                             ))}
                                         </Pie>
-                                        <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                        <Tooltip formatter={(value) => formatRelativeTime(Number(value) || 0)} />
                                         <Legend />
                                     </PieChart>
                                 </div>
@@ -420,7 +413,7 @@ const Results: React.FC = () => {
 
                         const timerEntries = Object.entries(drill.timerData || {}).filter(([, data]) => data.totalTime > 0);
                         const counterEntries = Object.entries(drill.counterData || {}).filter(([, data]) => data.count > 0);
-                        const hasWasteTime = (drill.wasteTime || 0) > 0;
+                        const hasWasteTime = (drill.wasteTime?.totalTime || 0) > 0;
 
                         return (
                             <div key={`pdf-drill-${drill.id}`} className="pdf-section" style={{ padding: '15px', margin: '10px', borderTop: '2px solid #ddd' }}>
@@ -457,7 +450,7 @@ const Results: React.FC = () => {
                                                         <Cell key={`cell-pdf-pie-${drill.id}-${entry.actionId}`} fill={ACTION_COLORS[entry.actionId] || '#999'} />
                                                     ))}
                                                 </Pie>
-                                                <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                                <Tooltip formatter={(value) => formatRelativeTime(Number(value) || 0)} />
                                                 <Legend />
                                             </PieChart>
                                         </div>
@@ -494,7 +487,7 @@ const Results: React.FC = () => {
                                         {hasWasteTime && (
                                             <tr style={{ backgroundColor: '#fff3cd' }}>
                                                 <td style={{ padding: '6px' }}>{t('results.wasteTime')}</td>
-                                                <td style={{ padding: '6px' }}>{formatTime(drill.wasteTime)}</td>
+                                                <td style={{ padding: '6px' }}>{formatTime(drill.wasteTime?.totalTime || 0)}</td>
                                                 <td style={{ padding: '6px' }}>-</td>
                                                 <td style={{ padding: '6px' }}>-</td>
                                             </tr>
@@ -643,7 +636,7 @@ const Results: React.FC = () => {
                                             <h3 style={{ textAlign: 'center', marginBottom: 8 }}>
                                                 {t('results.drillOverview') || 'Drill Overview'}
                                             </h3>
-                                            <DrillOverviewTimeline drillDurations={drillDurations} />
+                                            <DrillOverviewTimeline drillDurations={drillDurations} totalDuration={totalTrainingDuration} />
                                         </div>
                                     )}
 
@@ -663,7 +656,7 @@ const Results: React.FC = () => {
                                                     >
                                                         <XAxis
                                                             type="number"
-                                                            tickFormatter={(value) => formatDuration(value)}
+                                                            tickFormatter={(value) => formatRelativeTime(value)}
                                                             stroke="#666"
                                                             fontSize={12}
                                                         />
@@ -675,7 +668,7 @@ const Results: React.FC = () => {
                                                             width={90}
                                                             tick={{ fontSize: 10 }}
                                                         />
-                                                        <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                                        <Tooltip formatter={(value) => formatRelativeTime(Number(value) || 0)} />
                                                         <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
                                                             {drillTimeData.map((entry, index) => (
                                                                 <Cell key={`cell-drill-bar-${index}`} fill={entry.color} />
@@ -705,7 +698,7 @@ const Results: React.FC = () => {
                                                                     <Cell key={`cell-drill-pie-${index}`} fill={entry.color} />
                                                                 ))}
                                                             </Pie>
-                                                            <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                                            <Tooltip formatter={(value) => formatRelativeTime(Number(value) || 0)} />
                                                             <Legend />
                                                         </PieChart>
                                                     )}
@@ -732,7 +725,7 @@ const Results: React.FC = () => {
                         const counterEntries = Object.entries(drill.counterData || {}).filter(
                             ([, data]) => data.count > 0
                         );
-                        const hasWasteTime = (drill.wasteTime || 0) > 0;
+                        const hasWasteTime = (drill.wasteTime?.totalTime || 0) > 0;
                         const hasData = timerEntries.length > 0 || counterEntries.length > 0 || hasWasteTime;
 
                         return (
@@ -800,7 +793,7 @@ const Results: React.FC = () => {
                                                                         <Cell key={`cell-${drill.id}-${entry.actionId}`} fill={ACTION_COLORS[entry.actionId] || '#999999'} />
                                                                     ))}
                                                                 </Pie>
-                                                                <Tooltip formatter={(value) => formatDuration(Number(value) || 0)} />
+                                                                <Tooltip formatter={(value) => formatRelativeTime(Number(value) || 0)} />
                                                                 <Legend />
                                                             </PieChart>
                                                         ) : (
@@ -856,7 +849,7 @@ const Results: React.FC = () => {
                                                         {hasWasteTime && (
                                                             <tr className="waste-time-row">
                                                                 <td>{t('results.wasteTime')}</td>
-                                                                <td>{formatTime(drill.wasteTime)}</td>
+                                                                <td>{formatTime(drill.wasteTime?.totalTime || 0)}</td>
                                                                 <td>-</td>
                                                                 <td>-</td>
                                                             </tr>

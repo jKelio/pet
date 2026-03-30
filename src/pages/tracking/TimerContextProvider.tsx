@@ -7,13 +7,13 @@ interface TimerContextProviderProps {
 }
 
 const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children }) => {
-    const { drills, currentDrillIndex, setDrills } = useTrackingContext();
+    const { drills, currentDrillIndex, setDrills, practiceInfo, setPracticeInfo } = useTrackingContext();
 
     const [timers, setTimers] = useState<Record<string, TimerState>>({});
     const [counters, setCounters] = useState<Record<string, CounterState>>({});
     const [currentTimer, setCurrentTimer] = useState<string | null>(null);
     const [wasteTime, setWasteTime] = useState<number>(0);
-    const [wasteTrackingActive, setWasteTrackingActive] = useState<boolean>(false);
+    const [drillActive, setDrillActive] = useState<boolean>(false);
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const wasteTimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -21,8 +21,19 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
     const wasteTimeRef = useRef(wasteTime);
     wasteTimeRef.current = wasteTime;
 
+    const drillActiveRef = useRef(drillActive);
+    drillActiveRef.current = drillActive;
+
+    const currentTimerRef = useRef(currentTimer);
+    currentTimerRef.current = currentTimer;
+
     const drillsRef = useRef(drills);
     drillsRef.current = drills;
+
+    // Tracks the start of the current gap period (between drills / pre-training / post-training)
+    const gapSegmentStartRef = useRef<number | null>(null);
+    // Tracks the start of the current in-drill idle period
+    const wasteSegmentStartRef = useRef<number | null>(null);
 
     const isInitializingRef = useRef(false);
 
@@ -73,7 +84,9 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
             setCounters({});
             setCurrentTimer(null);
             setWasteTime(0);
-            setWasteTrackingActive(false);
+            setDrillActive(false);
+            gapSegmentStartRef.current = null;
+            wasteSegmentStartRef.current = null;
         }
     }, [drills.length]);
 
@@ -110,7 +123,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         setTimers(newTimers);
         setCounters(newCounters);
         setCurrentTimer(null);
-        setWasteTime(drill?.wasteTime || 0);
+        setWasteTime(drill?.wasteTime?.totalTime || 0);
 
         setTimeout(() => {
             isInitializingRef.current = false;
@@ -148,8 +161,9 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         };
     }, [currentTimer]);
 
+    // In-drill waste time display interval (runs when drill is active and no timer is running)
     useEffect(() => {
-        if (wasteTrackingActive && !currentTimer) {
+        if (drillActive && !currentTimer) {
             wasteTimeIntervalRef.current = setInterval(() => {
                 setWasteTime(prev => prev + 100);
             }, 100);
@@ -165,20 +179,33 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
                 clearInterval(wasteTimeIntervalRef.current);
             }
         };
-    }, [wasteTrackingActive, currentTimer]);
-
-    useEffect(() => {
-        if (wasteTimeRef.current > 0) {
-            setDrills(prevDrills => prevDrills.map((drill, idx) => {
-                if (idx !== currentDrillIndex) return drill;
-                return { ...drill, wasteTime: wasteTimeRef.current };
-            }));
-        }
-    }, [currentTimer, currentDrillIndex, setDrills]);
+    }, [drillActive, currentTimer]);
 
     const startTimer = (actionId: string) => {
         if (currentTimer && currentTimer !== actionId) {
             stopTimer(currentTimer);
+        }
+
+        // Close in-drill waste segment if currently idle
+        if (drillActiveRef.current && wasteSegmentStartRef.current !== null) {
+            const segEnd = Date.now();
+            const newSeg = {
+                startTime: wasteSegmentStartRef.current,
+                endTime: segEnd,
+                duration: segEnd - wasteSegmentStartRef.current
+            };
+            const existingSegs = drillsRef.current[currentDrillIndex]?.wasteTime?.timeSegments || [];
+            setDrills(prev => prev.map((drill, idx) => {
+                if (idx !== currentDrillIndex) return drill;
+                return {
+                    ...drill,
+                    wasteTime: {
+                        totalTime: wasteTimeRef.current,
+                        timeSegments: [...existingSegs, newSeg]
+                    }
+                };
+            }));
+            wasteSegmentStartRef.current = null;
         }
 
         const now = Date.now();
@@ -240,6 +267,11 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
             };
         });
         setCurrentTimer(null);
+
+        // Start in-drill waste segment if drill is active
+        if (drillActiveRef.current) {
+            wasteSegmentStartRef.current = Date.now();
+        }
     };
 
     const stopTimer = (actionId: string) => {
@@ -269,6 +301,11 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
             };
         });
         setCurrentTimer(null);
+
+        // Start in-drill waste segment if drill is active
+        if (drillActiveRef.current) {
+            wasteSegmentStartRef.current = Date.now();
+        }
     };
 
     useEffect(() => {
@@ -333,23 +370,95 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}`;
     };
 
-    const saveWasteTime = (wasteTime: number) => {
-        setDrills(prevDrills => prevDrills.map((drill, idx) => {
-            if (idx !== currentDrillIndex) return drill;
-            return {
-                ...drill,
-                wasteTime
+    // Called when TimeWatcher mounts — begins gap tracking before first drill
+    const startTracking = useCallback(() => {
+        gapSegmentStartRef.current = Date.now();
+    }, []);
+
+    // Called when coach explicitly starts a drill
+    const startDrill = useCallback(() => {
+        // Close the current gap segment and save to practiceInfo
+        if (gapSegmentStartRef.current !== null) {
+            const segEnd = Date.now();
+            const newSeg = {
+                startTime: gapSegmentStartRef.current,
+                endTime: segEnd,
+                duration: segEnd - gapSegmentStartRef.current
             };
-        }));
-    };
+            setPracticeInfo(prev => ({
+                ...prev,
+                wasteTime: {
+                    totalTime: (prev.wasteTime?.totalTime || 0) + newSeg.duration,
+                    timeSegments: [...(prev.wasteTime?.timeSegments || []), newSeg]
+                }
+            }));
+            gapSegmentStartRef.current = null;
+        }
+        // Begin tracking in-drill waste immediately (no timer running at drill start)
+        wasteSegmentStartRef.current = Date.now();
+        setDrillActive(true);
+    }, [setPracticeInfo]);
+
+    // Called when coach explicitly ends a drill
+    const endDrill = useCallback(() => {
+        // Stop any running timer (also triggers wasteSegmentStartRef in stopTimer — we'll clear it below)
+        if (currentTimerRef.current) {
+            stopTimer(currentTimerRef.current);
+            wasteSegmentStartRef.current = null; // No waste starts after drill end
+        }
+
+        // Close in-drill waste segment if open
+        if (wasteSegmentStartRef.current !== null) {
+            const segEnd = Date.now();
+            const newSeg = {
+                startTime: wasteSegmentStartRef.current,
+                endTime: segEnd,
+                duration: segEnd - wasteSegmentStartRef.current
+            };
+            const existingSegs = drillsRef.current[currentDrillIndex]?.wasteTime?.timeSegments || [];
+            setDrills(prev => prev.map((drill, idx) => {
+                if (idx !== currentDrillIndex) return drill;
+                return {
+                    ...drill,
+                    wasteTime: {
+                        totalTime: wasteTimeRef.current,
+                        timeSegments: [...existingSegs, newSeg]
+                    }
+                };
+            }));
+            wasteSegmentStartRef.current = null;
+        }
+
+        setDrillActive(false);
+        gapSegmentStartRef.current = Date.now();
+    }, [currentDrillIndex, setDrills, stopTimer]);
+
+    // Called before navigating to results — closes the final gap segment
+    const finishTracking = useCallback(() => {
+        if (gapSegmentStartRef.current !== null) {
+            const segEnd = Date.now();
+            const newSeg = {
+                startTime: gapSegmentStartRef.current,
+                endTime: segEnd,
+                duration: segEnd - gapSegmentStartRef.current
+            };
+            setPracticeInfo(prev => ({
+                ...prev,
+                wasteTime: {
+                    totalTime: (prev.wasteTime?.totalTime || 0) + newSeg.duration,
+                    timeSegments: [...(prev.wasteTime?.timeSegments || []), newSeg]
+                }
+            }));
+            gapSegmentStartRef.current = null;
+        }
+    }, [setPracticeInfo]);
 
     const value = {
         timers,
         counters,
         currentTimer,
         wasteTime,
-        wasteTrackingActive,
-        setWasteTrackingActive,
+        drillActive,
         startTimer,
         pauseTimer,
         stopTimer,
@@ -358,7 +467,10 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         formatTime,
         saveTimerData,
         saveCounterData,
-        saveWasteTime
+        startTracking,
+        startDrill,
+        endDrill,
+        finishTracking
     };
 
     return (

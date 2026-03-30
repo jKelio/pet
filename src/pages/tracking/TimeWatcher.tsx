@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     IonPage,
     IonHeader,
@@ -27,20 +27,21 @@ import { useTimerContext } from './TimerContext';
 import {
     play,
     pause,
-    arrowForward,
     timeOutline,
     calculatorOutline,
     hourglassOutline,
     addCircleOutline,
     removeCircleOutline,
-    checkmarkCircleOutline
+    checkmarkCircleOutline,
+    stopCircleOutline,
+    playCircleOutline
 } from 'ionicons/icons';
 
 const TimeWatcher: React.FC = () => {
     const { t } = useTranslation('pet');
-    const { 
-        drills, 
-        currentDrillIndex, 
+    const {
+        drills,
+        currentDrillIndex,
         setCurrentDrillIndex,
         practiceInfo,
         initDrills
@@ -50,55 +51,76 @@ const TimeWatcher: React.FC = () => {
         counters,
         currentTimer,
         wasteTime,
+        drillActive,
         startTimer,
         pauseTimer,
         incrementCounter,
         decrementCounter,
         formatTime,
-        stopTimer,
-        setWasteTrackingActive,
-        saveWasteTime
+        startTracking,
+        startDrill,
+        endDrill,
+        finishTracking
     } = useTimerContext();
     const history = useHistory();
 
+    // Tracks whether a drill has been ended (distinguishes "before first drill" from "between drills")
+    const [drillHasEnded, setDrillHasEnded] = useState(false);
+    // Live elapsed time for the current gap period (display only)
+    const [gapElapsed, setGapElapsed] = useState(0);
+    const gapDisplayStartRef = useRef<number | null>(null);
+
     const currentDrill = drills[currentDrillIndex];
     const enabledActions = currentDrill?.actionButtons.filter(action => action.enabled) || [];
+    const isLastDrill = currentDrillIndex === drills.length - 1;
 
+    // Start gap tracking when TimeWatcher mounts
     useEffect(() => {
-        setWasteTrackingActive(true);
-    }, [setWasteTrackingActive]);
+        startTracking();
+    }, [startTracking]);
 
-    // Ensure drills are initialized and currentDrillIndex is correct
+    // Ensure drills are initialized
     useEffect(() => {
         if (drills.length === 0 && practiceInfo.drillsNumber > 0) {
-            // Drills haven't been created yet, create them now
             initDrills(practiceInfo.drillsNumber);
         }
-
-        // Ensure currentDrillIndex is within valid range
         if (drills.length > 0 && (currentDrillIndex >= drills.length || currentDrillIndex < 0)) {
             setCurrentDrillIndex(0);
         }
     }, [drills.length, currentDrillIndex, practiceInfo.drillsNumber, initDrills, setCurrentDrillIndex]);
 
-    const goToNextDrill = () => {
-        if (currentDrillIndex < drills.length - 1) {
-            saveWasteTime(wasteTime);
+    // Gap elapsed display timer
+    useEffect(() => {
+        if (!drillActive) {
+            gapDisplayStartRef.current = Date.now();
+            setGapElapsed(0);
+            const interval = setInterval(() => {
+                setGapElapsed(Date.now() - (gapDisplayStartRef.current || Date.now()));
+            }, 100);
+            return () => clearInterval(interval);
+        } else {
+            setGapElapsed(0);
+            gapDisplayStartRef.current = null;
+        }
+    }, [drillActive]);
+
+    const handleStartDrill = () => {
+        if (drillHasEnded) {
             setCurrentDrillIndex(currentDrillIndex + 1);
         }
+        setDrillHasEnded(false);
+        startDrill();
     };
 
-    const finishTraining = () => {
-        Object.keys(timers).forEach((id) => {
-            if (timers[id]?.isRunning) {
-                stopTimer(id);
-            }
-        });
-        saveWasteTime(wasteTime);
+    const handleEndDrill = () => {
+        endDrill();
+        setDrillHasEnded(true);
+    };
+
+    const handleFinishTraining = () => {
+        finishTracking();
         history.push('/page/results');
     };
-
-    const isLastDrill = currentDrillIndex === drills.length - 1;
 
     const handleTimerButtonClick = (actionId: string, isCurrentTimer: boolean, isRunning: boolean) => {
         if (isCurrentTimer && isRunning) {
@@ -108,6 +130,84 @@ const TimeWatcher: React.FC = () => {
         }
     };
 
+    // Next drill number to display (1-based)
+    const nextDrillNumber = drillHasEnded ? currentDrillIndex + 2 : currentDrillIndex + 1;
+
+    // --- GAP VIEW ---
+    if (!drillActive) {
+        const showFinishButton = drillHasEnded && isLastDrill;
+
+        return (
+            <IonPage>
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>{t('timeWatcher.pause')}</IonTitle>
+                    </IonToolbar>
+                </IonHeader>
+
+                <IonContent>
+                    <IonGrid>
+                        <IonRow>
+                            <IonCol>
+                                <IonCard>
+                                    <IonCardHeader>
+                                        <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <IonIcon icon={hourglassOutline} size="large" />
+                                            {t('timeWatcher.gapTime')}
+                                        </IonCardTitle>
+                                    </IonCardHeader>
+                                    <IonCardContent>
+                                        <IonItem>
+                                            <IonLabel>
+                                                <h2 style={{ fontSize: '2rem', textAlign: 'center' }}>
+                                                    {formatTime(gapElapsed)}
+                                                </h2>
+                                            </IonLabel>
+                                            <IonBadge slot="end" color="warning">
+                                                {t('timeWatcher.active')}
+                                            </IonBadge>
+                                        </IonItem>
+                                    </IonCardContent>
+                                </IonCard>
+                            </IonCol>
+                        </IonRow>
+                    </IonGrid>
+
+                    <IonFab vertical="bottom" horizontal="center" slot="fixed">
+                        {showFinishButton ? (
+                            <IonFabButton onClick={handleFinishTraining} color="success">
+                                <IonIcon icon={checkmarkCircleOutline} />
+                            </IonFabButton>
+                        ) : (
+                            <IonFabButton onClick={handleStartDrill} color="primary">
+                                <IonIcon icon={playCircleOutline} />
+                            </IonFabButton>
+                        )}
+                    </IonFab>
+
+                    {/* Label below FAB */}
+                    <div style={{
+                        position: 'fixed',
+                        bottom: 16,
+                        left: 0,
+                        right: 0,
+                        textAlign: 'center',
+                        pointerEvents: 'none',
+                        paddingBottom: 'env(safe-area-inset-bottom)'
+                    }}>
+                        <span style={{ fontSize: '0.85rem', color: '#666', marginTop: 70, display: 'block' }}>
+                            {showFinishButton
+                                ? t('timeWatcher.finishTraining')
+                                : `${t('timeWatcher.startDrill')} ${nextDrillNumber}`
+                            }
+                        </span>
+                    </div>
+                </IonContent>
+            </IonPage>
+        );
+    }
+
+    // --- DRILL ACTIVE VIEW ---
     return (
         <IonPage>
             <IonHeader>
@@ -156,8 +256,8 @@ const TimeWatcher: React.FC = () => {
                                                             <h3>{t(`actions.${action.id}`)}</h3>
                                                             <p>{formatTime(totalTime)}</p>
                                                         </IonLabel>
-                                                        <IonBadge 
-                                                            slot="end" 
+                                                        <IonBadge
+                                                            slot="end"
                                                             color={isCurrentTimer ? 'success' : 'medium'}
                                                         >
                                                             {isCurrentTimer ? t('timeWatcher.active') : t('timeWatcher.inactive')}
@@ -257,8 +357,8 @@ const TimeWatcher: React.FC = () => {
                                             <h3>{t('timeWatcher.wasteTime') || 'Waste Time'}</h3>
                                             <p>{formatTime(wasteTime)}</p>
                                         </IonLabel>
-                                        <IonBadge 
-                                            slot="end" 
+                                        <IonBadge
+                                            slot="end"
                                             color={!currentTimer ? 'warning' : 'medium'}
                                         >
                                             {!currentTimer ? t('timeWatcher.active') : t('timeWatcher.inactive')}
@@ -271,19 +371,27 @@ const TimeWatcher: React.FC = () => {
                 </IonGrid>
 
                 <IonFab vertical="bottom" horizontal="center" slot="fixed">
-                    {isLastDrill ? (
-                        <IonFabButton onClick={finishTraining} color="success">
-                            <IonIcon icon={checkmarkCircleOutline} />
-                        </IonFabButton>
-                    ) : (
-                        <IonFabButton onClick={goToNextDrill}>
-                            <IonIcon icon={arrowForward} />
-                        </IonFabButton>
-                    )}
+                    <IonFabButton onClick={handleEndDrill} color="danger">
+                        <IonIcon icon={stopCircleOutline} />
+                    </IonFabButton>
                 </IonFab>
+
+                <div style={{
+                    position: 'fixed',
+                    bottom: 16,
+                    left: 0,
+                    right: 0,
+                    textAlign: 'center',
+                    pointerEvents: 'none',
+                    paddingBottom: 'env(safe-area-inset-bottom)'
+                }}>
+                    <span style={{ fontSize: '0.85rem', color: '#666', marginTop: 70, display: 'block' }}>
+                        {t('timeWatcher.endDrill')}
+                    </span>
+                </div>
             </IonContent>
         </IonPage>
     );
 };
 
-export default TimeWatcher; 
+export default TimeWatcher;

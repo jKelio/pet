@@ -27,8 +27,7 @@ export interface TimerContextType {
     counters: Record<string, CounterState>;
     currentTimer: string | null;
     wasteTime: number;
-    wasteTrackingActive: boolean;
-    setWasteTrackingActive: (active: boolean) => void;
+    drillActive: boolean;
     startTimer: (actionId: string) => void;
     pauseTimer: (actionId: string) => void;
     stopTimer: (actionId: string) => void;
@@ -37,7 +36,10 @@ export interface TimerContextType {
     formatTime: (milliseconds: number) => string;
     saveTimerData: (actionId: string, timerData: TimerData) => void;
     saveCounterData: (actionId: string, count: number) => void;
-    saveWasteTime: (wasteTime: number) => void;
+    startTracking: () => void;
+    startDrill: () => void;
+    endDrill: () => void;
+    finishTracking: () => void;
 }
 
 export const TimerContext = createContext<TimerContextType | undefined>(undefined);

@@ -19,6 +19,7 @@ const TrackingContextProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         totalTime: 0,
         trackedPlayerName: '',
         drillsNumber: 0,
+        wasteTime: { totalTime: 0, timeSegments: [] },
     });
     const [drills, setDrills] = useState<Drill[]>([]);
     const [currentDrillIndex, setCurrentDrillIndex] = useState<number>(0);
