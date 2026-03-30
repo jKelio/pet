@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: hsl(210 40% 98%);
+  --color-foreground: hsl(222 47% 11%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222 47% 11%);
+  --color-primary: hsl(222 89% 13%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(214 100% 56%);
+  --color-secondary-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(210 40% 96%);
+  --color-muted-foreground: hsl(215 16% 47%);
+  --color-accent: hsl(214 100% 56%);
+  --color-accent-foreground: hsl(0 0% 100%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(214 32% 91%);
+  --color-input: hsl(214 32% 91%);
+  --color-ring: hsl(222 89% 13%);
+  --radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-background: hsl(222 89% 13%);
+    --color-foreground: hsl(0 0% 100%);
+    --color-card: hsl(222 72% 17%);
+    --color-card-foreground: hsl(0 0% 100%);
+    --color-primary: hsl(213 100% 65%);
+    --color-primary-foreground: hsl(222 47% 11%);
+    --color-muted: hsl(217 33% 20%);
+    --color-muted-foreground: hsl(215 20% 65%);
+    --color-accent: hsl(213 100% 65%);
+    --color-accent-foreground: hsl(222 47% 11%);
+    --color-destructive: hsl(0 63% 31%);
+    --color-border: hsl(217 33% 25%);
+    --color-input: hsl(217 33% 25%);
+    --color-ring: hsl(213 100% 65%);
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
