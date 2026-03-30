@@ -97,16 +97,24 @@ const Results: React.FC = () => {
 
     // Drill time data for bar chart and pie chart (total time per drill)
     const DRILL_COLORS = ['#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE', '#FF6699', '#33CC99', '#FF6666', '#66B3FF', '#FFCC99'];
-    const drillTimeData = drills.map((drill, index) => {
-        const drillTimerTime = Object.values(drill.timerData || {}).reduce((s, td) => s + (td.totalTime || 0), 0);
-        const drillTotal = drillTimerTime + (drill.wasteTime?.totalTime || 0);
-        return {
-            drillId: drill.id,
-            name: `${t('results.drill')} ${drill.id}`,
-            totalTime: drillTotal,
-            color: DRILL_COLORS[index % DRILL_COLORS.length],
-        };
-    }).filter(d => d.totalTime > 0);
+    const drillTimeData = [
+        ...drills.map((drill, index) => {
+            const drillTimerTime = Object.values(drill.timerData || {}).reduce((s, td) => s + (td.totalTime || 0), 0);
+            const drillTotal = drillTimerTime + (drill.wasteTime?.totalTime || 0);
+            return {
+                drillId: drill.id,
+                name: `${t('results.drill')} ${drill.id}`,
+                totalTime: drillTotal,
+                color: DRILL_COLORS[index % DRILL_COLORS.length],
+            };
+        }).filter(d => d.totalTime > 0),
+        ...(practiceInfo.wasteTime?.totalTime > 0 ? [{
+            drillId: -1,
+            name: t('timeWatcher.gapTime'),
+            totalTime: practiceInfo.wasteTime.totalTime,
+            color: '#808080',
+        }] : []),
+    ];
     const drillChartHeight = Math.max(200, drillTimeData.length * 40 + 50);
 
     // Helper function to get drill tag string

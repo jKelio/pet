@@ -7,7 +7,7 @@ interface TimerContextProviderProps {
 }
 
 const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children }) => {
-    const { drills, currentDrillIndex, setDrills, practiceInfo, setPracticeInfo } = useTrackingContext();
+    const { drills, currentDrillIndex, setDrills, setPracticeInfo } = useTrackingContext();
 
     const [timers, setTimers] = useState<Record<string, TimerState>>({});
     const [counters, setCounters] = useState<Record<string, CounterState>>({});
@@ -274,7 +274,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         }
     };
 
-    const stopTimer = (actionId: string) => {
+    const stopTimer = useCallback((actionId: string) => {
         const now = Date.now();
         setTimers(prev => {
             const timer = prev[actionId];
@@ -306,7 +306,7 @@ const TimerContextProvider: React.FC<TimerContextProviderProps> = ({ children })
         if (drillActiveRef.current) {
             wasteSegmentStartRef.current = Date.now();
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (isInitializingRef.current) return;
