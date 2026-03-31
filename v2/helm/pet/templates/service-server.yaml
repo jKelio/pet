@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "pet.fullname" . }}-server
+  labels:
+    {{- include "pet.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "pet.server.selectorLabels" . | nindent 4 }}
+  ports:
+    - port: {{ .Values.server.port }}
+      targetPort: {{ .Values.server.port }}
+      protocol: TCP
+      name: http

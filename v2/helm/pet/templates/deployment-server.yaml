@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pet.fullname" . }}-server
+  labels:
+    {{- include "pet.labels" . | nindent 4 }}
+    {{- include "pet.server.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.server.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pet.server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pet.server.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: server
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.server.port }}
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: {{ .Values.server.env.NODE_ENV | quote }}
+            - name: PORT
+              value: {{ .Values.server.env.PORT | quote }}
+            - name: HOST
+              value: {{ .Values.server.env.HOST | quote }}
+            - name: APP_BASE_URL
+              value: {{ .Values.server.env.APP_BASE_URL | default (printf "https://%s" .Values.ingress.host) | quote }}
+            - name: CORS_ORIGIN
+              value: {{ .Values.server.env.CORS_ORIGIN | default (printf "https://%s" .Values.ingress.host) | quote }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.server.existingSecret }}
+                  key: DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.server.existingSecret }}
+                  key: JWT_SECRET
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.server.existingSecret }}
+                  key: RESEND_API_KEY
+            - name: EMAIL_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.server.existingSecret }}
+                  key: EMAIL_FROM
+          readinessProbe:
+            {{- toYaml .Values.server.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.server.livenessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}

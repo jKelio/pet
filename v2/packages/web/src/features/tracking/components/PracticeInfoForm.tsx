@@ -2,12 +2,14 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '../../../shared/components/ui/input.js';
 import { Label } from '../../../shared/components/ui/label.js';
 import { useTrackingStore } from '../stores/tracking.store.js';
+import { useAdminStore } from '../../admin/stores/admin.store.js';
 
 export function PracticeInfoForm() {
   const { t } = useTranslation('pet');
   const practiceInfo = useTrackingStore((s) => s.practiceInfo);
   const setPracticeInfo = useTrackingStore((s) => s.setPracticeInfo);
   const initDrills = useTrackingStore((s) => s.initDrills);
+  const teams = useAdminStore((s) => s.teams);
 
   const update = (field: string, value: string | number) =>
     setPracticeInfo({ ...practiceInfo, [field]: value });
@@ -35,11 +37,27 @@ export function PracticeInfoForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="teamName">{t('general.teamLabel')}</Label>
-            <Input
-              id="teamName"
-              value={practiceInfo.teamName}
-              onChange={(e) => update('teamName', e.target.value)}
-            />
+            {teams.length > 0 ? (
+              <select
+                id="teamName"
+                value={practiceInfo.teamName}
+                onChange={(e) => update('teamName', e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">— Team wählen —</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.name}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                id="teamName"
+                value={practiceInfo.teamName}
+                onChange={(e) => update('teamName', e.target.value)}
+              />
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="date">{t('general.dateLabel')}</Label>

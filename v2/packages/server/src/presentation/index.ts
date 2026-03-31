@@ -6,6 +6,7 @@ import diPlugin from './plugins/di.plugin.js';
 import authMiddlewarePlugin from './middleware/auth.middleware.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerSessionRoutes } from './routes/session.routes.js';
+import { registerAdminRoutes } from './routes/admin.routes.js';
 
 function getConfig() {
   const required = ['DATABASE_URL', 'JWT_SECRET', 'RESEND_API_KEY', 'APP_BASE_URL', 'EMAIL_FROM'];
@@ -55,6 +56,7 @@ async function build() {
   registerAuthRoutes(fastify, {
     sendMagicLink: fastify.useCases.sendMagicLink,
     verifyMagicLink: fastify.useCases.verifyMagicLink,
+    refreshSession: fastify.useCases.refreshSession,
     refreshTokenCookieName: config.refreshTokenCookieName,
     isProduction: config.isProduction,
   });
@@ -62,6 +64,16 @@ async function build() {
   registerSessionRoutes(fastify, {
     syncSession: fastify.useCases.syncSession,
     sessionRepository: fastify.repos.session,
+  });
+
+  registerAdminRoutes(fastify, {
+    getMyProfile: fastify.useCases.getMyProfile,
+    onboardTenant: fastify.useCases.onboardTenant,
+    createTeam: fastify.useCases.createTeam,
+    listMembers: fastify.useCases.listMembers,
+    inviteMember: fastify.useCases.inviteMember,
+    removeMember: fastify.useCases.removeMember,
+    teamRepository: fastify.repos.team,
   });
 
   // Health check

@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Users, User, Trash2, ChevronRight, CloudOff } from 'lucide-react';
+import { Clock, Users, User, Trash2, ChevronRight, CloudOff, Cloud, Loader2 } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { db, type SavedSession } from './lib/db.js';
 import { useTrackingStore } from '../tracking/stores/tracking.store.js';
 import { useTimerStore } from '../tracking/stores/timer.store.js';
+import { useAuthStore } from '../auth/stores/auth.store.js';
+import { useAdminStore } from '../admin/stores/admin.store.js';
+import { sessionApi } from './api/session.api.js';
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString('de-DE', {
@@ -40,8 +43,11 @@ export function SessionHistoryPage() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<SavedSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const restoreFromDraft = useTrackingStore((s) => s.restoreFromDraft);
   const resetAll = useTimerStore((s) => s.resetAll);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const teams = useAdminStore((s) => s.teams);
 
   useEffect(() => {
     db.sessions
@@ -70,6 +76,29 @@ export function SessionHistoryPage() {
     // Restore into tracking store so ResultsPage can read it
     restoreFromDraft(session.id, session.practiceInfo, session.drills);
     navigate('/sessions');
+  };
+
+  const handleSync = async (session: SavedSession) => {
+    if (!accessToken) return;
+
+    // Use session's stored teamId or pick the first available team
+    const teamId = session.teamId ?? teams[0]?.id;
+    if (!teamId) return;
+
+    setSyncingId(session.id);
+    try {
+      await sessionApi.sync(
+        { id: session.id, teamId, practiceInfo: session.practiceInfo, drills: session.drills },
+        accessToken,
+      );
+      const now = Date.now();
+      await db.sessions.update(session.id, { syncedAt: now, teamId });
+      setSessions((prev) =>
+        prev.map((s) => (s.id === session.id ? { ...s, syncedAt: now, teamId } : s)),
+      );
+    } finally {
+      setSyncingId(null);
+    }
   };
 
   return (
@@ -145,6 +174,21 @@ export function SessionHistoryPage() {
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
+                    {accessToken && !session.syncedAt && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleSync(session)}
+                        disabled={syncingId === session.id}
+                        title="In Cloud synchronisieren"
+                      >
+                        {syncingId === session.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Cloud className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                     <Button
                       size="icon"
                       variant="ghost"

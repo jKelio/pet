@@ -72,6 +72,15 @@ export class PgUserRepository implements UserRepository {
 export class PgMembershipRepository implements MembershipRepository {
   constructor(private readonly db: DbClient) {}
 
+  async findById(id: string): Promise<Membership | null> {
+    const [row] = await this.db
+      .select()
+      .from(memberships)
+      .where(eq(memberships.id, id))
+      .limit(1);
+    return row ? this.toMembership(row) : null;
+  }
+
   async findByUserAndTenant(userId: string, tenantId: string): Promise<Membership | null> {
     const [row] = await this.db
       .select()
@@ -102,6 +111,10 @@ export class PgMembershipRepository implements MembershipRepository {
         target: [memberships.userId, memberships.tenantId],
         set: { role: membership.role },
       });
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(memberships).where(eq(memberships.id, id));
   }
 
   async assignTeam(membershipId: string, teamId: string): Promise<void> {

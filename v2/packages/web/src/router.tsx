@@ -14,6 +14,12 @@ const SessionHistoryPage = lazy(() =>
     default: m.SessionHistoryPage,
   })),
 );
+const AdminPage = lazy(() =>
+  import('./features/admin/AdminPage.js').then((m) => ({ default: m.AdminPage })),
+);
+const GlossaryPage = lazy(() =>
+  import('./features/glossary/GlossaryPage.js').then((m) => ({ default: m.GlossaryPage })),
+);
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -77,7 +83,9 @@ export const router = createBrowserRouter([
     path: '/glossary',
     element: (
       <AppShell>
-        <PlaceholderPage title="Glossar" />
+        <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
+          <GlossaryPage />
+        </Suspense>
       </AppShell>
     ),
   },
@@ -86,7 +94,9 @@ export const router = createBrowserRouter([
     element: (
       <AppShell>
         <ProtectedRoute>
-          <PlaceholderPage title="Team-Verwaltung" />
+          <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
+            <AdminPage />
+          </Suspense>
         </ProtectedRoute>
       </AppShell>
     ),

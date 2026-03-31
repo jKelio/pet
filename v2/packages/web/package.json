@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "bun test",
     "lint": "eslint src/"
   },
   "dependencies": {
@@ -49,7 +49,6 @@
     "autoprefixer": "10.4.27",
     "tailwindcss": "4.2.2",
     "typescript": "^5.7",
-    "vite": "^6",
-    "vitest": "^3"
+    "vite": "^6"
   }
 }

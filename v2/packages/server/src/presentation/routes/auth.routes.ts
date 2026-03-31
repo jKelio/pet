@@ -1,12 +1,15 @@
 import type { FastifyInstance } from 'fastify';
 import type { SendMagicLinkUseCase } from '../../application/use-cases/send-magic-link.js';
 import type { VerifyMagicLinkUseCase } from '../../application/use-cases/verify-magic-link.js';
+import type { RefreshSessionUseCase } from '../../application/use-cases/refresh-session.js';
 import { SendMagicLinkSchema, VerifyMagicLinkSchema } from '@pet/shared';
 import { InvalidTokenError, ExpiredTokenError } from '../../application/use-cases/verify-magic-link.js';
+import { InvalidRefreshTokenError } from '../../application/use-cases/refresh-session.js';
 
 interface AuthRoutesDeps {
   sendMagicLink: SendMagicLinkUseCase;
   verifyMagicLink: VerifyMagicLinkUseCase;
+  refreshSession: RefreshSessionUseCase;
   refreshTokenCookieName: string;
   isProduction: boolean;
 }
@@ -67,6 +70,34 @@ export function registerAuthRoutes(fastify: FastifyInstance, deps: AuthRoutesDep
         });
       }
       throw error;
+    }
+  });
+
+  // POST /auth/refresh — issue new access token from httpOnly refresh cookie
+  fastify.post('/auth/refresh', async (request, reply) => {
+    const refreshToken = request.cookies[deps.refreshTokenCookieName];
+    if (!refreshToken) {
+      return reply.code(401).send({ code: 'UNAUTHORIZED', message: 'No refresh token', statusCode: 401 });
+    }
+
+    try {
+      const { accessToken, refreshToken: newRefreshToken } = await deps.refreshSession.execute(refreshToken);
+
+      reply.setCookie(deps.refreshTokenCookieName, newRefreshToken, {
+        httpOnly: true,
+        secure: deps.isProduction,
+        sameSite: 'lax',
+        path: '/auth/refresh',
+        maxAge: 30 * 24 * 60 * 60,
+      });
+
+      return reply.code(200).send({ accessToken });
+    } catch (err) {
+      if (err instanceof InvalidRefreshTokenError) {
+        reply.clearCookie(deps.refreshTokenCookieName, { path: '/auth/refresh' });
+        return reply.code(401).send({ code: 'UNAUTHORIZED', message: err.message, statusCode: 401 });
+      }
+      throw err;
     }
   });
 
