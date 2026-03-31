@@ -10,7 +10,7 @@ import { registerSessionRoutes } from './routes/session.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
 
 function getConfig() {
-  const required = ['DATABASE_URL', 'JWT_SECRET', 'RESEND_API_KEY', 'APP_BASE_URL', 'EMAIL_FROM'];
+  const required = ['DATABASE_URL', 'JWT_SECRET', 'APP_BASE_URL', 'SMTP_FROM'];
   for (const key of required) {
     if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
   }
@@ -18,8 +18,14 @@ function getConfig() {
   return {
     databaseUrl: process.env.DATABASE_URL!,
     jwtSecret: process.env.JWT_SECRET!,
-    resendApiKey: process.env.RESEND_API_KEY!,
-    emailFromAddress: process.env.EMAIL_FROM!,
+    smtp: {
+      host: process.env.SMTP_HOST ?? 'localhost',
+      port: parseInt(process.env.SMTP_PORT ?? '1025', 10),
+      secure: process.env.SMTP_SECURE === 'true',
+      user: process.env.SMTP_USER || undefined,
+      pass: process.env.SMTP_PASS || undefined,
+      from: process.env.SMTP_FROM!,
+    },
     appBaseUrl: process.env.APP_BASE_URL!,
     isProduction: process.env.NODE_ENV === 'production',
     port: parseInt(process.env.PORT ?? '3000', 10),

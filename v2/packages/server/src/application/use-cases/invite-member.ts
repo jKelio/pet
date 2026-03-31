@@ -1,9 +1,15 @@
-import type { UserRepository, MembershipRepository } from '../../domain/ports/user.repository.js';
+import type { UserRepository, MembershipRepository, TenantRepository } from '../../domain/ports/user.repository.js';
+import type { EmailSender } from '../../domain/ports/email.sender.js';
+import { AuthService } from '../../domain/services/auth.service.js';
 import type { Membership, UserRole } from '@pet/shared';
 
 export interface InviteMemberDeps {
   userRepository: UserRepository;
   membershipRepository: MembershipRepository;
+  tenantRepository: TenantRepository;
+  emailSender: EmailSender;
+  authService: AuthService;
+  appBaseUrl: string;
 }
 
 export interface InviteMemberInput {
@@ -74,6 +80,24 @@ export class InviteMemberUseCase {
         input.teamIds.map((teamId) => this.deps.membershipRepository.assignTeam(membership.id, teamId)),
       );
     }
+
+    // Send invite email with a ready-to-use magic link
+    const tenant = await this.deps.tenantRepository.findById(tenantId);
+    const token = this.deps.authService.generateMagicLinkToken();
+    await this.deps.userRepository.saveMagicLinkToken(user.id, token.hash, token.expiresAt);
+    const magicLinkUrl = `${this.deps.appBaseUrl}/auth/verify?token=${token.raw}`;
+
+    await this.deps.emailSender.sendMagicLink({
+      to: user.email,
+      magicLinkUrl,
+      userName: user.name || undefined,
+      inviteContext: {
+        tenantName: tenant?.name ?? 'deinem Club',
+        role: input.role,
+      },
+    }).catch(() => {
+      // Don't fail the invite if email delivery fails — membership is already created
+    });
 
     return membership;
   }

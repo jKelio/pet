@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Timer,
@@ -14,6 +14,7 @@ import {
 import { Button } from '../ui/button.js';
 import { cn } from '../../lib/utils.js';
 import { useAuth } from '../../../features/auth/hooks/useAuth.js';
+import { useAdminStore } from '../../../features/admin/stores/admin.store.js';
 
 interface NavItem {
   label: string;
@@ -36,10 +37,19 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, accessToken, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const loadProfile = useAdminStore((s) => s.loadProfile);
+  const membership = useAdminStore((s) => s.membership);
+
+  // Load profile once on first authenticated render so teams/tenant are available app-wide
+  useEffect(() => {
+    if (isAuthenticated && accessToken && !membership) {
+      loadProfile(accessToken);
+    }
+  }, [isAuthenticated, accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = async () => {
     await logout();

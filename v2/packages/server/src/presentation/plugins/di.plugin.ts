@@ -4,7 +4,7 @@ import { createDbClient } from '../../infrastructure/db/client.js';
 import { PgUserRepository, PgMembershipRepository } from '../../infrastructure/repositories/pg-user.repository.js';
 import { PgTeamRepository, PgTenantRepository } from '../../infrastructure/repositories/pg-team.repository.js';
 import { PgSessionRepository } from '../../infrastructure/repositories/pg-session.repository.js';
-import { ResendEmailSender } from '../../infrastructure/services/resend-email.sender.js';
+import { SmtpEmailSender } from '../../infrastructure/services/smtp-email.sender.js';
 import { JoseTokenService } from '../../infrastructure/services/jose-token.service.js';
 import { AuthService } from '../../domain/services/auth.service.js';
 import { SendMagicLinkUseCase } from '../../application/use-cases/send-magic-link.js';
@@ -21,8 +21,14 @@ import { RemoveMemberUseCase } from '../../application/use-cases/remove-member.j
 export interface AppConfig {
   databaseUrl: string;
   jwtSecret: string;
-  resendApiKey: string;
-  emailFromAddress: string;
+  smtp: {
+    host: string;
+    port: number;
+    secure: boolean;
+    user?: string;
+    pass?: string;
+    from: string;
+  };
   appBaseUrl: string;
   isProduction: boolean;
 }
@@ -56,7 +62,7 @@ declare module 'fastify' {
 const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const db = createDbClient(config.databaseUrl);
   const tokenService = new JoseTokenService(config.jwtSecret);
-  const emailSender = new ResendEmailSender(config.resendApiKey, config.emailFromAddress);
+  const emailSender = new SmtpEmailSender(config.smtp);
   const authService = new AuthService();
 
   // Repositories
@@ -111,7 +117,14 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   });
 
   const listMembers = new ListMembersUseCase({ userRepository, membershipRepository });
-  const inviteMember = new InviteMemberUseCase({ userRepository, membershipRepository });
+  const inviteMember = new InviteMemberUseCase({
+    userRepository,
+    membershipRepository,
+    tenantRepository,
+    emailSender,
+    authService,
+    appBaseUrl: config.appBaseUrl,
+  });
   const removeMember = new RemoveMemberUseCase({ membershipRepository });
 
   fastify.decorate('config', config);
