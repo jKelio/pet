@@ -1,4 +1,4 @@
-import type { UserRepository } from '../../domain/ports/user.repository.js';
+import type { UserRepository, MembershipRepository } from '../../domain/ports/user.repository.js';
 import { AuthService } from '../../domain/services/auth.service.js';
 import type { User } from '@pet/shared';
 
@@ -9,6 +9,7 @@ export interface TokenIssuer {
 
 export interface VerifyMagicLinkDeps {
   userRepository: UserRepository;
+  membershipRepository: MembershipRepository;
   authService: AuthService;
   tokenIssuer: TokenIssuer;
 }
@@ -39,8 +40,12 @@ export class VerifyMagicLinkUseCase {
 
     const { tokenExpiresAt: _, ...user } = userWithExpiry;
 
+    // Embed tenantId in JWT so protected routes have tenant context without extra DB calls
+    const memberships = await this.deps.membershipRepository.findByUser(user.id);
+    const tenantId = memberships[0]?.tenantId;
+
     const [accessToken, refreshToken] = await Promise.all([
-      this.deps.tokenIssuer.issueAccessToken(user),
+      this.deps.tokenIssuer.issueAccessToken(user, tenantId),
       this.deps.tokenIssuer.issueRefreshToken(user.id),
     ]);
 

@@ -5,7 +5,7 @@ import {
   ExpiredTokenError,
 } from './verify-magic-link.js';
 import { AuthService } from '../../domain/services/auth.service.js';
-import type { UserRepository } from '../../domain/ports/user.repository.js';
+import type { UserRepository, MembershipRepository } from '../../domain/ports/user.repository.js';
 import type { User } from '@pet/shared';
 
 function makeUserWithExpiry(overrides?: Partial<{ tokenExpiresAt: Date }>) {
@@ -27,10 +27,20 @@ function makeRepo(userWithExpiry: ReturnType<typeof makeUserWithExpiry> | null):
     clearMagicLinkToken: mock(async () => {}),
     updateLastLogin: mock(async () => {}),
     findByMagicLinkToken: mock(async () => userWithExpiry),
-    findByRefreshToken: mock(async () => null),
-    saveRefreshToken: mock(async () => {}),
-    clearRefreshToken: mock(async () => {}),
   } as unknown as UserRepository;
+}
+
+function makeMembershipRepo(): MembershipRepository {
+  return {
+    findById: mock(async () => null),
+    findByUser: mock(async () => []),
+    findByUserAndTenant: mock(async () => null),
+    findByTenant: mock(async () => []),
+    save: mock(async () => {}),
+    delete: mock(async () => {}),
+    assignTeam: mock(async () => {}),
+    getTeamIds: mock(async () => []),
+  } as unknown as MembershipRepository;
 }
 
 const tokenIssuer = {
@@ -51,7 +61,7 @@ describe('VerifyMagicLinkUseCase', () => {
   test('returns tokens and user for a valid, unexpired token', async () => {
     const userWithExpiry = makeUserWithExpiry();
     const repo = makeRepo(userWithExpiry);
-    const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, authService, tokenIssuer });
+    const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, membershipRepository: makeMembershipRepo(), authService, tokenIssuer });
 
     const result = await useCase.execute('any-raw-token');
 
@@ -64,7 +74,7 @@ describe('VerifyMagicLinkUseCase', () => {
   test('clears the token and records last login on success', async () => {
     const userWithExpiry = makeUserWithExpiry();
     const repo = makeRepo(userWithExpiry);
-    const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, authService, tokenIssuer });
+    const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, membershipRepository: makeMembershipRepo(), authService, tokenIssuer });
 
     await useCase.execute('any-raw-token');
 
@@ -74,7 +84,7 @@ describe('VerifyMagicLinkUseCase', () => {
 
   test('throws InvalidTokenError when token is not found', async () => {
     const repo = makeRepo(null);
-    const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, authService, tokenIssuer });
+    const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, membershipRepository: makeMembershipRepo(), authService, tokenIssuer });
 
     expect(useCase.execute('bad-token')).rejects.toBeInstanceOf(InvalidTokenError);
   });
@@ -82,7 +92,7 @@ describe('VerifyMagicLinkUseCase', () => {
   test('throws ExpiredTokenError when token is past its expiry', async () => {
     const userWithExpiry = makeUserWithExpiry({ tokenExpiresAt: new Date(Date.now() - 1000) });
     const repo = makeRepo(userWithExpiry);
-    const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, authService, tokenIssuer });
+    const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, membershipRepository: makeMembershipRepo(), authService, tokenIssuer });
 
     expect(useCase.execute('expired-token')).rejects.toBeInstanceOf(ExpiredTokenError);
   });

@@ -76,6 +76,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
 
   const verifyMagicLink = new VerifyMagicLinkUseCase({
     userRepository,
+    membershipRepository,
     authService,
     tokenIssuer: tokenService,
   });
@@ -106,6 +107,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const refreshSession = new RefreshSessionUseCase({
     tokenService,
     userRepository,
+    membershipRepository,
   });
 
   const listMembers = new ListMembersUseCase({ userRepository, membershipRepository });

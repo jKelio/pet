@@ -81,6 +81,14 @@ export class PgMembershipRepository implements MembershipRepository {
     return row ? this.toMembership(row) : null;
   }
 
+  async findByUser(userId: string): Promise<Membership[]> {
+    const rows = await this.db
+      .select()
+      .from(memberships)
+      .where(eq(memberships.userId, userId));
+    return rows.map(this.toMembership);
+  }
+
   async findByUserAndTenant(userId: string, tenantId: string): Promise<Membership | null> {
     const [row] = await this.db
       .select()

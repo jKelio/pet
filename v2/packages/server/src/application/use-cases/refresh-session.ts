@@ -1,9 +1,10 @@
-import type { UserRepository } from '../../domain/ports/user.repository.js';
+import type { UserRepository, MembershipRepository } from '../../domain/ports/user.repository.js';
 import type { JoseTokenService } from '../../infrastructure/services/jose-token.service.js';
 
 export interface RefreshSessionDeps {
   tokenService: JoseTokenService;
   userRepository: UserRepository;
+  membershipRepository: MembershipRepository;
 }
 
 export interface RefreshSessionResult {
@@ -37,9 +38,11 @@ export class RefreshSessionUseCase {
     const user = await this.deps.userRepository.findById(verified.userId);
     if (!user) throw new InvalidRefreshTokenError();
 
-    // Issue new token pair — access token has no tenantId; client calls /me to restore context
+    const memberships = await this.deps.membershipRepository.findByUser(user.id);
+    const tenantId = memberships[0]?.tenantId;
+
     const [accessToken, refreshToken] = await Promise.all([
-      this.deps.tokenService.issueAccessToken(user),
+      this.deps.tokenService.issueAccessToken(user, tenantId),
       this.deps.tokenService.issueRefreshToken(user.id),
     ]);
 

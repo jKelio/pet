@@ -24,6 +24,7 @@ export interface TeamRepository {
 
 export interface MembershipRepository {
   findById(id: string): Promise<Membership | null>;
+  findByUser(userId: string): Promise<Membership[]>;
   findByUserAndTenant(userId: string, tenantId: string): Promise<Membership | null>;
   findByTenant(tenantId: string): Promise<Membership[]>;
   save(membership: Membership): Promise<void>;
