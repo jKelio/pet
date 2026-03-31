@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   PieChart,
   Pie,
@@ -55,6 +55,8 @@ function formatDuration(ms: number): string {
 export function ResultsPage() {
   const { t } = useTranslation('pet');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const viewOnly = searchParams.get('view') === '1';
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
@@ -64,9 +66,9 @@ export function ResultsPage() {
   const practiceInfo = useTrackingStore((s) => s.practiceInfo);
   const resetAllData = useTrackingStore((s) => s.resetAllData);
 
-  // Save completed session to IndexedDB once when results page mounts
+  // Save completed session to IndexedDB — skipped in view-only mode (cloud sessions)
   useEffect(() => {
-    if (drills.length > 0) {
+    if (!viewOnly && drills.length > 0) {
       completeSession(sessionId, practiceInfo, drills).catch(() => {});
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -193,6 +195,8 @@ export function ResultsPage() {
     navigate('/');
   };
 
+  const handleBack = () => navigate(-1);
+
   if (drills.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
@@ -221,10 +225,17 @@ export function ResultsPage() {
               {isExporting ? exportStatus || 'Exportiere…' : 'PDF Export'}
             </span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleReset}>
-            <RotateCcw className="h-4 w-4" />
-            <span className="ml-1.5 hidden sm:inline">Neues Training</span>
-          </Button>
+          {viewOnly ? (
+            <Button variant="outline" size="sm" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4" />
+              <span className="ml-1.5 hidden sm:inline">Zurück</span>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              <RotateCcw className="h-4 w-4" />
+              <span className="ml-1.5 hidden sm:inline">Neues Training</span>
+            </Button>
+          )}
         </div>
       </div>
 

@@ -57,7 +57,7 @@ export function CloudSessionsPage() {
   const handleOpen = (session: PracticeSession) => {
     resetAll();
     restoreFromDraft('cloud-' + session.id, session.practiceInfo, session.drills);
-    navigate('/sessions');
+    navigate('/sessions?view=1');
   };
 
   if (!accessToken) return null;

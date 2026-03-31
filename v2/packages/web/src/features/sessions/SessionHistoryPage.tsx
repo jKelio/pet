@@ -73,9 +73,8 @@ export function SessionHistoryPage() {
   };
 
   const handleViewResults = (session: SavedSession) => {
-    // Restore into tracking store so ResultsPage can read it
     restoreFromDraft(session.id, session.practiceInfo, session.drills);
-    navigate('/sessions');
+    navigate('/sessions?view=1');
   };
 
   const handleSync = async (session: SavedSession) => {
