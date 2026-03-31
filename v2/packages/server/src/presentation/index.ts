@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
+import rateLimit from '@fastify/rate-limit';
 import fp from 'fastify-plugin';
 import diPlugin from './plugins/di.plugin.js';
 import authMiddlewarePlugin from './middleware/auth.middleware.js';
@@ -45,6 +46,13 @@ async function build() {
 
   // Cookies
   await fastify.register(cookie);
+
+  // Rate limiting — applied globally; magic-link route has a stricter override
+  await fastify.register(rateLimit, {
+    global: true,
+    max: 60,
+    timeWindow: '1 minute',
+  });
 
   // Dependency Injection
   await fastify.register(diPlugin, config);

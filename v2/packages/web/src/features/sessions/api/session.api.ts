@@ -5,4 +5,7 @@ import type { SyncSessionInput } from '@pet/shared';
 export const sessionApi = {
   sync: (payload: SyncSessionInput, accessToken: string) =>
     apiClient.post<PracticeSession>('/sessions/sync', payload, accessToken),
+
+  listByTeam: (teamId: string, accessToken: string) =>
+    apiClient.get<PracticeSession[]>(`/sessions?teamId=${encodeURIComponent(teamId)}`, accessToken),
 };

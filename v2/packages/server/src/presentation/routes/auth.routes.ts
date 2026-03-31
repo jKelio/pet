@@ -15,8 +15,10 @@ interface AuthRoutesDeps {
 }
 
 export function registerAuthRoutes(fastify: FastifyInstance, deps: AuthRoutesDeps): void {
-  // POST /auth/magic-link — request a magic link email
-  fastify.post('/auth/magic-link', async (request, reply) => {
+  // POST /auth/magic-link — request a magic link email (stricter rate limit: 5/15 min per IP)
+  fastify.post('/auth/magic-link', {
+    config: { rateLimit: { max: 5, timeWindow: '15 minutes' } },
+  }, async (request, reply) => {
     const result = SendMagicLinkSchema.safeParse(request.body);
     if (!result.success) {
       return reply.code(400).send({

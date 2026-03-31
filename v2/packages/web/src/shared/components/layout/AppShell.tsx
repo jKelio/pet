@@ -4,6 +4,7 @@ import {
   Timer,
   BarChart2,
   FolderOpen,
+  Cloud,
   Users,
   BookOpen,
   LogOut,
@@ -24,7 +25,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Tracking', href: '/', icon: Timer, requiresAuth: true },
   { label: 'Ergebnisse', href: '/sessions', icon: BarChart2, requiresAuth: true },
-  { label: 'Sessions', href: '/sessions/history', icon: FolderOpen, requiresAuth: true },
+  { label: 'Verlauf', href: '/sessions/history', icon: FolderOpen, requiresAuth: true },
+  { label: 'Cloud', href: '/sessions/cloud', icon: Cloud, requiresAuth: true },
   { label: 'Glossar', href: '/glossary', icon: BookOpen, requiresAuth: false },
   { label: 'Team', href: '/admin', icon: Users, requiresAuth: true },
 ];

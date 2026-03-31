@@ -16,6 +16,7 @@
   "dependencies": {
     "@fastify/cookie": "^11",
     "@fastify/cors": "^10",
+    "@fastify/rate-limit": "10.3.0",
     "@pet/shared": "workspace:*",
     "drizzle-orm": "^0.38",
     "fastify": "^5",

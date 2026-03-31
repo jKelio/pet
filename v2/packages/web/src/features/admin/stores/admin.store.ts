@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Team, Tenant, Membership, User, UserRole } from '@pet/shared';
 import { adminApi, type MemberWithUser } from '../api/admin.api.js';
+import { useAuthStore } from '../../auth/stores/auth.store.js';
 
 interface AdminState {
   user: User | null;
@@ -55,6 +56,15 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
         teams: [result.team],
         loading: false,
       });
+      // Refresh the access token so it includes the new tenantId for session sync
+      const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+      if (res.ok) {
+        const { accessToken: newToken } = await res.json() as { accessToken: string };
+        const authStore = useAuthStore.getState();
+        if (authStore.user) {
+          authStore.setAuth(newToken, authStore.user, result.membership.tenantId);
+        }
+      }
     } catch (err) {
       set({ loading: false, error: err instanceof Error ? err.message : 'Fehler beim Einrichten' });
       throw err;

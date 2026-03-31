@@ -17,6 +17,9 @@ const SessionHistoryPage = lazy(() =>
 const AdminPage = lazy(() =>
   import('./features/admin/AdminPage.js').then((m) => ({ default: m.AdminPage })),
 );
+const CloudSessionsPage = lazy(() =>
+  import('./features/sessions/CloudSessionsPage.js').then((m) => ({ default: m.CloudSessionsPage })),
+);
 const GlossaryPage = lazy(() =>
   import('./features/glossary/GlossaryPage.js').then((m) => ({ default: m.GlossaryPage })),
 );
@@ -74,6 +77,18 @@ export const router = createBrowserRouter([
         <ProtectedRoute>
           <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
             <SessionHistoryPage />
+          </Suspense>
+        </ProtectedRoute>
+      </AppShell>
+    ),
+  },
+  {
+    path: '/sessions/cloud',
+    element: (
+      <AppShell>
+        <ProtectedRoute>
+          <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
+            <CloudSessionsPage />
           </Suspense>
         </ProtectedRoute>
       </AppShell>
