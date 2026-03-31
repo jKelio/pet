@@ -17,6 +17,11 @@ import { RefreshSessionUseCase } from '../../application/use-cases/refresh-sessi
 import { ListMembersUseCase } from '../../application/use-cases/list-members.js';
 import { InviteMemberUseCase } from '../../application/use-cases/invite-member.js';
 import { RemoveMemberUseCase } from '../../application/use-cases/remove-member.js';
+import { SuperAdminListTenantsUseCase } from '../../application/use-cases/superadmin-list-tenants.js';
+import { SuperAdminDeleteTenantUseCase } from '../../application/use-cases/superadmin-delete-tenant.js';
+import { SuperAdminAddClubAdminUseCase } from '../../application/use-cases/superadmin-add-club-admin.js';
+import { GetMyTenantsUseCase } from '../../application/use-cases/get-my-tenants.js';
+import { SwitchTenantUseCase } from '../../application/use-cases/switch-tenant.js';
 
 export interface AppConfig {
   databaseUrl: string;
@@ -31,6 +36,7 @@ export interface AppConfig {
   };
   appBaseUrl: string;
   isProduction: boolean;
+  superAdminEmails: string[];
 }
 
 declare module 'fastify' {
@@ -47,6 +53,11 @@ declare module 'fastify' {
       listMembers: ListMembersUseCase;
       inviteMember: InviteMemberUseCase;
       removeMember: RemoveMemberUseCase;
+      superAdminListTenants: SuperAdminListTenantsUseCase;
+      superAdminDeleteTenant: SuperAdminDeleteTenantUseCase;
+      superAdminAddClubAdmin: SuperAdminAddClubAdminUseCase;
+      getMyTenants: GetMyTenantsUseCase;
+      switchTenant: SwitchTenantUseCase;
     };
     repos: {
       session: PgSessionRepository;
@@ -78,6 +89,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     emailSender,
     authService,
     appBaseUrl: config.appBaseUrl,
+    superAdminEmails: config.superAdminEmails,
   });
 
   const verifyMagicLink = new VerifyMagicLinkUseCase({
@@ -116,6 +128,12 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     membershipRepository,
   });
 
+  const superAdminListTenants = new SuperAdminListTenantsUseCase({ tenantRepository });
+  const superAdminDeleteTenant = new SuperAdminDeleteTenantUseCase({ tenantRepository });
+  const superAdminAddClubAdmin = new SuperAdminAddClubAdminUseCase({ userRepository, membershipRepository, tenantRepository });
+  const getMyTenants = new GetMyTenantsUseCase({ membershipRepository, tenantRepository });
+  const switchTenant = new SwitchTenantUseCase({ userRepository, membershipRepository, tokenIssuer: tokenService });
+
   const listMembers = new ListMembersUseCase({ userRepository, membershipRepository });
   const inviteMember = new InviteMemberUseCase({
     userRepository,
@@ -140,6 +158,11 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     listMembers,
     inviteMember,
     removeMember,
+    superAdminListTenants,
+    superAdminDeleteTenant,
+    superAdminAddClubAdmin,
+    getMyTenants,
+    switchTenant,
   });
   fastify.decorate('repos', {
     session: sessionRepository,

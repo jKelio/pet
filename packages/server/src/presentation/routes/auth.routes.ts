@@ -2,14 +2,19 @@ import type { FastifyInstance } from 'fastify';
 import type { SendMagicLinkUseCase } from '../../application/use-cases/send-magic-link.js';
 import type { VerifyMagicLinkUseCase } from '../../application/use-cases/verify-magic-link.js';
 import type { RefreshSessionUseCase } from '../../application/use-cases/refresh-session.js';
+import type { GetMyTenantsUseCase } from '../../application/use-cases/get-my-tenants.js';
+import type { SwitchTenantUseCase } from '../../application/use-cases/switch-tenant.js';
 import { SendMagicLinkSchema, VerifyMagicLinkSchema } from '@pet/shared';
 import { InvalidTokenError, ExpiredTokenError } from '../../application/use-cases/verify-magic-link.js';
 import { InvalidRefreshTokenError } from '../../application/use-cases/refresh-session.js';
+import { ForbiddenError } from '../../application/use-cases/switch-tenant.js';
 
 interface AuthRoutesDeps {
   sendMagicLink: SendMagicLinkUseCase;
   verifyMagicLink: VerifyMagicLinkUseCase;
   refreshSession: RefreshSessionUseCase;
+  getMyTenants: GetMyTenantsUseCase;
+  switchTenant: SwitchTenantUseCase;
   refreshTokenCookieName: string;
   isProduction: boolean;
 }
@@ -107,5 +112,28 @@ export function registerAuthRoutes(fastify: FastifyInstance, deps: AuthRoutesDep
   fastify.post('/auth/logout', async (request, reply) => {
     reply.clearCookie(deps.refreshTokenCookieName, { path: '/auth/refresh' });
     return reply.code(200).send({ message: 'Logged out' });
+  });
+
+  // GET /auth/my-tenants — list all tenants the authenticated user belongs to
+  fastify.get('/auth/my-tenants', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+    const tenants = await deps.getMyTenants.execute(request.userId);
+    return reply.code(200).send(tenants);
+  });
+
+  // POST /auth/switch-tenant — issue a new access token for a different tenant
+  fastify.post('/auth/switch-tenant', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+    const { tenantId } = request.body as { tenantId?: string };
+    if (!tenantId) {
+      return reply.code(400).send({ code: 'VALIDATION_ERROR', message: 'tenantId is required', statusCode: 400 });
+    }
+    try {
+      const { accessToken } = await deps.switchTenant.execute(request.userId, tenantId);
+      return reply.code(200).send({ accessToken });
+    } catch (err) {
+      if (err instanceof ForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
+      }
+      throw err;
+    }
   });
 }

@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import type { DbClient } from '../db/client.js';
 import { tenants, teams } from '../db/schema.js';
 import type { TenantRepository, TeamRepository } from '../../domain/ports/user.repository.js';
@@ -51,11 +51,20 @@ export class PgTenantRepository implements TenantRepository {
     return row ? this.toTenant(row) : null;
   }
 
+  async findAll(): Promise<Tenant[]> {
+    const rows = await this.db.select().from(tenants).orderBy(desc(tenants.createdAt));
+    return rows.map((r) => this.toTenant(r));
+  }
+
   async save(tenant: Tenant): Promise<void> {
     await this.db
       .insert(tenants)
       .values({ id: tenant.id, name: tenant.name, slug: tenant.slug, plan: tenant.plan })
       .onConflictDoUpdate({ target: tenants.id, set: { name: tenant.name, slug: tenant.slug } });
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(tenants).where(eq(tenants.id, id));
   }
 
   private toTenant(row: typeof tenants.$inferSelect): Tenant {

@@ -5,9 +5,11 @@ import rateLimit from '@fastify/rate-limit';
 import fp from 'fastify-plugin';
 import diPlugin from './plugins/di.plugin.js';
 import authMiddlewarePlugin from './middleware/auth.middleware.js';
+import superAdminMiddlewarePlugin from './middleware/superadmin.middleware.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerSessionRoutes } from './routes/session.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
+import { registerSuperAdminRoutes } from './routes/superadmin.routes.js';
 
 function getConfig() {
   const required = ['DATABASE_URL', 'JWT_SECRET', 'APP_BASE_URL', 'SMTP_FROM'];
@@ -32,6 +34,8 @@ function getConfig() {
     host: process.env.HOST ?? '0.0.0.0',
     corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     refreshTokenCookieName: 'pet_refresh_token',
+    superAdminEmails: (process.env.SUPER_ADMIN_EMAILS ?? '')
+      .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
   };
 }
 
@@ -65,29 +69,45 @@ async function build() {
 
   // Auth middleware decorator
   await fastify.register(fp(authMiddlewarePlugin), { tokenService: fastify.tokenService });
+  await fastify.register(fp(superAdminMiddlewarePlugin), { superAdminEmails: config.superAdminEmails });
 
   // Routes
   registerAuthRoutes(fastify, {
     sendMagicLink: fastify.useCases.sendMagicLink,
     verifyMagicLink: fastify.useCases.verifyMagicLink,
     refreshSession: fastify.useCases.refreshSession,
+    getMyTenants: fastify.useCases.getMyTenants,
+    switchTenant: fastify.useCases.switchTenant,
     refreshTokenCookieName: config.refreshTokenCookieName,
     isProduction: config.isProduction,
   });
 
-  registerSessionRoutes(fastify, {
-    syncSession: fastify.useCases.syncSession,
-    sessionRepository: fastify.repos.session,
+  await fastify.register(async (scope) => {
+    registerSessionRoutes(scope, {
+      syncSession: fastify.useCases.syncSession,
+      sessionRepository: fastify.repos.session,
+    });
   });
 
-  registerAdminRoutes(fastify, {
-    getMyProfile: fastify.useCases.getMyProfile,
-    onboardTenant: fastify.useCases.onboardTenant,
-    createTeam: fastify.useCases.createTeam,
-    listMembers: fastify.useCases.listMembers,
-    inviteMember: fastify.useCases.inviteMember,
-    removeMember: fastify.useCases.removeMember,
-    teamRepository: fastify.repos.team,
+  await fastify.register(async (scope) => {
+    registerAdminRoutes(scope, {
+      getMyProfile: fastify.useCases.getMyProfile,
+      onboardTenant: fastify.useCases.onboardTenant,
+      createTeam: fastify.useCases.createTeam,
+      listMembers: fastify.useCases.listMembers,
+      inviteMember: fastify.useCases.inviteMember,
+      removeMember: fastify.useCases.removeMember,
+      teamRepository: fastify.repos.team,
+    });
+  });
+
+  await fastify.register(async (scope) => {
+    registerSuperAdminRoutes(scope, {
+      listTenants: fastify.useCases.superAdminListTenants,
+      deleteTenant: fastify.useCases.superAdminDeleteTenant,
+      addClubAdmin: fastify.useCases.superAdminAddClubAdmin,
+      onboardTenant: fastify.useCases.onboardTenant,
+    });
   });
 
   // Health check

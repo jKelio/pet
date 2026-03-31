@@ -9,6 +9,7 @@ export interface SendMagicLinkDeps {
   emailSender: EmailSender;
   authService: AuthService;
   appBaseUrl: string;
+  superAdminEmails: string[];
 }
 
 export class SendMagicLinkUseCase {
@@ -21,8 +22,22 @@ export class SendMagicLinkUseCase {
     let user = await this.deps.userRepository.findByEmail(emailStr);
 
     if (!user) {
-      user = this.createNewUser(emailStr);
-      await this.deps.userRepository.save(user);
+      const isSuperAdmin = this.deps.superAdminEmails
+        .map((e) => e.toLowerCase())
+        .includes(emailStr.toLowerCase());
+
+      // No auto-registration — only pre-invited users or superadmin emails can log in.
+      // Return silently to prevent email enumeration.
+      if (!isSuperAdmin) return;
+
+      const newUser: User = {
+        id: crypto.randomUUID(),
+        email: emailStr,
+        name: '',
+        memberships: [],
+      };
+      await this.deps.userRepository.save(newUser);
+      user = newUser;
     }
 
     const token = this.deps.authService.generateMagicLinkToken();
@@ -37,12 +52,4 @@ export class SendMagicLinkUseCase {
     });
   }
 
-  private createNewUser(email: string): User {
-    return {
-      id: crypto.randomUUID(),
-      email,
-      name: '',
-      createdAt: new Date().toISOString(),
-    };
-  }
 }

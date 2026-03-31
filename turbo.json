@@ -21,6 +21,16 @@
     },
     "db:migrate": {
       "cache": false
+    },
+    "db:seed": {
+      "cache": false
+    },
+    "db:truncate": {
+      "cache": false
+    },
+    "db:studio": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

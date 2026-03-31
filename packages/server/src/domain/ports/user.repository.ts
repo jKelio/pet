@@ -13,7 +13,9 @@ export interface UserRepository {
 export interface TenantRepository {
   findById(id: string): Promise<Tenant | null>;
   findBySlug(slug: string): Promise<Tenant | null>;
+  findAll(): Promise<Tenant[]>;
   save(tenant: Tenant): Promise<void>;
+  delete(id: string): Promise<void>;
 }
 
 export interface TeamRepository {

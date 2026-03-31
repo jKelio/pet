@@ -111,6 +111,12 @@ export interface Team {
   createdAt: string;
 }
 
+export interface TenantMembership {
+  tenantId: string;
+  tenantName: string;
+  role: UserRole;
+}
+
 // ─── API Contracts ────────────────────────────────────────────────────────────
 
 export interface AuthTokens {

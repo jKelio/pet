@@ -15,6 +15,7 @@ import { Button } from '../ui/button.js';
 import { cn } from '../../lib/utils.js';
 import { useAuth } from '../../../features/auth/hooks/useAuth.js';
 import { useAdminStore } from '../../../features/admin/stores/admin.store.js';
+import { TenantSwitcher } from './TenantSwitcher.js';
 
 interface NavItem {
   label: string;
@@ -74,8 +75,9 @@ export function AppShell({ children }: AppShellProps) {
           <span className="text-xs text-muted-foreground">v2</span>
         </Link>
         {user && (
-          <p className="text-sm text-muted-foreground mt-2 truncate">{user.email}</p>
+          <p className="text-xs text-muted-foreground mt-2 truncate">{user.email}</p>
         )}
+        {isAuthenticated && <TenantSwitcher />}
       </div>
 
       {/* Nav Links */}

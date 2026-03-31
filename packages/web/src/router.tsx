@@ -23,6 +23,9 @@ const CloudSessionsPage = lazy(() =>
 const GlossaryPage = lazy(() =>
   import('./features/glossary/GlossaryPage.js').then((m) => ({ default: m.GlossaryPage })),
 );
+const SuperAdminPage = lazy(() =>
+  import('./features/superadmin/SuperAdminPage.js').then((m) => ({ default: m.SuperAdminPage })),
+);
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -111,6 +114,18 @@ export const router = createBrowserRouter([
         <ProtectedRoute>
           <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
             <AdminPage />
+          </Suspense>
+        </ProtectedRoute>
+      </AppShell>
+    ),
+  },
+  {
+    path: '/superadmin',
+    element: (
+      <AppShell>
+        <ProtectedRoute>
+          <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
+            <SuperAdminPage />
           </Suspense>
         </ProtectedRoute>
       </AppShell>

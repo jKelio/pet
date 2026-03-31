@@ -1,5 +1,5 @@
 import { apiClient } from '../../../shared/lib/api-client.js';
-import type { User, AuthTokens } from '@pet/shared';
+import type { User, AuthTokens, TenantMembership } from '@pet/shared';
 
 export interface VerifyResponse extends AuthTokens {
   user: User;
@@ -14,4 +14,10 @@ export const authApi = {
 
   logout: () =>
     apiClient.post<{ message: string }>('/auth/logout', {}),
+
+  getMyTenants: (accessToken: string) =>
+    apiClient.get<TenantMembership[]>('/auth/my-tenants', accessToken),
+
+  switchTenant: (tenantId: string, accessToken: string) =>
+    apiClient.post<{ accessToken: string }>('/auth/switch-tenant', { tenantId }, accessToken),
 };
