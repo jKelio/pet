@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed 's/.*:<//')",
+      "Bash(xargs grep:*)",
+      "Bash(bun:*)",
+      "Bash(export PATH=\"$HOME/.bun/bin:$PATH\")",
+      "Bash(mkdir -p C:/Users/leonj/repositories/pet/v2)",
+      "Bash(mkdir -p packages/shared/src packages/web/src packages/server/src)"
+    ]
+  }
+}

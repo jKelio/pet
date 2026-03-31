@@ -1,16 +1,10 @@
-name: v2 CI
+name: CI
 
 on:
   push:
-    branches: [master, "feature/pet-v2-*"]
-    paths: ["v2/**"]
+    branches: [master, "feature/*"]
   pull_request:
     branches: [master]
-    paths: ["v2/**"]
-
-defaults:
-  run:
-    working-directory: v2
 
 jobs:
   check:
@@ -61,8 +55,8 @@ jobs:
       - name: Build server image
         uses: docker/build-push-action@v6
         with:
-          context: v2
-          file: v2/packages/server/Dockerfile
+          context: .
+          file: packages/server/Dockerfile
           push: false
           tags: pet-server:ci
           cache-from: type=gha
@@ -81,8 +75,8 @@ jobs:
       - name: Build web image
         uses: docker/build-push-action@v6
         with:
-          context: v2
-          file: v2/packages/web/Dockerfile
+          context: .
+          file: packages/web/Dockerfile
           push: false
           tags: pet-web:ci
           cache-from: type=gha
