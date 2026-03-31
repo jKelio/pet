@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { router } from './router.js';
+import './lib/i18n.js';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
