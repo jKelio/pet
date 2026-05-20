@@ -25,7 +25,11 @@ export function TenantSwitcher() {
 
   useEffect(() => {
     if (!accessToken) return;
-    authApi.getMyTenants(accessToken).then(setTenants).catch(() => {});
+    let cancelled = false;
+    authApi.getMyTenants(accessToken)
+      .then((result) => { if (!cancelled) setTenants(result); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [accessToken]);
 
   if (tenants.length <= 1) return null;

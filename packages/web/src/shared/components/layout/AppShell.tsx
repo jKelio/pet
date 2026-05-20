@@ -36,6 +36,85 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'SuperAdmin', href: '/superadmin', icon: Shield, requiresAuth: true, requiresSuperAdmin: true },
 ];
 
+interface SidebarNavProps {
+  mobile?: boolean;
+  isAuthenticated: boolean;
+  user: { email: string } | null;
+  visibleItems: NavItem[];
+  currentPath: string;
+  onLinkClick: () => void;
+  onLogout: () => void;
+}
+
+function SidebarNav({
+  mobile = false,
+  isAuthenticated,
+  user,
+  visibleItems,
+  currentPath,
+  onLinkClick,
+  onLogout,
+}: SidebarNavProps) {
+  return (
+    <nav
+      className={cn(
+        'flex flex-col h-full bg-card border-r border-border',
+        mobile ? 'w-72' : 'w-64 hidden lg:flex',
+      )}
+    >
+      {/* Logo */}
+      <div className="p-6 border-b border-border">
+        <Link to="/" className="flex items-center gap-2" onClick={onLinkClick}>
+          <span className="text-xl font-bold text-primary">PET</span>
+          <span className="text-xs text-muted-foreground">v2</span>
+        </Link>
+        {user && (
+          <p className="text-xs text-muted-foreground mt-2 truncate">{user.email}</p>
+        )}
+        {isAuthenticated && <TenantSwitcher />}
+      </div>
+
+      {/* Nav Links */}
+      <div className="flex-1 p-4 space-y-1 overflow-y-auto">
+        {visibleItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentPath === item.href;
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              onClick={onLinkClick}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Logout */}
+      {isAuthenticated && (
+        <div className="p-4 border-t border-border">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 text-muted-foreground"
+            onClick={onLogout}
+          >
+            <LogOut className="h-4 w-4" />
+            Abmelden
+          </Button>
+        </div>
+      )}
+    </nav>
+  );
+}
+
 interface AppShellProps {
   children: React.ReactNode;
 }
@@ -61,85 +140,37 @@ export function AppShell({ children }: AppShellProps) {
     navigate('/auth/login');
   };
 
+  const closeSidebar = () => setSidebarOpen(false);
+
   const visibleItems = NAV_ITEMS.filter(
     (item) =>
       (!item.requiresAuth || isAuthenticated) &&
       (!item.requiresSuperAdmin || isSuperAdmin),
   );
 
-  const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
-    <nav
-      className={cn(
-        'flex flex-col h-full bg-card border-r border-border',
-        mobile ? 'w-72' : 'w-64 hidden lg:flex',
-      )}
-    >
-      {/* Logo */}
-      <div className="p-6 border-b border-border">
-        <Link to="/" className="flex items-center gap-2" onClick={() => setSidebarOpen(false)}>
-          <span className="text-xl font-bold text-primary">PET</span>
-          <span className="text-xs text-muted-foreground">v2</span>
-        </Link>
-        {user && (
-          <p className="text-xs text-muted-foreground mt-2 truncate">{user.email}</p>
-        )}
-        {isAuthenticated && <TenantSwitcher />}
-      </div>
-
-      {/* Nav Links */}
-      <div className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {visibleItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={() => setSidebarOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {item.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Logout */}
-      {isAuthenticated && (
-        <div className="p-4 border-t border-border">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Abmelden
-          </Button>
-        </div>
-      )}
-    </nav>
-  );
+  const sidebarProps = {
+    isAuthenticated,
+    user,
+    visibleItems,
+    currentPath: location.pathname,
+    onLinkClick: closeSidebar,
+    onLogout: handleLogout,
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Sidebar */}
-      <Sidebar />
+      <SidebarNav {...sidebarProps} />
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div
             className="absolute inset-0 bg-black/50"
-            onClick={() => setSidebarOpen(false)}
+            onClick={closeSidebar}
           />
           <div className="absolute left-0 top-0 h-full z-50">
-            <Sidebar mobile />
+            <SidebarNav {...sidebarProps} mobile />
           </div>
         </div>
       )}
