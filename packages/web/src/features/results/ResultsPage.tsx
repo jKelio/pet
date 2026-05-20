@@ -27,6 +27,7 @@ import {
 import { Button } from '../../shared/components/ui/button.js';
 import { useTrackingStore } from '../tracking/stores/tracking.store.js';
 import { completeSession } from '../tracking/hooks/useDraftPersistence.js';
+import { useAuthStore } from '../auth/stores/auth.store.js';
 import {
   extractDrillDurations,
   extractTimelineSegmentsForDrill,
@@ -64,11 +65,12 @@ export function ResultsPage() {
   const drills = useTrackingStore((s) => s.drills);
   const practiceInfo = useTrackingStore((s) => s.practiceInfo);
   const resetAllData = useTrackingStore((s) => s.resetAllData);
+  const tenantId = useAuthStore((s) => s.tenantId);
 
   // Save completed session to IndexedDB — skipped in view-only mode (cloud sessions)
   useEffect(() => {
     if (!viewOnly && drills.length > 0) {
-      completeSession(sessionId, practiceInfo, drills).catch(() => {});
+      completeSession(sessionId, practiceInfo, drills, tenantId).catch(() => {});
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

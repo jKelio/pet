@@ -19,6 +19,7 @@ export interface SavedSession {
   /** Set once the session has been synced to the backend */
   syncedAt: number | null;
   teamId: string | null;
+  tenantId: string | null;
 }
 
 // ── Database ──────────────────────────────────────────────────────────────────
@@ -33,6 +34,11 @@ const db = new Dexie('pet-v2') as PetDB;
 db.version(1).stores({
   drafts: 'id, savedAt',
   sessions: 'id, completedAt, syncedAt',
+});
+
+db.version(2).stores({
+  drafts: 'id, savedAt',
+  sessions: 'id, completedAt, syncedAt, tenantId',
 });
 
 export { db };

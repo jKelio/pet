@@ -64,6 +64,7 @@ export async function completeSession(
   sessionId: string,
   practiceInfo: ReturnType<typeof useTrackingStore.getState>['practiceInfo'],
   drills: ReturnType<typeof useTrackingStore.getState>['drills'],
+  tenantId: string | null = null,
 ): Promise<void> {
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const id = UUID_RE.test(sessionId) ? sessionId : crypto.randomUUID();
@@ -74,6 +75,7 @@ export async function completeSession(
     completedAt: Date.now(),
     syncedAt: null,
     teamId: null,
+    tenantId,
   });
   await db.drafts.delete(sessionId);
 }

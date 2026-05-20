@@ -81,6 +81,7 @@ export function SessionHistoryPage() {
   const restoreFromDraft = useTrackingStore((s) => s.restoreFromDraft);
   const resetAll = useTimerStore((s) => s.resetAll);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const tenantId = useAuthStore((s) => s.tenantId);
   const teams = useAdminStore((s) => s.teams);
 
   useEffect(() => {
@@ -89,11 +90,13 @@ export function SessionHistoryPage() {
       .reverse()
       .toArray()
       .then((rows) => {
-        setSessions(rows);
+        // Show sessions for the current tenant, plus legacy sessions saved without a tenantId
+        const filtered = rows.filter((s) => s.tenantId === tenantId || s.tenantId == null);
+        setSessions(filtered);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [tenantId]);
 
   const handleDelete = async (id: string) => {
     await db.sessions.delete(id);
