@@ -127,8 +127,9 @@ export function ResultsPage() {
 
     try {
       const container = exportRef.current;
+      const savedStyle = container.getAttribute('style') ?? '';
       container.style.cssText =
-        'position:fixed;left:0;top:0;z-index:-9999;opacity:1;width:800px';
+        'position:fixed;left:0;top:0;z-index:-9999;opacity:1;width:800px;overflow:visible';
 
       await new Promise((r) => setTimeout(r, 300));
 
@@ -168,7 +169,7 @@ export function ResultsPage() {
         }
       }
 
-      container.style.cssText = 'position:absolute;left:-9999px;opacity:0';
+      container.setAttribute('style', savedStyle);
 
       const date = new Date().toISOString().split('T')[0];
       const blob = pdf.output('blob');
@@ -233,8 +234,8 @@ export function ResultsPage() {
         </div>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      {/* Scrollable content — also used as export container */}
+      <div ref={exportRef} className="flex-1 overflow-y-auto p-6 space-y-8">
 
         {/* ── Summary cards ─────────────────────────────────────────────── */}
         <section className="pdf-section">
@@ -495,12 +496,6 @@ export function ResultsPage() {
         })}
       </div>
 
-      {/* Hidden export container */}
-      <div
-        ref={exportRef}
-        style={{ position: 'absolute', left: '-9999px', opacity: 0 }}
-        aria-hidden="true"
-      />
     </div>
   );
 }
