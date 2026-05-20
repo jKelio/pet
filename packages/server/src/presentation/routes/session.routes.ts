@@ -17,9 +17,11 @@ export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRou
   fastify.post('/sessions/sync', async (request, reply) => {
     const result = SyncSessionSchema.safeParse(request.body);
     if (!result.success) {
+      const issue = result.error.issues[0];
+      const field = issue.path.length > 0 ? `${issue.path.join('.')}: ` : '';
       return reply.code(400).send({
         code: 'VALIDATION_ERROR',
-        message: result.error.issues[0].message,
+        message: `${field}${issue.message}`,
         statusCode: 400,
       });
     }

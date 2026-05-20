@@ -65,8 +65,10 @@ export async function completeSession(
   practiceInfo: ReturnType<typeof useTrackingStore.getState>['practiceInfo'],
   drills: ReturnType<typeof useTrackingStore.getState>['drills'],
 ): Promise<void> {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const id = UUID_RE.test(sessionId) ? sessionId : crypto.randomUUID();
   await db.sessions.put({
-    id: sessionId,
+    id,
     practiceInfo,
     drills,
     completedAt: Date.now(),

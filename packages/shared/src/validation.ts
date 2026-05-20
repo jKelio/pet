@@ -23,8 +23,8 @@ export const VerifyMagicLinkSchema = z.object({
 // ─── Tracking Data Schemas ────────────────────────────────────────────────────
 
 export const TimeSegmentSchema = z.object({
-  startTime: z.number().int().positive(),
-  endTime: z.number().int().positive().nullable(),
+  startTime: z.number().int().nonnegative(),
+  endTime: z.number().int().nonnegative().nullable(),
   duration: z.number().int().nonnegative(),
 });
 

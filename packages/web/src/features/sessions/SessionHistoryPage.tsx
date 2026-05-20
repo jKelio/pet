@@ -8,6 +8,39 @@ import { useTimerStore } from '../tracking/stores/timer.store.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from '../admin/stores/admin.store.js';
 import { sessionApi } from './api/session.api.js';
+import type { TimerData, Drill, PracticeInfo } from '@pet/shared';
+
+// Normalizes time segments saved with old field names (start/end → startTime/endTime/duration).
+function normalizeTimerData(raw: unknown): TimerData {
+  const td = raw as Record<string, unknown>;
+  const segs = Array.isArray(td?.timeSegments) ? td.timeSegments : [];
+  return {
+    totalTime: typeof td?.totalTime === 'number' ? td.totalTime : 0,
+    timeSegments: segs.map((s: Record<string, unknown>) => {
+      const startTime = typeof s.startTime === 'number' ? s.startTime : (s.start as number ?? 0);
+      const endTime = typeof s.endTime === 'number' ? s.endTime
+        : typeof s.end === 'number' ? s.end
+        : null;
+      const duration = typeof s.duration === 'number' ? s.duration
+        : (endTime != null ? endTime - startTime : 0);
+      return { startTime, endTime, duration };
+    }),
+  };
+}
+
+function normalizeDrill(drill: Drill): Drill {
+  return {
+    ...drill,
+    wasteTime: normalizeTimerData(drill.wasteTime),
+    timerData: Object.fromEntries(
+      Object.entries(drill.timerData ?? {}).map(([k, v]) => [k, normalizeTimerData(v)]),
+    ),
+  };
+}
+
+function normalizePracticeInfo(pi: PracticeInfo): PracticeInfo {
+  return { ...pi, wasteTime: normalizeTimerData(pi.wasteTime) };
+}
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString('de-DE', {
@@ -44,6 +77,7 @@ export function SessionHistoryPage() {
   const [sessions, setSessions] = useState<SavedSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<{ id: string; message: string } | null>(null);
   const restoreFromDraft = useTrackingStore((s) => s.restoreFromDraft);
   const resetAll = useTimerStore((s) => s.resetAll);
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -84,10 +118,20 @@ export function SessionHistoryPage() {
     const teamId = session.teamId ?? teams[0]?.id;
     if (!teamId) return;
 
+    // The server requires a valid UUID. Old local sessions may have non-UUID ids — mint a fresh one.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const syncId = UUID_RE.test(session.id) ? session.id : crypto.randomUUID();
+
     setSyncingId(session.id);
+    setSyncError(null);
     try {
       await sessionApi.sync(
-        { id: session.id, teamId, practiceInfo: session.practiceInfo, drills: session.drills },
+        {
+          id: syncId,
+          teamId,
+          practiceInfo: normalizePracticeInfo(session.practiceInfo),
+          drills: session.drills.map(normalizeDrill),
+        },
         accessToken,
       );
       const now = Date.now();
@@ -95,6 +139,11 @@ export function SessionHistoryPage() {
       setSessions((prev) =>
         prev.map((s) => (s.id === session.id ? { ...s, syncedAt: now, teamId } : s)),
       );
+    } catch (err) {
+      setSyncError({
+        id: session.id,
+        message: err instanceof Error ? err.message : 'Sync fehlgeschlagen',
+      });
     } finally {
       setSyncingId(null);
     }
@@ -170,6 +219,9 @@ export function SessionHistoryPage() {
                       )}
                       <span>{session.drills.length} Drills</span>
                     </div>
+                    {syncError?.id === session.id && (
+                      <p className="text-xs text-destructive mt-1">{syncError.message}</p>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
@@ -179,7 +231,12 @@ export function SessionHistoryPage() {
                         variant="ghost"
                         onClick={() => handleSync(session)}
                         disabled={syncingId === session.id}
-                        title="In Cloud synchronisieren"
+                        title={
+                          syncError?.id === session.id
+                            ? `Fehler: ${syncError.message}`
+                            : 'In Cloud synchronisieren'
+                        }
+                        className={syncError?.id === session.id ? 'text-destructive hover:text-destructive' : ''}
                       >
                         {syncingId === session.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
