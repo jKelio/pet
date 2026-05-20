@@ -6,6 +6,7 @@ export interface MyProfile {
   membership: Membership | null;
   tenant: Tenant | null;
   teams: Team[];
+  isSuperAdmin: boolean;
 }
 
 export interface OnboardPayload {

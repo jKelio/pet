@@ -109,6 +109,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     tenantRepository,
     teamRepository,
     membershipRepository,
+    superAdminEmails: config.superAdminEmails,
   });
 
   const onboardTenant = new OnboardTenantUseCase({

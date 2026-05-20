@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   X,
+  Shield,
 } from 'lucide-react';
 import { Button } from '../ui/button.js';
 import { cn } from '../../lib/utils.js';
@@ -22,6 +23,7 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   requiresAuth: boolean;
+  requiresSuperAdmin?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -31,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Cloud', href: '/sessions/cloud', icon: Cloud, requiresAuth: true },
   { label: 'Glossar', href: '/glossary', icon: BookOpen, requiresAuth: false },
   { label: 'Team', href: '/admin', icon: Users, requiresAuth: true },
+  { label: 'SuperAdmin', href: '/superadmin', icon: Shield, requiresAuth: true, requiresSuperAdmin: true },
 ];
 
 interface AppShellProps {
@@ -44,6 +47,7 @@ export function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const loadProfile = useAdminStore((s) => s.loadProfile);
   const membership = useAdminStore((s) => s.membership);
+  const isSuperAdmin = useAdminStore((s) => s.isSuperAdmin);
 
   // Load profile once on first authenticated render so teams/tenant are available app-wide
   useEffect(() => {
@@ -58,7 +62,9 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.requiresAuth || isAuthenticated,
+    (item) =>
+      (!item.requiresAuth || isAuthenticated) &&
+      (!item.requiresSuperAdmin || isSuperAdmin),
   );
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (

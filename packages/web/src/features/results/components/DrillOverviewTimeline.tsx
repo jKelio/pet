@@ -65,7 +65,7 @@ export function DrillOverviewTimeline({ drillDurations, totalDuration }: Props) 
               key={`bg-${idx}`}
               x={LABEL_WIDTH + PADDING.left} y={PADDING.top + idx * ROW_HEIGHT}
               width={chartWidth} height={ROW_HEIGHT}
-              fill={idx % 2 === 0 ? '#fafafa' : '#ffffff'}
+              fill={idx % 2 === 0 ? 'var(--color-muted)' : 'var(--color-card)'}
             />
           ))}
 
@@ -75,7 +75,7 @@ export function DrillOverviewTimeline({ drillDurations, totalDuration }: Props) 
               key={`grid-${tick}`}
               x1={xScale(tick)} y1={PADDING.top}
               x2={xScale(tick)} y2={PADDING.top + numRows * ROW_HEIGHT}
-              stroke="#e8e8e8" strokeWidth={1}
+              stroke="var(--color-border)" strokeWidth={1}
             />
           ))}
 
@@ -124,18 +124,18 @@ export function DrillOverviewTimeline({ drillDurations, totalDuration }: Props) 
           <line
             x1={LABEL_WIDTH + PADDING.left} y1={PADDING.top + numRows * ROW_HEIGHT}
             x2={LABEL_WIDTH + PADDING.left + chartWidth} y2={PADDING.top + numRows * ROW_HEIGHT}
-            stroke="#999" strokeWidth={1}
+            stroke="var(--color-border)" strokeWidth={1}
           />
           {ticks.map((tick) => (
             <g key={`tick-${tick}`}>
               <line
                 x1={xScale(tick)} y1={PADDING.top + numRows * ROW_HEIGHT}
                 x2={xScale(tick)} y2={PADDING.top + numRows * ROW_HEIGHT + 5}
-                stroke="#999" strokeWidth={1}
+                stroke="var(--color-border)" strokeWidth={1}
               />
               <text
                 x={xScale(tick)} y={PADDING.top + numRows * ROW_HEIGHT + 20}
-                textAnchor="middle" fontSize={11} fill="#666"
+                textAnchor="middle" fontSize={11} fill="var(--color-muted-foreground)"
               >
                 {formatRelativeTime(tick)}
               </text>

@@ -1,5 +1,5 @@
 # ── Stage 1: Build ────────────────────────────────────────────────────────────
-FROM oven/bun:1.2-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ COPY package.json bun.lock ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/web/package.json ./packages/web/
 
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy source
 COPY packages/shared/ ./packages/shared/

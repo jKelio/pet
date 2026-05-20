@@ -9,6 +9,7 @@ interface AdminState {
   tenant: Tenant | null;
   teams: Team[];
   members: MemberWithUser[];
+  isSuperAdmin: boolean;
   loading: boolean;
   error: string | null;
 
@@ -27,6 +28,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
   tenant: null,
   teams: [],
   members: [],
+  isSuperAdmin: false,
   loading: false,
   error: null,
 
@@ -39,6 +41,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
         membership: profile.membership,
         tenant: profile.tenant,
         teams: profile.teams,
+        isSuperAdmin: profile.isSuperAdmin,
         loading: false,
       });
     } catch (err) {
@@ -120,5 +123,5 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
   },
 
   reset: () =>
-    set({ user: null, membership: null, tenant: null, teams: [], members: [], loading: false, error: null }),
+    set({ user: null, membership: null, tenant: null, teams: [], members: [], isSuperAdmin: false, loading: false, error: null }),
 }));

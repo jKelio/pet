@@ -11,6 +11,7 @@ export interface GetMyProfileDeps {
   tenantRepository: TenantRepository;
   teamRepository: TeamRepository;
   membershipRepository: MembershipRepository;
+  superAdminEmails: string[];
 }
 
 export interface MyProfile {
@@ -18,17 +19,24 @@ export interface MyProfile {
   membership: Membership | null;
   tenant: Tenant | null;
   teams: Team[];
+  isSuperAdmin: boolean;
 }
 
 export class GetMyProfileUseCase {
-  constructor(private readonly deps: GetMyProfileDeps) {}
+  private readonly superAdminAllowlist: Set<string>;
+
+  constructor(private readonly deps: GetMyProfileDeps) {
+    this.superAdminAllowlist = new Set(deps.superAdminEmails.map((e) => e.toLowerCase()));
+  }
 
   async execute(userId: string, tenantId: string | null): Promise<MyProfile> {
     const user = await this.deps.userRepository.findById(userId);
     if (!user) throw new Error('User not found');
 
+    const isSuperAdmin = this.superAdminAllowlist.has(user.email.toLowerCase());
+
     if (!tenantId) {
-      return { user, membership: null, tenant: null, teams: [] };
+      return { user, membership: null, tenant: null, teams: [], isSuperAdmin };
     }
 
     const [membership, tenant] = await Promise.all([
@@ -37,7 +45,7 @@ export class GetMyProfileUseCase {
     ]);
 
     if (!membership || !tenant) {
-      return { user, membership: null, tenant: null, teams: [] };
+      return { user, membership: null, tenant: null, teams: [], isSuperAdmin };
     }
 
     const allTeams = await this.deps.teamRepository.findByTenant(tenantId);
@@ -50,6 +58,6 @@ export class GetMyProfileUseCase {
       teams = allTeams.filter((t) => assignedIds.includes(t.id));
     }
 
-    return { user, membership, tenant, teams };
+    return { user, membership, tenant, teams, isSuperAdmin };
   }
 }

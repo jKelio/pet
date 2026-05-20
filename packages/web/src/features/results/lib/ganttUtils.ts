@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { Drill } from '@pet/shared';
+import type { Drill, TimeSegment } from '@pet/shared';
 import { ACTION_COLORS as SHARED_COLORS } from '@pet/shared';
 
 export const ACTION_COLORS: Record<string, string> = SHARED_COLORS;
@@ -103,6 +103,7 @@ export function extractDrillDurations(
 export function extractTimelineSegments(
   drills: Drill[],
   t: TFunction,
+  extraGapSegments?: TimeSegment[],
 ): {
   segments: Array<{
     actionId: string;
@@ -142,11 +143,33 @@ export function extractTimelineSegments(
       });
     });
 
+    drill.wasteTime?.timeSegments?.forEach((seg) => {
+      if (seg.startTime && seg.endTime) {
+        rawSegments.push({
+          actionId: 'wasteTime',
+          startTime: seg.startTime,
+          endTime: seg.endTime,
+          duration: seg.duration,
+        });
+      }
+    });
+
     Object.entries(drill.counterData ?? {}).forEach(([actionId, cd]) => {
       cd.timestamps?.forEach((ts) => {
         rawCounterEvents.push({ actionId, timestamp: ts, drillId: drill.id });
       });
     });
+  });
+
+  extraGapSegments?.forEach((seg) => {
+    if (seg.startTime && seg.endTime) {
+      rawSegments.push({
+        actionId: 'wasteTime',
+        startTime: seg.startTime,
+        endTime: seg.endTime,
+        duration: seg.duration,
+      });
+    }
   });
 
   const allTimestamps = [

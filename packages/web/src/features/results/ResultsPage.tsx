@@ -29,7 +29,6 @@ import { useTrackingStore } from '../tracking/stores/tracking.store.js';
 import { completeSession } from '../tracking/hooks/useDraftPersistence.js';
 import {
   extractDrillDurations,
-  extractTimelineSegments,
   extractTimelineSegmentsForDrill,
   aggregateTimeByActionForDrill,
   ACTION_COLORS,
@@ -119,11 +118,6 @@ export function ResultsPage() {
         ]
       : []),
   ];
-
-  const { segments, counterEvents, drillBoundaries, actionLabels } = extractTimelineSegments(
-    drills,
-    t,
-  );
 
   // ── PDF export ────────────────────────────────────────────────────────────
 
@@ -293,6 +287,21 @@ export function ResultsPage() {
           )}
         </section>
 
+        {/* ── Drill overview timeline ───────────────────────────────────── */}
+        {drillDurations.length > 0 && (
+          <section className="pdf-section space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Trainings-Zeitleiste
+            </h2>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <DrillOverviewTimeline
+                drillDurations={drillDurations}
+                totalDuration={totalTrainingDuration}
+              />
+            </div>
+          </section>
+        )}
+
         {/* ── Zeit pro Drill (Bar chart) ────────────────────────────────── */}
         {drillTimeData.length > 0 && (
           <section className="pdf-section space-y-3">
@@ -320,37 +329,6 @@ export function ResultsPage() {
           </section>
         )}
 
-        {/* ── Drill overview timeline ───────────────────────────────────── */}
-        {drillDurations.length > 0 && (
-          <section className="pdf-section space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Trainings-Zeitleiste
-            </h2>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <DrillOverviewTimeline
-                drillDurations={drillDurations}
-                totalDuration={totalTrainingDuration}
-              />
-            </div>
-          </section>
-        )}
-
-        {/* ── Full action timeline (all drills) ────────────────────────── */}
-        {segments.length > 0 && (
-          <section className="pdf-section space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Aktions-Zeitleiste
-            </h2>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <ActionTimeline
-                segments={segments}
-                counterEvents={counterEvents}
-                drillBoundaries={drillBoundaries}
-                actionLabels={actionLabels}
-              />
-            </div>
-          </section>
-        )}
 
         {/* ── Per-drill detail ─────────────────────────────────────────── */}
         {drills.map((drill) => {
@@ -360,9 +338,8 @@ export function ResultsPage() {
           const hasData = actionData.length > 0 || dSegs.length > 0 || dCtrEvents.length > 0;
           if (!hasData) return null;
 
-          const counterData = Object.entries(drill.counterData ?? {}).filter(
-            ([, cd]) => cd.count > 0,
-          );
+          const counterData = Object.entries(drill.counterData ?? {}).filter(([, cd]) => cd.count > 0);
+          const timerData = Object.entries(drill.timerData ?? {}).filter(([, td]) => td.totalTime > 0);
 
           return (
             <section key={drill.id} className="pdf-section space-y-4">
@@ -378,9 +355,21 @@ export function ResultsPage() {
                 ))}
               </h2>
 
-              <div className="rounded-lg border border-border bg-card p-4 grid sm:grid-cols-2 gap-6">
-                {/* Pie chart: time per action */}
-                {actionData.length > 0 && (
+              {/* Gantt timeline */}
+              {dSegs.length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <ActionTimeline
+                    segments={dSegs}
+                    counterEvents={dCtrEvents}
+                    actionLabels={dLabels}
+                  />
+                </div>
+              )}
+
+              {/* Pie + Bar charts */}
+              {actionData.length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-4 grid sm:grid-cols-2 gap-6">
+                  {/* Pie chart */}
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">Zeit pro Aktion</p>
                     <ResponsiveContainer width="100%" height={200}>
@@ -401,40 +390,104 @@ export function ResultsPage() {
                           ))}
                         </Pie>
                         <Tooltip formatter={(v) => formatDuration(v as number)} />
-                        <Legend
-                          formatter={(label) => (
-                            <span className="text-xs">{label}</span>
-                          )}
-                        />
+                        <Legend formatter={(label) => <span className="text-xs">{label}</span>} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                )}
 
-                {/* Counter summary */}
-                {counterData.length > 0 && (
+                  {/* Bar chart: Zeit pro Aktion */}
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">Zähler</p>
-                    <div className="space-y-2">
-                      {counterData.map(([actionId, cd]) => (
-                        <div key={actionId} className="flex items-center justify-between">
-                          <span className="text-sm">{t(`actions.${actionId}`)}</span>
-                          <span className="font-bold tabular-nums">{cd.count}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-xs text-muted-foreground mb-2">Zeit pro Aktion</p>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={actionData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                        <XAxis
+                          type="number"
+                          tickFormatter={(v) => formatRelativeTime(v as number)}
+                          fontSize={10}
+                        />
+                        <YAxis type="category" dataKey="actionLabel" fontSize={10} width={90} />
+                        <Tooltip formatter={(v) => formatDuration(v as number)} />
+                        <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
+                          {actionData.map((entry, i) => (
+                            <Cell
+                              key={i}
+                              fill={ACTION_COLORS[entry.actionId] ?? DRILL_COLORS[i % DRILL_COLORS.length]}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+              {/* Timer + Counter tables */}
+              {(timerData.length > 0 || counterData.length > 0) && (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {/* Gestoppte Zeiten */}
+                  {timerData.length > 0 && (
+                    <div className="rounded-lg border border-border bg-card p-4">
+                      <p className="text-xs text-muted-foreground mb-3">Gestoppte Zeiten</p>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border text-xs text-muted-foreground">
+                            <th className="text-left pb-2 font-medium">Aktion</th>
+                            <th className="text-right pb-2 font-medium">Segmente</th>
+                            <th className="text-right pb-2 font-medium">Gesamt</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {timerData.map(([actionId, td]) => (
+                            <tr key={actionId} className="border-b border-border/50 last:border-0">
+                              <td className="py-1.5 flex items-center gap-2">
+                                <span
+                                  className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                                  style={{ backgroundColor: ACTION_COLORS[actionId] ?? '#999' }}
+                                />
+                                {t(`actions.${actionId}`, { defaultValue: actionId })}
+                              </td>
+                              <td className="py-1.5 text-right tabular-nums text-muted-foreground">
+                                {td.timeSegments?.length ?? 0}×
+                              </td>
+                              <td className="py-1.5 text-right tabular-nums font-medium">
+                                {formatDuration(td.totalTime)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
-              {/* Per-drill action timeline */}
-              {dSegs.length > 0 && (
-                <div className="rounded-lg border border-border bg-card p-4">
-                  <ActionTimeline
-                    segments={dSegs}
-                    counterEvents={dCtrEvents}
-                    actionLabels={dLabels}
-                  />
+                  {/* Zähler */}
+                  {counterData.length > 0 && (
+                    <div className="rounded-lg border border-border bg-card p-4">
+                      <p className="text-xs text-muted-foreground mb-3">Zähler</p>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border text-xs text-muted-foreground">
+                            <th className="text-left pb-2 font-medium">Aktion</th>
+                            <th className="text-right pb-2 font-medium">Anzahl</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {counterData.map(([actionId, cd]) => (
+                            <tr key={actionId} className="border-b border-border/50 last:border-0">
+                              <td className="py-1.5 flex items-center gap-2">
+                                <span
+                                  className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                                  style={{ backgroundColor: ACTION_COLORS[actionId] ?? '#999' }}
+                                />
+                                {t(`actions.${actionId}`, { defaultValue: actionId })}
+                              </td>
+                              <td className="py-1.5 text-right tabular-nums font-medium">
+                                {cd.count}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </section>

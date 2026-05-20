@@ -96,7 +96,7 @@ export function ActionTimeline({
               y={topPadding + idx * ROW_HEIGHT}
               width={chartWidth}
               height={ROW_HEIGHT}
-              fill={idx % 2 === 0 ? '#fafafa' : '#ffffff'}
+              fill={idx % 2 === 0 ? 'var(--color-muted)' : 'var(--color-card)'}
             />
           ))}
 
@@ -109,12 +109,12 @@ export function ActionTimeline({
                 <g key={`boundary-${b.drillId}`}>
                   <line
                     x1={x} y1={topPadding} x2={x} y2={topPadding + chartHeight}
-                    stroke="#666" strokeWidth={1.5} strokeDasharray="4,3"
+                    stroke="var(--color-muted-foreground)" strokeWidth={1.5} strokeDasharray="4,3"
                   />
                   <text
                     x={x + 4} y={PADDING.top + 4}
                     textAnchor="start" dominantBaseline="hanging"
-                    fontSize={10} fill="#666" fontWeight="500"
+                    fontSize={10} fill="var(--color-muted-foreground)" fontWeight="500"
                   >
                     {b.drillLabel}
                   </text>
@@ -126,7 +126,7 @@ export function ActionTimeline({
             <text
               x={LABEL_WIDTH + PADDING.left + 4} y={PADDING.top + 4}
               textAnchor="start" dominantBaseline="hanging"
-              fontSize={10} fill="#666" fontWeight="500"
+              fontSize={10} fill="var(--color-muted-foreground)" fontWeight="500"
             >
               {drillBoundaries[0].drillLabel}
             </text>
@@ -138,7 +138,7 @@ export function ActionTimeline({
               key={`grid-${tick}`}
               x1={xScale(tick)} y1={topPadding}
               x2={xScale(tick)} y2={topPadding + chartHeight}
-              stroke="#e8e8e8" strokeWidth={1}
+              stroke="var(--color-border)" strokeWidth={1}
             />
           ))}
 
@@ -187,7 +187,7 @@ export function ActionTimeline({
                 cx={xScale(evt.timestamp)} cy={yCenter(evt.actionId)}
                 r={COUNTER_RADIUS}
                 fill={ACTION_COLORS[evt.actionId] ?? '#999'}
-                stroke="#fff" strokeWidth={1.5}
+                stroke="var(--color-card)" strokeWidth={1.5}
               >
                 <title>{`${evt.actionLabel} @ ${formatRelativeTime(evt.timestamp)}`}</title>
               </circle>
@@ -198,18 +198,18 @@ export function ActionTimeline({
           <line
             x1={LABEL_WIDTH + PADDING.left} y1={topPadding + chartHeight}
             x2={LABEL_WIDTH + PADDING.left + chartWidth} y2={topPadding + chartHeight}
-            stroke="#999" strokeWidth={1}
+            stroke="var(--color-border)" strokeWidth={1}
           />
           {ticks.map((tick) => (
             <g key={`tick-${tick}`}>
               <line
                 x1={xScale(tick)} y1={topPadding + chartHeight}
                 x2={xScale(tick)} y2={topPadding + chartHeight + 5}
-                stroke="#999" strokeWidth={1}
+                stroke="var(--color-border)" strokeWidth={1}
               />
               <text
                 x={xScale(tick)} y={topPadding + chartHeight + 20}
-                textAnchor="middle" fontSize={11} fill="#666"
+                textAnchor="middle" fontSize={11} fill="var(--color-muted-foreground)"
               >
                 {formatRelativeTime(tick)}
               </text>

@@ -68,7 +68,7 @@ describe('VerifyMagicLinkUseCase', () => {
     expect(result.accessToken).toBe('access-token');
     expect(result.refreshToken).toBe('refresh-token');
     expect(result.user.id).toBe('user-1');
-    expect((result.user as Record<string, unknown>).tokenExpiresAt).toBeUndefined();
+    expect((result.user as unknown as Record<string, unknown>).tokenExpiresAt).toBeUndefined();
   });
 
   test('clears the token and records last login on success', async () => {

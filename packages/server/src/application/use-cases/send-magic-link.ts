@@ -34,7 +34,7 @@ export class SendMagicLinkUseCase {
         id: crypto.randomUUID(),
         email: emailStr,
         name: '',
-        memberships: [],
+        createdAt: new Date().toISOString(),
       };
       await this.deps.userRepository.save(newUser);
       user = newUser;

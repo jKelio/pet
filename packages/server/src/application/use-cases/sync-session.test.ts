@@ -18,6 +18,7 @@ const SESSION_INPUT: SyncSessionInput = {
     totalTime: 60,
     trackedPlayerName: '',
     drillsNumber: 3,
+    wasteTime: { totalTime: 0, timeSegments: [] },
   },
   drills: [],
 };

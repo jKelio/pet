@@ -27,10 +27,16 @@ describe('SendMagicLinkUseCase', () => {
   const authService = new AuthService();
   const appBaseUrl = 'https://app.example.com';
 
-  test('creates a new user when email is not registered', async () => {
+  test('auto-creates a user when the email is a superadmin email', async () => {
     const repo = makeRepo(null);
     const emailSender = makeEmailSender();
-    const useCase = new SendMagicLinkUseCase({ userRepository: repo, emailSender, authService, appBaseUrl });
+    const useCase = new SendMagicLinkUseCase({
+      userRepository: repo,
+      emailSender,
+      authService,
+      appBaseUrl,
+      superAdminEmails: ['new@example.com'],
+    });
 
     await useCase.execute('new@example.com');
 
@@ -39,11 +45,35 @@ describe('SendMagicLinkUseCase', () => {
     expect(savedUser.email).toBe('new@example.com');
   });
 
+  test('silently returns for an unknown, non-superadmin email (no enumeration)', async () => {
+    const repo = makeRepo(null);
+    const emailSender = makeEmailSender();
+    const useCase = new SendMagicLinkUseCase({
+      userRepository: repo,
+      emailSender,
+      authService,
+      appBaseUrl,
+      superAdminEmails: [],
+    });
+
+    await useCase.execute('stranger@example.com');
+
+    expect(repo.save).not.toHaveBeenCalled();
+    expect(repo.saveMagicLinkToken).not.toHaveBeenCalled();
+    expect(emailSender.sendMagicLink).not.toHaveBeenCalled();
+  });
+
   test('reuses existing user without creating a new one', async () => {
     const existing = { id: 'user-1', email: 'coach@example.com', name: 'Coach', createdAt: new Date().toISOString() };
     const repo = makeRepo(existing);
     const emailSender = makeEmailSender();
-    const useCase = new SendMagicLinkUseCase({ userRepository: repo, emailSender, authService, appBaseUrl });
+    const useCase = new SendMagicLinkUseCase({
+      userRepository: repo,
+      emailSender,
+      authService,
+      appBaseUrl,
+      superAdminEmails: [],
+    });
 
     await useCase.execute('coach@example.com');
 
@@ -52,9 +82,16 @@ describe('SendMagicLinkUseCase', () => {
   });
 
   test('sends a magic link email with a URL containing the raw token', async () => {
-    const repo = makeRepo(null);
+    const existing = { id: 'user-1', email: 'test@example.com', name: '', createdAt: new Date().toISOString() };
+    const repo = makeRepo(existing);
     const emailSender = makeEmailSender();
-    const useCase = new SendMagicLinkUseCase({ userRepository: repo, emailSender, authService, appBaseUrl });
+    const useCase = new SendMagicLinkUseCase({
+      userRepository: repo,
+      emailSender,
+      authService,
+      appBaseUrl,
+      superAdminEmails: [],
+    });
 
     await useCase.execute('test@example.com');
 
@@ -68,7 +105,13 @@ describe('SendMagicLinkUseCase', () => {
   test('rejects invalid email addresses', async () => {
     const repo = makeRepo(null);
     const emailSender = makeEmailSender();
-    const useCase = new SendMagicLinkUseCase({ userRepository: repo, emailSender, authService, appBaseUrl });
+    const useCase = new SendMagicLinkUseCase({
+      userRepository: repo,
+      emailSender,
+      authService,
+      appBaseUrl,
+      superAdminEmails: [],
+    });
 
     expect(useCase.execute('not-an-email')).rejects.toThrow();
   });
