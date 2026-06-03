@@ -74,6 +74,13 @@ export function extractDrillDurations(
       });
     });
 
+    // Include waste-time segments so the drill span matches the "Zeit pro Drill"
+    // bar, which adds wasteTime to the total.
+    drill.wasteTime?.timeSegments?.forEach((seg) => {
+      if (seg.startTime && seg.startTime < earliestTime) earliestTime = seg.startTime;
+      if (seg.endTime && seg.endTime > latestTime) latestTime = seg.endTime;
+    });
+
     if (earliestTime !== Infinity && latestTime !== -Infinity) {
       drillTimes.push({
         drillId: drill.id,

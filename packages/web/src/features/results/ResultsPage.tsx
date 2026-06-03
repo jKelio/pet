@@ -95,20 +95,15 @@ export function ResultsPage() {
 
   const drillDurations = extractDrillDurations(drills, t, trainingStartTime);
 
+  // Derived from the same wall-clock span as the "Trainings-Zeitleiste" so both
+  // charts always agree on a drill's duration.
   const drillTimeData = [
-    ...drills
-      .map((drill, i) => {
-        const dTimerTime = Object.values(drill.timerData ?? {}).reduce(
-          (s, td) => s + (td.totalTime ?? 0),
-          0,
-        );
-        const total = dTimerTime + (drill.wasteTime?.totalTime ?? 0);
-        return {
-          name: `${t('drills.drill')} ${drill.id}`,
-          totalTime: total,
-          color: DRILL_COLORS[i % DRILL_COLORS.length],
-        };
-      })
+    ...drillDurations
+      .map((d, i) => ({
+        name: `${t('drills.drill')} ${d.drillId}`,
+        totalTime: d.duration,
+        color: DRILL_COLORS[i % DRILL_COLORS.length],
+      }))
       .filter((d) => d.totalTime > 0),
     ...(practiceInfo.wasteTime?.totalTime > 0
       ? [
