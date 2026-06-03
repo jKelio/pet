@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '../../../shared/components/ui/input.js';
 import { Label } from '../../../shared/components/ui/label.js';
@@ -10,6 +11,13 @@ export function PracticeInfoForm() {
   const setPracticeInfo = useTrackingStore((s) => s.setPracticeInfo);
   const initDrills = useTrackingStore((s) => s.initDrills);
   const teams = useAdminStore((s) => s.teams);
+  const tenant = useAdminStore((s) => s.tenant);
+
+  useEffect(() => {
+    if (tenant?.name && !practiceInfo.clubName) {
+      setPracticeInfo({ ...practiceInfo, clubName: tenant.name });
+    }
+  }, [tenant?.name]);
 
   const update = (field: string, value: string | number) =>
     setPracticeInfo({ ...practiceInfo, [field]: value });
