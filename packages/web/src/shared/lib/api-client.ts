@@ -46,8 +46,9 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 async function request<T>(path: string, init?: RequestInit, accessToken?: string): Promise<T> {
+  const hasBody = init?.body != null;
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...(init?.headers ?? {}),
   };
@@ -63,7 +64,7 @@ async function request<T>(path: string, init?: RequestInit, accessToken?: string
     const newToken = await refreshAccessToken();
     if (newToken) {
       const retryHeaders: HeadersInit = {
-        'Content-Type': 'application/json',
+        ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
         Authorization: `Bearer ${newToken}`,
         ...(init?.headers ?? {}),
       };
