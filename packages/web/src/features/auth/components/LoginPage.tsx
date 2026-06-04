@@ -40,9 +40,8 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/icon.png" alt="PROTRACK" className="h-16 w-16 mx-auto mb-3" />
-          <h1 className="text-3xl font-bold text-primary">PROTRACK</h1>
-          <p className="text-muted-foreground mt-1">{t('auth.tagline')}</p>
+          <img src="/icon.png" alt="PROTRACK Hockey" className="h-28 w-28 mx-auto rounded-2xl mb-3" />
+          <p className="text-muted-foreground">{t('auth.tagline')}</p>
         </div>
 
         <Card>
