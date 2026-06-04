@@ -5,6 +5,8 @@ import {
   formatRelativeTime,
   extractDrillDurations,
   aggregateTimeByActionForDrill,
+  aggregateTimersAcrossDrills,
+  aggregateCountersAcrossDrills,
 } from './ganttUtils.js';
 
 const t = ((key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key) as unknown as Parameters<
@@ -141,5 +143,114 @@ describe('aggregateTimeByActionForDrill', () => {
 
     const result = aggregateTimeByActionForDrill(drill, t);
     expect(result.find((r) => r.actionId === 'timemoving')).toBeUndefined();
+  });
+});
+
+describe('aggregateTimersAcrossDrills', () => {
+  test('sums totalTime and segment counts per actionId across drills', () => {
+    const drills = [
+      makeDrill({
+        id: 1,
+        timerData: {
+          explanation: {
+            totalTime: 5_000,
+            timeSegments: [{ startTime: 1, endTime: 2, duration: 5_000 }],
+          },
+        },
+      }),
+      makeDrill({
+        id: 2,
+        timerData: {
+          explanation: {
+            totalTime: 3_000,
+            timeSegments: [
+              { startTime: 1, endTime: 2, duration: 1_000 },
+              { startTime: 3, endTime: 4, duration: 2_000 },
+            ],
+          },
+        },
+      }),
+    ];
+
+    const result = aggregateTimersAcrossDrills(drills, t);
+    const explanation = result.find((r) => r.actionId === 'explanation');
+    expect(explanation?.totalTime).toBe(8_000);
+    expect(explanation?.segments).toBe(3);
+  });
+
+  test('keeps the two puck timers separate (no Time-Moving merge)', () => {
+    const drills = [
+      makeDrill({
+        timerData: {
+          [TIME_MOVING_WITH_PUCK]: { totalTime: 12_000, timeSegments: [] },
+          [TIME_MOVING_WITHOUT_PUCK]: { totalTime: 8_000, timeSegments: [] },
+        },
+      }),
+    ];
+
+    const result = aggregateTimersAcrossDrills(drills, t);
+    expect(result.find((r) => r.actionId === TIME_MOVING_WITH_PUCK)?.totalTime).toBe(12_000);
+    expect(result.find((r) => r.actionId === TIME_MOVING_WITHOUT_PUCK)?.totalTime).toBe(8_000);
+    expect(result.find((r) => r.actionId === 'timemoving')).toBeUndefined();
+  });
+
+  test('excludes waste time and zero-time actions, sorts descending', () => {
+    const drills = [
+      makeDrill({
+        timerData: {
+          explanation: { totalTime: 5_000, timeSegments: [] },
+          demonstration: { totalTime: 0, timeSegments: [] },
+          passing: { totalTime: 9_000, timeSegments: [] },
+        },
+        wasteTime: {
+          totalTime: 4_000,
+          timeSegments: [{ startTime: 1, endTime: 2, duration: 4_000 }],
+        },
+      }),
+    ];
+
+    const result = aggregateTimersAcrossDrills(drills, t);
+    expect(result.map((r) => r.actionId)).toEqual(['passing', 'explanation']);
+    expect(result.find((r) => r.actionId === 'wasteTime')).toBeUndefined();
+  });
+});
+
+describe('aggregateCountersAcrossDrills', () => {
+  test('sums counts per actionId across drills, sorts descending', () => {
+    const drills = [
+      makeDrill({
+        id: 1,
+        counterData: {
+          shots: { count: 3, timestamps: [] },
+          passes: { count: 2, timestamps: [] },
+        },
+      }),
+      makeDrill({
+        id: 2,
+        counterData: {
+          shots: { count: 4, timestamps: [] },
+        },
+      }),
+    ];
+
+    const result = aggregateCountersAcrossDrills(drills, t);
+    expect(result.map((r) => [r.actionId, r.count])).toEqual([
+      ['shots', 7],
+      ['passes', 2],
+    ]);
+  });
+
+  test('omits counters with zero count', () => {
+    const drills = [
+      makeDrill({
+        counterData: {
+          shots: { count: 0, timestamps: [] },
+          passes: { count: 1, timestamps: [] },
+        },
+      }),
+    ];
+
+    const result = aggregateCountersAcrossDrills(drills, t);
+    expect(result.map((r) => r.actionId)).toEqual(['passes']);
   });
 });

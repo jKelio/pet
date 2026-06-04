@@ -381,3 +381,60 @@ export function aggregateTimeByActionForDrill(
 
   return result;
 }
+
+/**
+ * Sums every timer action across all drills into one session-wide row per
+ * actionId. Mirrors the per-drill "Stopped times" table: with/without puck stay
+ * separate (no Time-Moving merge) and waste time is excluded.
+ */
+export function aggregateTimersAcrossDrills(
+  drills: Drill[],
+  t: TFunction,
+): Array<{ actionId: string; actionLabel: string; segments: number; totalTime: number }> {
+  const totals = new Map<string, { segments: number; totalTime: number }>();
+
+  drills.forEach((drill) => {
+    Object.entries(drill.timerData ?? {}).forEach(([actionId, td]) => {
+      const entry = totals.get(actionId) ?? { segments: 0, totalTime: 0 };
+      entry.totalTime += td.totalTime ?? 0;
+      entry.segments += td.timeSegments?.length ?? 0;
+      totals.set(actionId, entry);
+    });
+  });
+
+  return Array.from(totals.entries())
+    .filter(([, v]) => v.totalTime > 0)
+    .map(([actionId, v]) => ({
+      actionId,
+      actionLabel: t(`actions.${actionId}`, { defaultValue: actionId }),
+      segments: v.segments,
+      totalTime: v.totalTime,
+    }))
+    .sort((a, b) => b.totalTime - a.totalTime);
+}
+
+/**
+ * Sums every counter across all drills into one session-wide row per actionId.
+ * Mirrors the per-drill "Counters" table.
+ */
+export function aggregateCountersAcrossDrills(
+  drills: Drill[],
+  t: TFunction,
+): Array<{ actionId: string; actionLabel: string; count: number }> {
+  const totals = new Map<string, number>();
+
+  drills.forEach((drill) => {
+    Object.entries(drill.counterData ?? {}).forEach(([actionId, cd]) => {
+      totals.set(actionId, (totals.get(actionId) ?? 0) + (cd.count ?? 0));
+    });
+  });
+
+  return Array.from(totals.entries())
+    .filter(([, count]) => count > 0)
+    .map(([actionId, count]) => ({
+      actionId,
+      actionLabel: t(`actions.${actionId}`, { defaultValue: actionId }),
+      count,
+    }))
+    .sort((a, b) => b.count - a.count);
+}

@@ -32,6 +32,8 @@ import {
   extractDrillDurations,
   extractTimelineSegmentsForDrill,
   aggregateTimeByActionForDrill,
+  aggregateTimersAcrossDrills,
+  aggregateCountersAcrossDrills,
   ACTION_COLORS,
   formatRelativeTime,
 } from './lib/ganttUtils.js';
@@ -115,6 +117,10 @@ export function ResultsPage() {
         ]
       : []),
   ];
+
+  // Session-wide aggregation across every drill (mirrors the per-drill tables).
+  const overallTimers = aggregateTimersAcrossDrills(drills, t);
+  const overallCounters = aggregateCountersAcrossDrills(drills, t);
 
   // ── PDF export ────────────────────────────────────────────────────────────
 
@@ -306,7 +312,28 @@ export function ResultsPage() {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               {t('results.timePerDrill')}
             </h2>
-            <div className="rounded-lg border border-border bg-card p-4">
+            <div className="rounded-lg border border-border bg-card p-4 grid sm:grid-cols-2 gap-6">
+              {/* Pie chart */}
+              <ResponsiveContainer width="100%" height={Math.max(200, drillTimeData.length * 40 + 60)}>
+                <PieChart>
+                  <Pie
+                    data={drillTimeData}
+                    dataKey="totalTime"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={70}
+                  >
+                    {drillTimeData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v) => formatDuration(v as number)} />
+                  <Legend formatter={(label) => <span className="text-xs">{label}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* Bar chart */}
               <ResponsiveContainer width="100%" height={Math.max(200, drillTimeData.length * 40 + 60)}>
                 <BarChart data={drillTimeData} layout="vertical" margin={{ left: 20, right: 30 }}>
                   <XAxis
@@ -323,6 +350,82 @@ export function ResultsPage() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          </section>
+        )}
+
+        {/* ── Aktionen & Zähler über alle Drills ───────────────────────────── */}
+        {(overallTimers.length > 0 || overallCounters.length > 0) && (
+          <section className="pdf-section space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              {t('results.overall')}
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {/* Gestoppte Zeiten (gesamt) */}
+              {overallTimers.length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground mb-3">{t('results.stoppedTimes')}</p>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-xs text-muted-foreground">
+                        <th className="text-left pb-2 font-medium">{t('results.action')}</th>
+                        <th className="text-right pb-2 font-medium">{t('results.segments')}</th>
+                        <th className="text-right pb-2 font-medium">{t('results.total')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {overallTimers.map((row) => (
+                        <tr key={row.actionId} className="border-b border-border/50 last:border-0">
+                          <td className="py-1.5 flex items-center gap-2">
+                            <span
+                              className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                              style={{ backgroundColor: ACTION_COLORS[row.actionId] ?? '#999' }}
+                            />
+                            {row.actionLabel}
+                          </td>
+                          <td className="py-1.5 text-right tabular-nums text-muted-foreground">
+                            {row.segments}×
+                          </td>
+                          <td className="py-1.5 text-right tabular-nums font-medium">
+                            {formatDuration(row.totalTime)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Zähler (gesamt) */}
+              {overallCounters.length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground mb-3">{t('results.counters')}</p>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-xs text-muted-foreground">
+                        <th className="text-left pb-2 font-medium">{t('results.action')}</th>
+                        <th className="text-right pb-2 font-medium">{t('results.count')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {overallCounters.map((row) => (
+                        <tr key={row.actionId} className="border-b border-border/50 last:border-0">
+                          <td className="py-1.5 flex items-center gap-2">
+                            <span
+                              className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                              style={{ backgroundColor: ACTION_COLORS[row.actionId] ?? '#999' }}
+                            />
+                            {row.actionLabel}
+                          </td>
+                          <td className="py-1.5 text-right tabular-nums font-medium">
+                            {row.count}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </section>
         )}

@@ -203,6 +203,7 @@ const resources = {
         total: 'Total',
         counters: 'Counters',
         count: 'Count',
+        overall: 'Across all drills',
       },
       timeWatcher: {
         title: 'Time Watcher',
@@ -442,6 +443,7 @@ const resources = {
         total: 'Gesamt',
         counters: 'Zähler',
         count: 'Anzahl',
+        overall: 'Über alle Drills',
       },
       timeWatcher: {
         title: 'Zeit Beobachter',

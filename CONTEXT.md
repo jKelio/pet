@@ -27,3 +27,16 @@ _Avoid_: Loss, giveaway.
 **Time-Moving-Episode**:
 One continuous movement bout of the tracked player, made up of adjacent `with Puck` and `without Puck` children. It ends when neither puck timer is running (the player stops moving) and a new one begins when movement resumes. A drill may contain several. Episodes are *derived* from the children's timestamps, not stored.
 _Avoid_: Segment (reserved for a single timer start/stop interval), bout.
+
+### Actions & counters
+
+**Action**:
+Any single thing a coach can log against a drill. Every Action is one of two kinds — a **Timer Action** or a **Counter** — so "Action" is the umbrella term, not a third category alongside them.
+_Avoid_: using "Action" to mean only the timed kind.
+
+**Timer Action**:
+An Action measured as *elapsed time* (e.g. Explanation, Demonstration, `with Puck`, `without Puck`). It accumulates duration while running.
+
+**Counter**:
+An Action measured as a *number of occurrences* (e.g. Repetition, Shot, Pass, Feedback to a player). Each trigger records one event; there is no duration.
+_Avoid_: Tally, hit count.
