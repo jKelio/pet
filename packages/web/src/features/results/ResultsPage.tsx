@@ -136,6 +136,14 @@ export function ResultsPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // In view-only mode (cloud session preview) the store is never reset above,
+  // so reset it when the user navigates away to avoid leaking cloud data into
+  // the Tracking page and auto-starting the gap timer there.
+  useEffect(() => {
+    if (!viewOnly) return;
+    return () => resetAllData();
+  }, [viewOnly, resetAllData]);
+
   const handleSync = async () => {
     if (!accessToken) return;
     const teamId = teams[0]?.id;

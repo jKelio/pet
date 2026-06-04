@@ -37,6 +37,8 @@ export function useDraftPersistence() {
 
   // Debounced auto-save on state changes
   useEffect(() => {
+    // Don't persist cloud-session previews as drafts
+    if (sessionId.startsWith('cloud-')) return;
     // Don't save an empty session
     if (drills.length === 0 && !practiceInfo.clubName) return;
 
