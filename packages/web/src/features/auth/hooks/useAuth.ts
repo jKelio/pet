@@ -1,4 +1,5 @@
 import { useAuthStore } from '../stores/auth.store.js';
+import { useAdminStore } from '../../admin/stores/admin.store.js';
 import { authApi } from '../api/auth.api.js';
 import type { Permission } from '@pet/shared';
 import { hasPermission } from '@pet/shared';
@@ -6,7 +7,7 @@ import { hasPermission } from '@pet/shared';
 export function useAuth() {
   const { user, accessToken, tenantId, isAuthenticated, setAuth, clearAuth } = useAuthStore();
 
-  const role = useAuthStore((s) => s.user as any)?.role;
+  const role = useAdminStore((s) => s.membership?.role);
 
   const can = (permission: Permission): boolean => {
     if (!role) return false;

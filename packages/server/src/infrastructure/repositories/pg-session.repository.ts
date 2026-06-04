@@ -25,7 +25,7 @@ export class PgSessionRepository implements SessionRepository {
     return this.toEntity(row, drillRows);
   }
 
-  async findByTeam(teamId: string, tenantId: string, options: FindSessionsOptions = {}): Promise<PracticeSession[]> {
+  async findByTeam(teamId: string, tenantId: string, _options: FindSessionsOptions = {}): Promise<PracticeSession[]> {
     const rows = await this.db
       .select()
       .from(practiceSessions)
@@ -42,7 +42,7 @@ export class PgSessionRepository implements SessionRepository {
   }
 
   async save(session: PracticeSession): Promise<void> {
-    const { practiceInfo: info, drills: sessionDrills, ...rest } = session;
+    const { practiceInfo: info, drills: sessionDrills } = session;
 
     await this.db.transaction(async (tx) => {
       await tx

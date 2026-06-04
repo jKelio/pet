@@ -22,7 +22,7 @@ interface AdminState {
   reset: () => void;
 }
 
-export const useAdminStore = create<AdminState>()((set, get) => ({
+export const useAdminStore = create<AdminState>()((set) => ({
   user: null,
   membership: null,
   tenant: null,

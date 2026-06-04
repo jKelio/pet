@@ -1,4 +1,4 @@
-import type { User, Membership, Team, Tenant, UserRole } from '@pet/shared';
+import type { User, Membership, Team, Tenant } from '@pet/shared';
 
 export interface UserRepository {
   findById(id: string): Promise<User | null>;

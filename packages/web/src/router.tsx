@@ -33,14 +33,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="p-8 text-center text-muted-foreground">
-      <h2 className="text-xl font-semibold mb-2">{title}</h2>
-      <p>Wird in Phase 4 implementiert.</p>
-    </div>
-  );
-}
 
 export const router = createBrowserRouter([
   {
