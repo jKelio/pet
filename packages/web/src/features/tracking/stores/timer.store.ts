@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 import type { Drill, TimeSegment, TimerData, CounterData } from '@pet/shared';
+import {
+  TIME_MOVING_WITH_PUCK,
+  TIME_MOVING_WITHOUT_PUCK,
+  PUCK_RELEASE_COUNTER_IDS,
+} from '@pet/shared';
 import { useTrackingStore } from './tracking.store.js';
 
 export interface TimerState {
@@ -257,6 +262,16 @@ export const useTimerStore = create<TimerStore>()((set, get) => ({
       );
       return { counters: { ...state.counters, [id]: updated } };
     });
+
+    // Coupling: a Pass or Shot releases the puck. Only while the tracked player
+    // is moving WITH the puck does this switch Time Moving to "without puck"
+    // (which stops the with-puck timer). Otherwise it stays a plain counter tap.
+    if (
+      (PUCK_RELEASE_COUNTER_IDS as readonly string[]).includes(id) &&
+      get().currentTimer === TIME_MOVING_WITH_PUCK
+    ) {
+      get().startTimer(TIME_MOVING_WITHOUT_PUCK);
+    }
   },
 
   decrementCounter: (id) => {

@@ -13,12 +13,27 @@ export const TIMER_TICK_MS = 100;
 /** Minimum touch target size in pixels */
 export const MIN_TOUCH_TARGET_PX = 44;
 
+/**
+ * Time Moving puck-split timer ids.
+ * Time Moving is the sum of these two; only one runs at a time.
+ */
+export const TIME_MOVING_WITH_PUCK = 'timemovingwithpuck';
+export const TIME_MOVING_WITHOUT_PUCK = 'timemovingwithoutpuck';
+export const PUCK_TIMER_IDS = [TIME_MOVING_WITH_PUCK, TIME_MOVING_WITHOUT_PUCK] as const;
+
+/**
+ * Counters that release the puck. Tapping one while the player is moving WITH
+ * the puck switches Time Moving to "without puck".
+ */
+export const PUCK_RELEASE_COUNTER_IDS = ['passes', 'shots'] as const;
+
 /** Available action button definitions */
 export const DEFAULT_ACTION_BUTTONS = [
   { id: 'explanation', type: 'timer' as const, enabled: true },
   { id: 'demonstration', type: 'timer' as const, enabled: true },
   { id: 'feedbackteam', type: 'timer' as const, enabled: true },
-  { id: 'timemoving', type: 'timer' as const, enabled: true },
+  { id: TIME_MOVING_WITH_PUCK, type: 'timer' as const, enabled: true },
+  { id: TIME_MOVING_WITHOUT_PUCK, type: 'timer' as const, enabled: true },
   { id: 'repetition', type: 'counter' as const, enabled: true },
   { id: 'feedbackplayers', type: 'counter' as const, enabled: true },
   { id: 'shots', type: 'counter' as const, enabled: true },
@@ -33,6 +48,8 @@ export const ACTION_COLORS: Record<string, string> = {
   changesideone: '#FF8042',
   changesidetwo: '#FF6666',
   timemoving: '#A28BFE',
+  timemovingwithpuck: '#A28BFE',
+  timemovingwithoutpuck: '#C9BCFE',
   wasteTime: '#808080',
   repetition: '#E91E63',
   feedbackplayers: '#9C27B0',

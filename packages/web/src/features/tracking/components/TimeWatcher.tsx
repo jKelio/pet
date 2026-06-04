@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Square, CheckCircle, Hourglass, Timer, Hash, Plus, Minus } from 'lucide-react';
+import {
+  PUCK_TIMER_IDS,
+  TIME_MOVING_WITH_PUCK,
+  TIME_MOVING_WITHOUT_PUCK,
+} from '@pet/shared';
 import { Button } from '../../../shared/components/ui/button.js';
 import { useTrackingStore } from '../stores/tracking.store.js';
 import { useTimerStore, formatTime } from '../stores/timer.store.js';
@@ -131,6 +136,18 @@ export function TimeWatcher({ onFinish }: Props) {
   const timerActions = enabledActions.filter((a) => a.type === 'timer');
   const counterActions = enabledActions.filter((a) => a.type === 'counter');
 
+  // Time Moving = with Puck + without Puck (the running one's elapsed counts live).
+  const withPuck = timers[TIME_MOVING_WITH_PUCK];
+  const withoutPuck = timers[TIME_MOVING_WITHOUT_PUCK];
+  const showTimeMovingTotal = timerActions.some((a) =>
+    (PUCK_TIMER_IDS as readonly string[]).includes(a.id),
+  );
+  const timeMovingTotal =
+    (withPuck?.totalTime ?? 0) +
+    (withPuck?.elapsedTime ?? 0) +
+    (withoutPuck?.totalTime ?? 0) +
+    (withoutPuck?.elapsedTime ?? 0);
+
   return (
     <div className="flex flex-col h-full">
       {/* Drill header */}
@@ -161,7 +178,13 @@ export function TimeWatcher({ onFinish }: Props) {
               const total = (timer?.totalTime ?? 0) + (timer?.elapsedTime ?? 0);
               const isRunning = timer?.isRunning ?? false;
               const isActive = currentTimer === action.id;
-              const isDisabled = !!currentTimer && !isActive;
+              // The two Time Moving puck timers may always switch directly
+              // between each other; other timers stay mutually exclusive.
+              const isPuckPair =
+                (PUCK_TIMER_IDS as readonly string[]).includes(action.id) &&
+                !!currentTimer &&
+                (PUCK_TIMER_IDS as readonly string[]).includes(currentTimer);
+              const isDisabled = !!currentTimer && !isActive && !isPuckPair;
 
               return (
                 <div
@@ -193,6 +216,19 @@ export function TimeWatcher({ onFinish }: Props) {
                 </div>
               );
             })}
+
+            {showTimeMovingTotal && (
+              <div className="flex items-center gap-3 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground truncate">
+                    {t('timeWatcher.timeMovingTotal')}
+                  </p>
+                </div>
+                <p className="font-mono text-base font-bold tabular-nums">
+                  {formatTime(timeMovingTotal)}
+                </p>
+              </div>
+            )}
           </section>
         )}
 

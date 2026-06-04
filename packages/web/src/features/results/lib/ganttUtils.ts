@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Drill, TimeSegment } from '@pet/shared';
-import { ACTION_COLORS as SHARED_COLORS } from '@pet/shared';
+import { ACTION_COLORS as SHARED_COLORS, PUCK_TIMER_IDS } from '@pet/shared';
 
 export const ACTION_COLORS: Record<string, string> = SHARED_COLORS;
 
@@ -344,7 +344,16 @@ export function aggregateTimeByActionForDrill(
 ): Array<{ actionId: string; actionLabel: string; totalTime: number }> {
   const result: Array<{ actionId: string; actionLabel: string; totalTime: number }> = [];
 
+  // Time Moving = with Puck + without Puck. Merge the two into one combined
+  // slice so the per-action pie/bar shows the total without double-counting.
+  // The with/without split stays visible in the Gantt timeline and the table.
+  let timeMovingTotal = 0;
+
   Object.entries(drill.timerData ?? {}).forEach(([actionId, td]) => {
+    if ((PUCK_TIMER_IDS as readonly string[]).includes(actionId)) {
+      timeMovingTotal += td.totalTime ?? 0;
+      return;
+    }
     if (td.totalTime > 0) {
       result.push({
         actionId,
@@ -353,6 +362,14 @@ export function aggregateTimeByActionForDrill(
       });
     }
   });
+
+  if (timeMovingTotal > 0) {
+    result.push({
+      actionId: 'timemoving',
+      actionLabel: t('actions.timemoving', { defaultValue: 'Time moving' }),
+      totalTime: timeMovingTotal,
+    });
+  }
 
   if ((drill.wasteTime?.totalTime ?? 0) > 0) {
     result.push({

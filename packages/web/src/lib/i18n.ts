@@ -46,6 +46,8 @@ const resources = {
         changesideone: 'Change Side #1',
         changesidetwo: 'Change Side #2',
         timemoving: 'Time moving',
+        timemovingwithpuck: 'Time moving (with puck)',
+        timemovingwithoutpuck: 'Time moving (without puck)',
         repetition: 'Repetition',
         feedbackplayers: 'Feedback (Player)',
         shots: 'Shots',
@@ -62,6 +64,7 @@ const resources = {
       timeWatcher: {
         title: 'Time Watcher',
         timers: 'Timers',
+        timeMovingTotal: 'Time Moving (total)',
         counters: 'Counters',
         active: 'Active',
         inactive: 'Inactive',
@@ -140,6 +143,8 @@ const resources = {
         changesideone: 'Seite wechseln #1',
         changesidetwo: 'Seite wechseln #2',
         timemoving: 'Bewegungszeit',
+        timemovingwithpuck: 'Bewegungszeit (mit Puck)',
+        timemovingwithoutpuck: 'Bewegungszeit (ohne Puck)',
         repetition: 'Wiederholung',
         feedbackplayers: 'Feedback (Spieler)',
         shots: 'Schüsse',
@@ -156,6 +161,7 @@ const resources = {
       timeWatcher: {
         title: 'Zeit Beobachter',
         timers: 'Zeitmesser',
+        timeMovingTotal: 'Bewegungszeit (gesamt)',
         counters: 'Zähler',
         active: 'Aktiv',
         inactive: 'Inaktiv',

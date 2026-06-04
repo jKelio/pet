@@ -1,6 +1,11 @@
 import { describe, test, expect } from 'bun:test';
 import type { Drill } from '@pet/shared';
-import { formatRelativeTime, extractDrillDurations } from './ganttUtils.js';
+import { TIME_MOVING_WITH_PUCK, TIME_MOVING_WITHOUT_PUCK } from '@pet/shared';
+import {
+  formatRelativeTime,
+  extractDrillDurations,
+  aggregateTimeByActionForDrill,
+} from './ganttUtils.js';
 
 const t = ((key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key) as unknown as Parameters<
   typeof extractDrillDurations
@@ -102,5 +107,39 @@ describe('extractDrillDurations', () => {
 
     const [d] = extractDrillDurations([drill], t);
     expect(d.duration).toBe(15_000);
+  });
+});
+
+describe('aggregateTimeByActionForDrill', () => {
+  test('merges the two puck timers into one combined "Time Moving" entry', () => {
+    const drill = makeDrill({
+      timerData: {
+        explanation: { totalTime: 5_000, timeSegments: [] },
+        [TIME_MOVING_WITH_PUCK]: { totalTime: 12_000, timeSegments: [] },
+        [TIME_MOVING_WITHOUT_PUCK]: { totalTime: 8_000, timeSegments: [] },
+      },
+    });
+
+    const result = aggregateTimeByActionForDrill(drill, t);
+
+    // No separate with/without slices remain.
+    expect(result.find((r) => r.actionId === TIME_MOVING_WITH_PUCK)).toBeUndefined();
+    expect(result.find((r) => r.actionId === TIME_MOVING_WITHOUT_PUCK)).toBeUndefined();
+
+    // One combined Time Moving entry summing both.
+    const timeMoving = result.find((r) => r.actionId === 'timemoving');
+    expect(timeMoving?.totalTime).toBe(20_000);
+
+    // Other timers untouched.
+    expect(result.find((r) => r.actionId === 'explanation')?.totalTime).toBe(5_000);
+  });
+
+  test('omits Time Moving when neither puck timer has time', () => {
+    const drill = makeDrill({
+      timerData: { explanation: { totalTime: 5_000, timeSegments: [] } },
+    });
+
+    const result = aggregateTimeByActionForDrill(drill, t);
+    expect(result.find((r) => r.actionId === 'timemoving')).toBeUndefined();
   });
 });
