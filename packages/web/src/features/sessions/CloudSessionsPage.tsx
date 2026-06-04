@@ -19,9 +19,9 @@ function formatDate(iso: string): string {
   });
 }
 
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
+function formatDuration(ms: number): string {
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
   if (h === 0) return `${m} min`;
   return `${h} h ${m} min`;
 }
