@@ -9,11 +9,6 @@ import { useAuthStore } from './features/auth/stores/auth.store.js';
 const ResultsPage = lazy(() =>
   import('./features/results/ResultsPage.js').then((m) => ({ default: m.ResultsPage })),
 );
-const SessionHistoryPage = lazy(() =>
-  import('./features/sessions/SessionHistoryPage.js').then((m) => ({
-    default: m.SessionHistoryPage,
-  })),
-);
 const AdminPage = lazy(() =>
   import('./features/admin/AdminPage.js').then((m) => ({ default: m.AdminPage })),
 );
@@ -60,18 +55,6 @@ export const router = createBrowserRouter([
         <ProtectedRoute>
           <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
             <ResultsPage />
-          </Suspense>
-        </ProtectedRoute>
-      </AppShell>
-    ),
-  },
-  {
-    path: '/sessions/history',
-    element: (
-      <AppShell>
-        <ProtectedRoute>
-          <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
-            <SessionHistoryPage />
           </Suspense>
         </ProtectedRoute>
       </AppShell>

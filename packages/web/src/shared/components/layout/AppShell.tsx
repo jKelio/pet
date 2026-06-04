@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import {
   Timer,
   BarChart2,
-  FolderOpen,
   Cloud,
   Users,
   BookOpen,
@@ -31,7 +30,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.tracking', href: '/', icon: Timer, requiresAuth: true },
   { labelKey: 'nav.results', href: '/sessions', icon: BarChart2, requiresAuth: true },
-  { labelKey: 'nav.history', href: '/sessions/history', icon: FolderOpen, requiresAuth: true },
   { labelKey: 'nav.cloud', href: '/sessions/cloud', icon: Cloud, requiresAuth: true },
   { labelKey: 'nav.glossary', href: '/glossary', icon: BookOpen, requiresAuth: false },
   { labelKey: 'nav.team', href: '/admin', icon: Users, requiresAuth: true },

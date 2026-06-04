@@ -68,6 +68,7 @@ export async function completeSession(
 ): Promise<void> {
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const id = UUID_RE.test(sessionId) ? sessionId : crypto.randomUUID();
+  await db.sessions.clear();
   await db.sessions.put({
     id,
     practiceInfo,

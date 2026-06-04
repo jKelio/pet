@@ -23,11 +23,16 @@ import {
   Clock,
   Layers,
   TrendingDown,
+  Cloud,
 } from 'lucide-react';
+import type { TimerData, Drill, PracticeInfo } from '@pet/shared';
 import { Button } from '../../shared/components/ui/button.js';
 import { useTrackingStore } from '../tracking/stores/tracking.store.js';
 import { completeSession } from '../tracking/hooks/useDraftPersistence.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
+import { useAdminStore } from '../admin/stores/admin.store.js';
+import { sessionApi } from '../sessions/api/session.api.js';
+import { db } from '../sessions/lib/db.js';
 import {
   extractDrillDurations,
   extractTimelineSegmentsForDrill,
@@ -54,6 +59,43 @@ function formatDuration(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')} min`;
 }
 
+// ── Data normalizers (backward compat for sessions saved with old field names) ──
+
+function normalizeTimerData(raw: unknown): TimerData {
+  const td = raw as Record<string, unknown>;
+  const segs = Array.isArray(td?.timeSegments) ? td.timeSegments : [];
+  return {
+    totalTime: typeof td?.totalTime === 'number' ? td.totalTime : 0,
+    timeSegments: segs.map((s: Record<string, unknown>) => {
+      const startTime = typeof s.startTime === 'number' ? s.startTime : (s.start as number ?? 0);
+      const endTime = typeof s.endTime === 'number' ? s.endTime
+        : typeof s.end === 'number' ? s.end
+        : null;
+      const duration = typeof s.duration === 'number' ? s.duration
+        : (endTime != null ? endTime - startTime : 0);
+      return { startTime, endTime, duration };
+    }),
+  };
+}
+
+function normalizeDrill(drill: Drill): Drill {
+  return {
+    ...drill,
+    wasteTime: normalizeTimerData(drill.wasteTime),
+    timerData: Object.fromEntries(
+      Object.entries(drill.timerData ?? {}).map(([k, v]) => [k, normalizeTimerData(v)]),
+    ),
+  };
+}
+
+function normalizePracticeInfo(pi: PracticeInfo): PracticeInfo {
+  return {
+    ...pi,
+    totalTime: Math.round(pi.totalTime * 3_600_000),
+    wasteTime: normalizeTimerData(pi.wasteTime),
+  };
+}
+
 export function ResultsPage() {
   const { t } = useTranslation('pet');
   const navigate = useNavigate();
@@ -63,42 +105,88 @@ export function ResultsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
 
-  const sessionId = useTrackingStore((s) => s.sessionId);
-  const drills = useTrackingStore((s) => s.drills);
-  const practiceInfo = useTrackingStore((s) => s.practiceInfo);
+  // Freeze display data on first render so resetting the store doesn't clear the UI
+  const [localSessionId] = useState(() => useTrackingStore.getState().sessionId);
+  const [localDrills] = useState(() => useTrackingStore.getState().drills);
+  const [localPracticeInfo] = useState(() => useTrackingStore.getState().practiceInfo);
+
   const resetAllData = useTrackingStore((s) => s.resetAllData);
   const tenantId = useAuthStore((s) => s.tenantId);
+  const accessToken = useAuthStore((s) => s.accessToken);
 
-  // Save completed session to IndexedDB — skipped in view-only mode (cloud sessions)
+  const teams = useAdminStore((s) => s.teams);
+  const membership = useAdminStore((s) => s.membership);
+  const loadProfile = useAdminStore((s) => s.loadProfile);
+
+  const [synced, setSynced] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!viewOnly && drills.length > 0) {
-      completeSession(sessionId, practiceInfo, drills, tenantId).catch(() => {});
+    if (accessToken && !membership) loadProfile(accessToken);
+  }, [accessToken, membership]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save completed session to IndexedDB, then clear the store so the auto-save
+  // hook on TrackingPage can't recreate a stale draft. Skipped in view-only mode.
+  useEffect(() => {
+    if (!viewOnly && localDrills.length > 0) {
+      completeSession(localSessionId, localPracticeInfo, localDrills, tenantId)
+        .then(() => resetAllData())
+        .catch(() => {});
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSync = async () => {
+    if (!accessToken) return;
+    const teamId = teams[0]?.id;
+    if (!teamId) {
+      setSyncError(t('sessions.noTeamError'));
+      return;
+    }
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const syncId = UUID_RE.test(localSessionId) ? localSessionId : crypto.randomUUID();
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      await sessionApi.sync(
+        {
+          id: syncId,
+          teamId,
+          practiceInfo: normalizePracticeInfo(localPracticeInfo),
+          drills: localDrills.map(normalizeDrill),
+        },
+        accessToken,
+      );
+      await db.sessions.update(localSessionId, { syncedAt: Date.now(), teamId });
+      setSynced(true);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : t('sessions.syncError'));
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // ── Computed values ───────────────────────────────────────────────────────
 
   const totalWasteTime =
-    drills.reduce((sum, d) => sum + (d.wasteTime?.totalTime ?? 0), 0) +
-    (practiceInfo.wasteTime?.totalTime ?? 0);
+    localDrills.reduce((sum, d) => sum + (d.wasteTime?.totalTime ?? 0), 0) +
+    (localPracticeInfo.wasteTime?.totalTime ?? 0);
 
-  const totalTimerTime = drills.reduce(
+  const totalTimerTime = localDrills.reduce(
     (sum, d) => sum + Object.values(d.timerData ?? {}).reduce((s, td) => s + (td.totalTime ?? 0), 0),
     0,
   );
   const totalTime = totalTimerTime + totalWasteTime;
   const wastePercent = totalTime > 0 ? Math.round((totalWasteTime / totalTime) * 100) : 0;
 
-  const gapSegments = practiceInfo.wasteTime?.timeSegments ?? [];
+  const gapSegments = localPracticeInfo.wasteTime?.timeSegments ?? [];
   const trainingStartTime = gapSegments[0]?.startTime;
   const lastGap = gapSegments[gapSegments.length - 1];
   const totalTrainingDuration =
     trainingStartTime && lastGap?.endTime ? lastGap.endTime - trainingStartTime : undefined;
 
-  const drillDurations = extractDrillDurations(drills, t, trainingStartTime);
+  const drillDurations = extractDrillDurations(localDrills, t, trainingStartTime);
 
-  // Derived from the same wall-clock span as the "Trainings-Zeitleiste" so both
-  // charts always agree on a drill's duration.
   const drillTimeData = [
     ...drillDurations
       .map((d, i) => ({
@@ -107,20 +195,19 @@ export function ResultsPage() {
         color: DRILL_COLORS[i % DRILL_COLORS.length],
       }))
       .filter((d) => d.totalTime > 0),
-    ...(practiceInfo.wasteTime?.totalTime > 0
+    ...(localPracticeInfo.wasteTime?.totalTime > 0
       ? [
           {
             name: t('timeWatcher.gapTime'),
-            totalTime: practiceInfo.wasteTime.totalTime,
+            totalTime: localPracticeInfo.wasteTime.totalTime,
             color: '#808080',
           },
         ]
       : []),
   ];
 
-  // Session-wide aggregation across every drill (mirrors the per-drill tables).
-  const overallTimers = aggregateTimersAcrossDrills(drills, t);
-  const overallCounters = aggregateCountersAcrossDrills(drills, t);
+  const overallTimers = aggregateTimersAcrossDrills(localDrills, t);
+  const overallCounters = aggregateCountersAcrossDrills(localDrills, t);
 
   // ── PDF export ────────────────────────────────────────────────────────────
 
@@ -189,13 +276,12 @@ export function ResultsPage() {
   };
 
   const handleReset = () => {
-    resetAllData();
     navigate('/');
   };
 
   const handleBack = () => navigate(-1);
 
-  if (drills.length === 0) {
+  if (localDrills.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
         <p className="text-muted-foreground">{t('results.noData')}</p>
@@ -210,31 +296,48 @@ export function ResultsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card gap-3 flex-wrap">
-        <h1 className="text-xl font-bold">{t('results.title')}</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={exportToPdf} disabled={isExporting}>
-            {isExporting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4" />
+      <div className="flex flex-col border-b border-border bg-card">
+        <div className="flex items-center justify-between px-6 py-4 gap-3 flex-wrap">
+          <h1 className="text-xl font-bold">{t('results.title')}</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={exportToPdf} disabled={isExporting}>
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              <span className="ml-1.5 hidden sm:inline">
+                {isExporting ? exportStatus || t('results.exporting') : t('results.pdfExport')}
+              </span>
+            </Button>
+            {accessToken && !viewOnly && !synced && (
+              <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
+                {syncing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Cloud className="h-4 w-4" />
+                )}
+                <span className="ml-1.5 hidden sm:inline">{t('sessions.syncToCloud')}</span>
+              </Button>
             )}
-            <span className="ml-1.5 hidden sm:inline">
-              {isExporting ? exportStatus || t('results.exporting') : t('results.pdfExport')}
-            </span>
-          </Button>
-          {viewOnly ? (
-            <Button variant="outline" size="sm" onClick={handleBack}>
-              <ArrowLeft className="h-4 w-4" />
-              <span className="ml-1.5 hidden sm:inline">{t('results.back')}</span>
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4" />
-              <span className="ml-1.5 hidden sm:inline">{t('results.newTraining')}</span>
-            </Button>
-          )}
+            {viewOnly ? (
+              <Button variant="outline" size="sm" onClick={handleBack}>
+                <ArrowLeft className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">{t('results.back')}</span>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={handleReset}>
+                <RotateCcw className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">{t('results.newTraining')}</span>
+              </Button>
+            )}
+          </div>
         </div>
+        {syncError && (
+          <p className="px-6 pb-3 text-xs text-destructive">
+            {t('sessions.errorPrefix')}: {syncError}
+          </p>
+        )}
       </div>
 
       {/* Scrollable content — also used as export container */}
@@ -249,7 +352,7 @@ export function ResultsPage() {
             <SummaryCard
               icon={<Layers className="h-5 w-5" />}
               label={t('results.drills')}
-              value={String(drills.length)}
+              value={String(localDrills.length)}
             />
             <SummaryCard
               icon={<Clock className="h-5 w-5" />}
@@ -270,22 +373,22 @@ export function ResultsPage() {
           </div>
 
           {/* Practice info */}
-          {practiceInfo.clubName && (
+          {localPracticeInfo.clubName && (
             <div className="mt-4 rounded-lg border border-border bg-card p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-              {practiceInfo.clubName && (
-                <InfoRow label={t('results.club')} value={practiceInfo.clubName} />
+              {localPracticeInfo.clubName && (
+                <InfoRow label={t('results.club')} value={localPracticeInfo.clubName} />
               )}
-              {practiceInfo.teamName && (
-                <InfoRow label={t('results.team')} value={practiceInfo.teamName} />
+              {localPracticeInfo.teamName && (
+                <InfoRow label={t('results.team')} value={localPracticeInfo.teamName} />
               )}
-              {practiceInfo.coachName && (
-                <InfoRow label={t('results.coach')} value={practiceInfo.coachName} />
+              {localPracticeInfo.coachName && (
+                <InfoRow label={t('results.coach')} value={localPracticeInfo.coachName} />
               )}
-              {practiceInfo.trackedPlayerName && (
-                <InfoRow label={t('results.player')} value={practiceInfo.trackedPlayerName} />
+              {localPracticeInfo.trackedPlayerName && (
+                <InfoRow label={t('results.player')} value={localPracticeInfo.trackedPlayerName} />
               )}
-              {practiceInfo.date && (
-                <InfoRow label={t('results.date')} value={new Date(practiceInfo.date).toLocaleDateString()} />
+              {localPracticeInfo.date && (
+                <InfoRow label={t('results.date')} value={new Date(localPracticeInfo.date).toLocaleDateString()} />
               )}
             </div>
           )}
@@ -361,7 +464,6 @@ export function ResultsPage() {
               {t('results.overall')}
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
-              {/* Gestoppte Zeiten (gesamt) */}
               {overallTimers.length > 0 && (
                 <div className="rounded-lg border border-border bg-card p-4">
                   <p className="text-xs text-muted-foreground mb-3">{t('results.stoppedTimes')}</p>
@@ -396,7 +498,6 @@ export function ResultsPage() {
                 </div>
               )}
 
-              {/* Zähler (gesamt) */}
               {overallCounters.length > 0 && (
                 <div className="rounded-lg border border-border bg-card p-4">
                   <p className="text-xs text-muted-foreground mb-3">{t('results.counters')}</p>
@@ -430,9 +531,8 @@ export function ResultsPage() {
           </section>
         )}
 
-
         {/* ── Per-drill detail ─────────────────────────────────────────── */}
-        {drills.map((drill) => {
+        {localDrills.map((drill) => {
           const actionData = aggregateTimeByActionForDrill(drill, t);
           const { segments: dSegs, counterEvents: dCtrEvents, actionLabels: dLabels } =
             extractTimelineSegmentsForDrill(drill, t);
@@ -470,7 +570,6 @@ export function ResultsPage() {
               {/* Pie + Bar charts */}
               {actionData.length > 0 && (
                 <div className="rounded-lg border border-border bg-card p-4 grid sm:grid-cols-2 gap-6">
-                  {/* Pie chart */}
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">{t('results.timePerAction')}</p>
                     <ResponsiveContainer width="100%" height={200}>
@@ -496,7 +595,6 @@ export function ResultsPage() {
                     </ResponsiveContainer>
                   </div>
 
-                  {/* Bar chart */}
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">{t('results.timePerAction')}</p>
                     <ResponsiveContainer width="100%" height={200}>
@@ -521,10 +619,10 @@ export function ResultsPage() {
                   </div>
                 </div>
               )}
+
               {/* Timer + Counter tables */}
               {(timerData.length > 0 || counterData.length > 0) && (
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {/* Gestoppte Zeiten */}
                   {timerData.length > 0 && (
                     <div className="rounded-lg border border-border bg-card p-4">
                       <p className="text-xs text-muted-foreground mb-3">{t('results.stoppedTimes')}</p>
@@ -559,7 +657,6 @@ export function ResultsPage() {
                     </div>
                   )}
 
-                  {/* Zähler */}
                   {counterData.length > 0 && (
                     <div className="rounded-lg border border-border bg-card p-4">
                       <p className="text-xs text-muted-foreground mb-3">{t('results.counters')}</p>
