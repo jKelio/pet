@@ -6,3 +6,10 @@ dist/
 .claude/
 .turbo/
 *.tsbuildinfo
+
+# PWA dev service-worker output (generated)
+dev-dist/
+
+# Local skills tooling
+.agents/
+skills-lock.json
