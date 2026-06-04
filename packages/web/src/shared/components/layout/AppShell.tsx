@@ -65,7 +65,7 @@ function SidebarNav({
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <Link to="/" className="flex items-center gap-2" onClick={onLinkClick}>
-          <span className="text-xl font-bold text-primary">PET</span>
+          <span className="text-xl font-bold text-primary">PROTRACK</span>
           <span className="text-xs text-muted-foreground">v2</span>
         </Link>
         {user && (
@@ -186,7 +186,7 @@ export function AppShell({ children }: AppShellProps) {
           >
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
-          <span className="font-bold text-primary">PET</span>
+          <span className="font-bold text-primary">PROTRACK</span>
         </header>
 
         {/* Page Content */}

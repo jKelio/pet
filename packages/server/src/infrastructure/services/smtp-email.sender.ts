@@ -30,12 +30,12 @@ export class SmtpEmailSender implements EmailSender {
 
     const subject = isInvite
       ? `Du wurdest zu ${params.inviteContext!.tenantName} eingeladen`
-      : 'Dein Login-Link für PET';
+      : 'Dein Login-Link für PROTRACK';
 
     const body = isInvite
-      ? `<p>Du wurdest als <strong>${params.inviteContext!.role}</strong> zu <strong>${params.inviteContext!.tenantName}</strong> auf PET eingeladen.</p>
+      ? `<p>Du wurdest als <strong>${params.inviteContext!.role}</strong> zu <strong>${params.inviteContext!.tenantName}</strong> auf PROTRACK eingeladen.</p>
          <p>Klicke auf den Link, um dein Konto zu aktivieren und dich einzuloggen.</p>`
-      : `<p>hier ist dein Login-Link für PET – Practice Efficiency Tracking.</p>`;
+      : `<p>hier ist dein Login-Link für PROTRACK – Practice Efficiency Tracking.</p>`;
 
     try {
       await this.transporter.sendMail({
