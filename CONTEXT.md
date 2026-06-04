@@ -38,6 +38,28 @@ _Avoid_: structured, preset.
 A practice session where the drill structure is not known in advance. Drills are added one by one as the training progresses.
 _Avoid_: Observer Mode, Live Mode, unstructured.
 
+### Multi-tenant admin
+
+**Tenant**:
+A club — the top-level organisational unit. One club owns one or more Teams and has a set of Members.
+_Avoid_: Organisation, account, club (use Tenant in code; "club" is fine in UI copy).
+
+**Team**:
+A group within a Tenant (e.g. "U16", "Herren 1"). A Tenant has one or more Teams. A Member can be assigned to multiple Teams.
+_Avoid_: Group, squad.
+
+**Membership**:
+The relationship between a User and a Tenant, carrying a single Role. A User has at most one Membership per Tenant.
+_Avoid_: Account, subscription.
+
+**Roster**:
+The set of Members assigned to a specific Team. Managed by the club_admin; coaches see only their own Roster(s) in the app.
+_Avoid_: Team members (ambiguous with the broader Membership concept).
+
+**Role**:
+The permission level of a Membership within its Tenant (`club_admin`, `coach`, `assistant`, `analyst`, `viewer`). A single Role per Membership — not per Team.
+_Avoid_: Permission, access level.
+
 ### Actions & counters
 
 **Action**:

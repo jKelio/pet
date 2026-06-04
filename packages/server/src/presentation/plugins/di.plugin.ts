@@ -17,6 +17,8 @@ import { RefreshSessionUseCase } from '../../application/use-cases/refresh-sessi
 import { ListMembersUseCase } from '../../application/use-cases/list-members.js';
 import { InviteMemberUseCase } from '../../application/use-cases/invite-member.js';
 import { RemoveMemberUseCase } from '../../application/use-cases/remove-member.js';
+import { AssignTeamMemberUseCase } from '../../application/use-cases/assign-team-member.js';
+import { RemoveTeamMemberUseCase } from '../../application/use-cases/remove-team-member.js';
 import { SuperAdminListTenantsUseCase } from '../../application/use-cases/superadmin-list-tenants.js';
 import { SuperAdminDeleteTenantUseCase } from '../../application/use-cases/superadmin-delete-tenant.js';
 import { SuperAdminAddClubAdminUseCase } from '../../application/use-cases/superadmin-add-club-admin.js';
@@ -53,6 +55,8 @@ declare module 'fastify' {
       listMembers: ListMembersUseCase;
       inviteMember: InviteMemberUseCase;
       removeMember: RemoveMemberUseCase;
+      assignTeamMember: AssignTeamMemberUseCase;
+      removeTeamMember: RemoveTeamMemberUseCase;
       superAdminListTenants: SuperAdminListTenantsUseCase;
       superAdminDeleteTenant: SuperAdminDeleteTenantUseCase;
       superAdminAddClubAdmin: SuperAdminAddClubAdminUseCase;
@@ -145,6 +149,8 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     appBaseUrl: config.appBaseUrl,
   });
   const removeMember = new RemoveMemberUseCase({ membershipRepository });
+  const assignTeamMember = new AssignTeamMemberUseCase({ membershipRepository, teamRepository });
+  const removeTeamMember = new RemoveTeamMemberUseCase({ membershipRepository, teamRepository });
 
   fastify.decorate('config', config);
   fastify.decorate('tokenService', tokenService);
@@ -159,6 +165,8 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     listMembers,
     inviteMember,
     removeMember,
+    assignTeamMember,
+    removeTeamMember,
     superAdminListTenants,
     superAdminDeleteTenant,
     superAdminAddClubAdmin,

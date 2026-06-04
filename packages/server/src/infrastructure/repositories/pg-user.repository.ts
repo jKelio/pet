@@ -132,6 +132,12 @@ export class PgMembershipRepository implements MembershipRepository {
       .onConflictDoNothing();
   }
 
+  async unassignTeam(membershipId: string, teamId: string): Promise<void> {
+    await this.db
+      .delete(teamAssignments)
+      .where(and(eq(teamAssignments.membershipId, membershipId), eq(teamAssignments.teamId, teamId)));
+  }
+
   async getTeamIds(membershipId: string): Promise<string[]> {
     const rows = await this.db
       .select({ teamId: teamAssignments.teamId })

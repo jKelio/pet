@@ -32,5 +32,6 @@ export interface MembershipRepository {
   save(membership: Membership): Promise<void>;
   delete(id: string): Promise<void>;
   assignTeam(membershipId: string, teamId: string): Promise<void>;
+  unassignTeam(membershipId: string, teamId: string): Promise<void>;
   getTeamIds(membershipId: string): Promise<string[]>;
 }

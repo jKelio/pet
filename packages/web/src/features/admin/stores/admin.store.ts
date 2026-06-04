@@ -21,8 +21,10 @@ interface AdminState {
   onboard: (tenantName: string, teamName: string, accessToken: string) => Promise<void>;
   createTeam: (name: string, accessToken: string) => Promise<void>;
   loadMembers: (accessToken: string) => Promise<void>;
-  inviteMember: (email: string, role: UserRole, accessToken: string) => Promise<void>;
+  inviteMember: (email: string, role: UserRole, name: string | undefined, teamIds: string[] | undefined, accessToken: string) => Promise<void>;
   removeMember: (membershipId: string, accessToken: string) => Promise<void>;
+  assignTeamMember: (teamId: string, membershipId: string, accessToken: string) => Promise<void>;
+  removeTeamMember: (teamId: string, membershipId: string, accessToken: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -99,11 +101,10 @@ export const useAdminStore = create<AdminState>()((set) => ({
     }
   },
 
-  inviteMember: async (email, role, accessToken) => {
+  inviteMember: async (email, role, name, teamIds, accessToken) => {
     set({ loading: true, error: null });
     try {
-      await adminApi.inviteMember(email, role, accessToken);
-      // Refresh member list
+      await adminApi.inviteMember(email, role, name, teamIds, accessToken);
       const members = await adminApi.listMembers(accessToken);
       set({ members, loading: false });
     } catch (err) {
@@ -122,6 +123,40 @@ export const useAdminStore = create<AdminState>()((set) => ({
       }));
     } catch (err) {
       set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorRemove') });
+      throw err;
+    }
+  },
+
+  assignTeamMember: async (teamId, membershipId, accessToken) => {
+    set({ error: null });
+    try {
+      await adminApi.assignTeamMember(teamId, membershipId, accessToken);
+      set((s) => ({
+        members: s.members.map((m) =>
+          m.membership.id === membershipId
+            ? { ...m, teamIds: [...m.teamIds, teamId] }
+            : m,
+        ),
+      }));
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : tr('admin.errorAssign') });
+      throw err;
+    }
+  },
+
+  removeTeamMember: async (teamId, membershipId, accessToken) => {
+    set({ error: null });
+    try {
+      await adminApi.removeTeamMember(teamId, membershipId, accessToken);
+      set((s) => ({
+        members: s.members.map((m) =>
+          m.membership.id === membershipId
+            ? { ...m, teamIds: m.teamIds.filter((id) => id !== teamId) }
+            : m,
+        ),
+      }));
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : tr('admin.errorRemove') });
       throw err;
     }
   },

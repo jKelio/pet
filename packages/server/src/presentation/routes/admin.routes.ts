@@ -16,6 +16,16 @@ import {
   ForbiddenError as RemoveForbiddenError,
   NotFoundError,
 } from '../../application/use-cases/remove-member.js';
+import type { AssignTeamMemberUseCase } from '../../application/use-cases/assign-team-member.js';
+import {
+  ForbiddenError as AssignForbiddenError,
+  NotFoundError as AssignNotFoundError,
+} from '../../application/use-cases/assign-team-member.js';
+import type { RemoveTeamMemberUseCase } from '../../application/use-cases/remove-team-member.js';
+import {
+  ForbiddenError as RosterForbiddenError,
+  NotFoundError as RosterNotFoundError,
+} from '../../application/use-cases/remove-team-member.js';
 import type { TeamRepository } from '../../domain/ports/user.repository.js';
 
 const OnboardSchema = z.object({
@@ -30,6 +40,8 @@ interface AdminRoutesDeps {
   listMembers: ListMembersUseCase;
   inviteMember: InviteMemberUseCase;
   removeMember: RemoveMemberUseCase;
+  assignTeamMember: AssignTeamMemberUseCase;
+  removeTeamMember: RemoveTeamMemberUseCase;
   teamRepository: TeamRepository;
 }
 
@@ -129,7 +141,7 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
 
     try {
       const membership = await deps.inviteMember.execute(
-        { email: result.data.email, role: result.data.role, teamIds: result.data.teamIds },
+        { email: result.data.email, name: result.data.name, role: result.data.role, teamIds: result.data.teamIds },
         request.userId,
         tenantId,
       );
@@ -140,6 +152,57 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
       }
       if (err instanceof ConflictError) {
         return reply.code(409).send({ code: 'CONFLICT', message: err.message, statusCode: 409 });
+      }
+      throw err;
+    }
+  });
+
+  // POST /admin/teams/:teamId/members — assign a member to a team
+  fastify.post('/admin/teams/:teamId/members', async (request, reply) => {
+    const { teamId } = request.params as { teamId: string };
+    const body = request.body as { membershipId?: string };
+    const membershipId = body?.membershipId;
+    const tenantId = request.tenantId;
+
+    if (!membershipId) {
+      return reply.code(400).send({ code: 'VALIDATION_ERROR', message: 'membershipId is required', statusCode: 400 });
+    }
+    if (!tenantId) {
+      return reply.code(403).send({ code: 'NO_TENANT', message: 'No tenant in token', statusCode: 403 });
+    }
+
+    try {
+      await deps.assignTeamMember.execute(teamId, membershipId, request.userId, tenantId);
+      return reply.code(204).send();
+    } catch (err) {
+      if (err instanceof AssignForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
+      }
+      if (err instanceof AssignNotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: err.message, statusCode: 404 });
+      }
+      throw err;
+    }
+  });
+
+  // DELETE /admin/teams/:teamId/members/:membershipId — remove a member from a team
+  fastify.delete('/admin/teams/:teamId/members/:membershipId', async (request, reply) => {
+    const { teamId, membershipId } = request.params as { teamId: string; membershipId: string };
+    const tenantId = request.tenantId;
+
+    if (!tenantId) {
+      return reply.code(403).send({ code: 'NO_TENANT', message: 'No tenant in token', statusCode: 403 });
+    }
+
+    try {
+      await deps.removeTeamMember.execute(teamId, membershipId, request.userId, tenantId);
+      return reply.code(204).send();
+    } catch (err) {
+      if (err instanceof RosterForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
+      }
+      if (err instanceof RosterNotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: err.message, statusCode: 404 });
       }
       throw err;
     }

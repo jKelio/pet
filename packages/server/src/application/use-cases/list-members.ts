@@ -9,6 +9,7 @@ export interface ListMembersDeps {
 export interface MemberWithUser {
   membership: Membership;
   user: User;
+  teamIds: string[];
 }
 
 export class ListMembersUseCase {
@@ -17,14 +18,17 @@ export class ListMembersUseCase {
   async execute(tenantId: string): Promise<MemberWithUser[]> {
     const memberships = await this.deps.membershipRepository.findByTenant(tenantId);
 
-    const users = await Promise.all(
-      memberships.map((m) => this.deps.userRepository.findById(m.userId)),
+    const results = await Promise.all(
+      memberships.map(async (membership) => {
+        const [user, teamIds] = await Promise.all([
+          this.deps.userRepository.findById(membership.userId),
+          this.deps.membershipRepository.getTeamIds(membership.id),
+        ]);
+        if (!user) return null;
+        return { membership, user, teamIds };
+      }),
     );
 
-    return memberships.flatMap((membership, i) => {
-      const user = users[i];
-      if (!user) return [];
-      return [{ membership, user }];
-    });
+    return results.filter((r): r is MemberWithUser => r !== null);
   }
 }

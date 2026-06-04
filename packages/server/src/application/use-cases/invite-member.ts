@@ -14,6 +14,7 @@ export interface InviteMemberDeps {
 
 export interface InviteMemberInput {
   email: string;
+  name?: string;
   role: UserRole;
   teamIds?: string[];
 }
@@ -54,7 +55,7 @@ export class InviteMemberUseCase {
       user = {
         id: crypto.randomUUID(),
         email: input.email,
-        name: '',
+        name: input.name ?? '',
         createdAt: new Date().toISOString(),
       };
       await this.deps.userRepository.save(user);

@@ -97,6 +97,8 @@ async function build() {
       listMembers: fastify.useCases.listMembers,
       inviteMember: fastify.useCases.inviteMember,
       removeMember: fastify.useCases.removeMember,
+      assignTeamMember: fastify.useCases.assignTeamMember,
+      removeTeamMember: fastify.useCases.removeTeamMember,
       teamRepository: fastify.repos.team,
     });
   });
