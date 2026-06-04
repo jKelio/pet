@@ -41,7 +41,11 @@ function normalizeDrill(drill: Drill): Drill {
 }
 
 function normalizePracticeInfo(pi: PracticeInfo): PracticeInfo {
-  return { ...pi, wasteTime: normalizeTimerData(pi.wasteTime) };
+  return {
+    ...pi,
+    totalTime: Math.round(pi.totalTime * 3_600_000),
+    wasteTime: normalizeTimerData(pi.wasteTime),
+  };
 }
 
 function formatDate(ts: number): string {
@@ -86,6 +90,12 @@ export function SessionHistoryPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const tenantId = useAuthStore((s) => s.tenantId);
   const teams = useAdminStore((s) => s.teams);
+  const membership = useAdminStore((s) => s.membership);
+  const loadProfile = useAdminStore((s) => s.loadProfile);
+
+  useEffect(() => {
+    if (accessToken && !membership) loadProfile(accessToken);
+  }, [accessToken, membership]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     db.sessions
@@ -122,7 +132,10 @@ export function SessionHistoryPage() {
 
     // Use session's stored teamId or pick the first available team
     const teamId = session.teamId ?? teams[0]?.id;
-    if (!teamId) return;
+    if (!teamId) {
+      setSyncError({ id: session.id, message: t('sessions.noTeamError') });
+      return;
+    }
 
     // The server requires a valid UUID. Old local sessions may have non-UUID ids — mint a fresh one.
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
