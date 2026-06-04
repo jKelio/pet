@@ -119,13 +119,20 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
     }),
 
   resetAllData: () =>
-    set({
+    set((state) => ({
       sessionId: generateId(),
       mode: 'practiceInfo',
-      practiceInfo: { ...initialPracticeInfo, date: new Date().toISOString() },
+      practiceInfo: {
+        ...initialPracticeInfo,
+        date: new Date().toISOString(),
+        // Preserve coach/club/team context so the form is pre-filled on the next session
+        clubName: state.practiceInfo.clubName,
+        teamName: state.practiceInfo.teamName,
+        coachName: state.practiceInfo.coachName,
+      },
       drills: [],
       currentDrillIndex: 0,
-    }),
+    })),
 
   restoreFromDraft: (sessionId, practiceInfo, drills) =>
     set({

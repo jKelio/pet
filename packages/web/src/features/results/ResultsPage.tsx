@@ -276,6 +276,7 @@ export function ResultsPage() {
   };
 
   const handleReset = () => {
+    resetAllData();
     navigate('/');
   };
 
