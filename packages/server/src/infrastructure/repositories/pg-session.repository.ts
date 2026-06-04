@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm';
 import type { DbClient } from '../db/client.js';
-import { practiceSessions, drills } from '../db/schema.js';
+import { practiceSessions, drills, teams, tenants } from '../db/schema.js';
 import type { SessionRepository, FindSessionsOptions } from '../../domain/ports/session.repository.js';
 import type { PracticeSession, Drill, PracticeInfo } from '@pet/shared';
 
@@ -9,8 +9,10 @@ export class PgSessionRepository implements SessionRepository {
 
   async findById(id: string, tenantId: string): Promise<PracticeSession | null> {
     const [row] = await this.db
-      .select()
+      .select({ session: practiceSessions, teamName: teams.name, clubName: tenants.name })
       .from(practiceSessions)
+      .innerJoin(teams, eq(teams.id, practiceSessions.teamId))
+      .innerJoin(tenants, eq(tenants.id, practiceSessions.tenantId))
       .where(and(eq(practiceSessions.id, id), eq(practiceSessions.tenantId, tenantId)))
       .limit(1);
 
@@ -22,22 +24,24 @@ export class PgSessionRepository implements SessionRepository {
       .where(eq(drills.sessionId, id))
       .orderBy(drills.sequenceNumber);
 
-    return this.toEntity(row, drillRows);
+    return this.toEntity(row.session, drillRows, row.teamName, row.clubName);
   }
 
   async findByTeam(teamId: string, tenantId: string, _options: FindSessionsOptions = {}): Promise<PracticeSession[]> {
     const rows = await this.db
-      .select()
+      .select({ session: practiceSessions, teamName: teams.name, clubName: tenants.name })
       .from(practiceSessions)
+      .innerJoin(teams, eq(teams.id, practiceSessions.teamId))
+      .innerJoin(tenants, eq(tenants.id, practiceSessions.tenantId))
       .where(and(eq(practiceSessions.teamId, teamId), eq(practiceSessions.tenantId, tenantId)));
 
     return Promise.all(rows.map(async (row) => {
       const drillRows = await this.db
         .select()
         .from(drills)
-        .where(eq(drills.sessionId, row.id))
+        .where(eq(drills.sessionId, row.session.id))
         .orderBy(drills.sequenceNumber);
-      return this.toEntity(row, drillRows);
+      return this.toEntity(row.session, drillRows, row.teamName, row.clubName);
     }));
   }
 
@@ -103,10 +107,10 @@ export class PgSessionRepository implements SessionRepository {
       .where(and(eq(practiceSessions.id, id), eq(practiceSessions.tenantId, tenantId)));
   }
 
-  private toEntity(row: typeof practiceSessions.$inferSelect, drillRows: (typeof drills.$inferSelect)[]): PracticeSession {
+  private toEntity(row: typeof practiceSessions.$inferSelect, drillRows: (typeof drills.$inferSelect)[], teamName: string, clubName: string): PracticeSession {
     const practiceInfo: PracticeInfo = {
-      clubName: '',
-      teamName: '',
+      clubName,
+      teamName,
       date: row.date ? new Date(row.date).toISOString() : new Date().toISOString(),
       coachName: row.coachName,
       evaluation: row.evaluation,
