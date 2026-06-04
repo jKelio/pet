@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
+    "tunnel": "bun run scripts/tunnel.ts",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
