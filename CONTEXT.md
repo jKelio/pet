@@ -28,6 +28,16 @@ _Avoid_: Loss, giveaway.
 One continuous movement bout of the tracked player, made up of adjacent `with Puck` and `without Puck` children. It ends when neither puck timer is running (the player stops moving) and a new one begins when movement resumes. A drill may contain several. Episodes are *derived* from the children's timestamps, not stored.
 _Avoid_: Segment (reserved for a single timer start/stop interval), bout.
 
+### Sessions
+
+**Planned Session**:
+A practice session where the number of drills is declared upfront and all drills are configured before live tracking starts. The default session type.
+_Avoid_: structured, preset.
+
+**Open Session**:
+A practice session where the drill structure is not known in advance. Drills are added one by one as the training progresses.
+_Avoid_: Observer Mode, Live Mode, unstructured.
+
 ### Actions & counters
 
 **Action**:

@@ -1,15 +1,41 @@
 import { useEffect } from 'react';
+import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '../../../shared/components/ui/input.js';
 import { Label } from '../../../shared/components/ui/label.js';
 import { useTrackingStore } from '../stores/tracking.store.js';
 import { useAdminStore } from '../../admin/stores/admin.store.js';
+import type { SessionType } from '@pet/shared';
+
+function ClearableInput({
+  id,
+  value,
+  onChange,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+  return (
+    <div className="relative">
+      <Input id={id} value={value} onChange={onChange} className={value ? 'pr-8' : ''} {...props} />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function PracticeInfoForm() {
   const { t } = useTranslation('pet');
   const practiceInfo = useTrackingStore((s) => s.practiceInfo);
   const setPracticeInfo = useTrackingStore((s) => s.setPracticeInfo);
   const initDrills = useTrackingStore((s) => s.initDrills);
+  const sessionType = useTrackingStore((s) => s.sessionType);
+  const setSessionType = useTrackingStore((s) => s.setSessionType);
   const teams = useAdminStore((s) => s.teams);
   const tenant = useAdminStore((s) => s.tenant);
 
@@ -18,12 +44,6 @@ export function PracticeInfoForm() {
       setPracticeInfo((prev) => prev.clubName ? prev : { ...prev, clubName: tenant.name });
     }
   }, [tenant?.name]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (teams.length > 0) {
-      setPracticeInfo((prev) => prev.teamName ? prev : { ...prev, teamName: teams[0].name });
-    }
-  }, [teams.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const update = (field: string, value: string | number) =>
     setPracticeInfo({ ...practiceInfo, [field]: value });
@@ -34,8 +54,42 @@ export function PracticeInfoForm() {
     initDrills(n);
   };
 
+  const handleSessionType = (t: SessionType) => {
+    setSessionType(t);
+    if (t === 'open') {
+      setPracticeInfo((prev) => ({ ...prev, drillsNumber: 0 }));
+    }
+  };
+
   return (
     <div className="space-y-6">
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          {t('practice.sessionTypeLabel')}
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          {(['planned', 'open'] as const).map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => handleSessionType(type)}
+              className={`flex flex-col items-start gap-0.5 rounded-lg border px-4 py-3 text-left transition-colors ${
+                sessionType === type
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-border bg-card text-foreground hover:bg-muted/50'
+              }`}
+            >
+              <span className="text-sm font-semibold">
+                {t(`practice.sessionType${type.charAt(0).toUpperCase() + type.slice(1)}` as never)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t(`practice.sessionType${type.charAt(0).toUpperCase() + type.slice(1)}Desc` as never)}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
           {t('general.infoHeader')}
@@ -43,7 +97,7 @@ export function PracticeInfoForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="clubName">{t('general.clubLabel')}</Label>
-            <Input
+            <ClearableInput
               id="clubName"
               value={practiceInfo.clubName}
               onChange={(e) => update('clubName', e.target.value)}
@@ -51,26 +105,18 @@ export function PracticeInfoForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="teamName">{t('general.teamLabel')}</Label>
-            {teams.length > 0 ? (
-              <select
-                id="teamName"
-                value={practiceInfo.teamName}
-                onChange={(e) => update('teamName', e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">— Team wählen —</option>
+            <ClearableInput
+              id="teamName"
+              list="team-suggestions"
+              value={practiceInfo.teamName}
+              onChange={(e) => update('teamName', e.target.value)}
+            />
+            {teams.length > 0 && (
+              <datalist id="team-suggestions">
                 {teams.map((team) => (
-                  <option key={team.id} value={team.name}>
-                    {team.name}
-                  </option>
+                  <option key={team.id} value={team.name} />
                 ))}
-              </select>
-            ) : (
-              <Input
-                id="teamName"
-                value={practiceInfo.teamName}
-                onChange={(e) => update('teamName', e.target.value)}
-              />
+              </datalist>
             )}
           </div>
           <div className="space-y-1.5">
@@ -84,7 +130,7 @@ export function PracticeInfoForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="coachName">{t('general.coachLabel')}</Label>
-            <Input
+            <ClearableInput
               id="coachName"
               value={practiceInfo.coachName}
               onChange={(e) => update('coachName', e.target.value)}
@@ -142,23 +188,25 @@ export function PracticeInfoForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="trackedPlayerName">{t('practice.trackedPlayerNameLabel')}</Label>
-            <Input
+            <ClearableInput
               id="trackedPlayerName"
               value={practiceInfo.trackedPlayerName}
               onChange={(e) => update('trackedPlayerName', e.target.value)}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="drillsNumber">{t('practice.drillsNumberLabel')}</Label>
-            <Input
-              id="drillsNumber"
-              type="number"
-              min={1}
-              max={20}
-              value={practiceInfo.drillsNumber}
-              onChange={(e) => handleDrillsNumber(e.target.value)}
-            />
-          </div>
+          {sessionType !== 'open' && (
+            <div className="space-y-1.5">
+              <Label htmlFor="drillsNumber">{t('practice.drillsNumberLabel')}</Label>
+              <Input
+                id="drillsNumber"
+                type="number"
+                min={1}
+                max={20}
+                value={practiceInfo.drillsNumber}
+                onChange={(e) => handleDrillsNumber(e.target.value)}
+              />
+            </div>
+          )}
         </div>
       </section>
     </div>

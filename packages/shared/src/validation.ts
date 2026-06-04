@@ -69,7 +69,8 @@ export const PracticeInfoSchema = z.object({
   coachesNumber: z.number().int().nonnegative(),
   totalTime: z.number().int().nonnegative(),
   trackedPlayerName: z.string().trim(),
-  drillsNumber: z.number().int().positive(),
+  drillsNumber: z.number().int().nonnegative(),
+  sessionType: z.enum(['planned', 'open']).optional(),
   wasteTime: TimerDataSchema,
 });
 

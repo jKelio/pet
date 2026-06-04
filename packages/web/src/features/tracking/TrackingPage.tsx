@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { useTrackingStore } from './stores/tracking.store.js';
+import { useAdminStore } from '../admin/stores/admin.store.js';
 import { PracticeInfoForm } from './components/PracticeInfoForm.js';
 import { DrillsForm } from './components/DrillsForm.js';
 import { TimeWatcher } from './components/TimeWatcher.js';
@@ -14,10 +15,21 @@ export function TrackingPage() {
   useDraftPersistence();
   const mode = useTrackingStore((s) => s.mode);
   const drillsNumber = useTrackingStore((s) => s.practiceInfo.drillsNumber);
+  const sessionType = useTrackingStore((s) => s.sessionType);
   const goToNextStep = useTrackingStore((s) => s.goToNextStep);
   const goToPrevStep = useTrackingStore((s) => s.goToPrevStep);
+  const resetAllData = useTrackingStore((s) => s.resetAllData);
+  const setPracticeInfo = useTrackingStore((s) => s.setPracticeInfo);
+  const tenant = useAdminStore((s) => s.tenant);
 
-  const canAdvance = mode === 'practiceInfo' ? drillsNumber > 0 : true;
+  const handleReset = () => {
+    resetAllData();
+    if (tenant?.name) {
+      setPracticeInfo((prev) => ({ ...prev, clubName: tenant.name }));
+    }
+  };
+
+  const canAdvance = mode === 'practiceInfo' ? (sessionType === 'open' || drillsNumber > 0) : true;
 
   const handleFinish = () => {
     navigate('/sessions');
@@ -29,8 +41,8 @@ export function TrackingPage() {
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
         <h1 className="text-xl font-bold">{t(`steps.${mode}`, { defaultValue: t('steps.fallback') })}</h1>
 
-        {/* Step indicator (practiceInfo / drills only) */}
-        {mode !== 'timeWatcher' && (
+        {/* Step indicator (practiceInfo / drills only, planned sessions only) */}
+        {mode !== 'timeWatcher' && sessionType === 'planned' && (
           <div className="flex items-center gap-2">
             {['practiceInfo', 'drills'].map((step, i) => (
               <div key={step} className="flex items-center gap-2">
@@ -62,10 +74,15 @@ export function TrackingPage() {
       {/* Navigation footer (setup steps only) */}
       {mode !== 'timeWatcher' && (
         <div className="p-4 border-t border-border flex gap-3 bg-card">
-          {mode !== 'practiceInfo' && (
+          {mode === 'drills' && (
             <Button variant="outline" onClick={goToPrevStep} className="flex-1">
               <ChevronLeft className="h-4 w-4 mr-1" />
               {t('buttons.previousButtonText')}
+            </Button>
+          )}
+          {mode === 'practiceInfo' && (
+            <Button variant="ghost" size="icon" onClick={handleReset} title={t('buttons.resetForm')}>
+              <RotateCcw className="h-4 w-4" />
             </Button>
           )}
           <Button onClick={goToNextStep} disabled={!canAdvance} className="flex-1">

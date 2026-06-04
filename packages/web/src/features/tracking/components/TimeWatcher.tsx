@@ -24,6 +24,9 @@ export function TimeWatcher({ onFinish }: Props) {
   const drills = useTrackingStore((s) => s.drills);
   const currentDrillIndex = useTrackingStore((s) => s.currentDrillIndex);
   const setCurrentDrillIndex = useTrackingStore((s) => s.setCurrentDrillIndex);
+  const sessionType = useTrackingStore((s) => s.sessionType);
+  const appendDrill = useTrackingStore((s) => s.appendDrill);
+  const setPracticeInfo = useTrackingStore((s) => s.setPracticeInfo);
 
   const timers = useTimerStore((s) => s.timers);
   const counters = useTimerStore((s) => s.counters);
@@ -82,7 +85,17 @@ export function TimeWatcher({ onFinish }: Props) {
 
   const handleFinish = () => {
     finishTracking();
+    if (sessionType === 'open') {
+      setPracticeInfo((prev) => ({ ...prev, drillsNumber: drills.length }));
+    }
     onFinish();
+  };
+
+  const handleAddAndStartDrill = () => {
+    appendDrill();
+    setCurrentDrillIndex(drills.length);
+    setDrillHasEnded(false);
+    startDrill();
   };
 
   const handleTimerClick = (actionId: string, isRunning: boolean) => {
@@ -115,8 +128,26 @@ export function TimeWatcher({ onFinish }: Props) {
           </div>
         </div>
 
-        <div className="p-4 border-t border-border">
-          {showFinishButton ? (
+        <div className="p-4 border-t border-border space-y-2">
+          {sessionType === 'open' ? (
+            drillHasEnded ? (
+              <>
+                <Button className="w-full" onClick={handleAddAndStartDrill}>
+                  <Play className="h-4 w-4 mr-2" />
+                  {t('timeWatcher.addDrill', { n: drills.length + 1 })}
+                </Button>
+                <Button className="w-full" variant="default" onClick={handleFinish}>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {t('timeWatcher.finishTraining')}
+                </Button>
+              </>
+            ) : (
+              <Button className="w-full" onClick={handleStartDrill}>
+                <Play className="h-4 w-4 mr-2" />
+                {t('timeWatcher.startDrill')} 1
+              </Button>
+            )
+          ) : showFinishButton ? (
             <Button className="w-full" variant="default" onClick={handleFinish}>
               <CheckCircle className="h-4 w-4 mr-2" />
               {t('timeWatcher.finishTraining')}

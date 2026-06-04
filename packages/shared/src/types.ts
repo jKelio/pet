@@ -39,6 +39,8 @@ export interface Drill {
   wasteTime: TimerData;
 }
 
+export type SessionType = 'planned' | 'open';
+
 export interface PracticeInfo {
   clubName: string;
   teamName: string;
@@ -50,6 +52,7 @@ export interface PracticeInfo {
   totalTime: number;
   trackedPlayerName: string;
   drillsNumber: number;
+  sessionType?: SessionType;
   wasteTime: TimerData;
 }
 
