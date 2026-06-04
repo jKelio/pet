@@ -59,6 +59,9 @@ export class InviteMemberUseCase {
         createdAt: new Date().toISOString(),
       };
       await this.deps.userRepository.save(user);
+    } else if (input.name && !user.name) {
+      user = { ...user, name: input.name };
+      await this.deps.userRepository.save(user);
     }
 
     // Prevent duplicate membership
