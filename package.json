@@ -19,6 +19,8 @@
     "db:studio": "turbo run db:studio --filter=@pet/server"
   },
   "devDependencies": {
-    "turbo": "^2"
+    "turbo": "^2",
+    "eslint": "^9",
+    "typescript-eslint": "^8"
   }
 }

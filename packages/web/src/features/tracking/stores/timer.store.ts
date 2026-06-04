@@ -372,7 +372,7 @@ export const useTimerStore = create<TimerStore>()((set, get) => ({
   },
 
   endDrill: () => {
-    const { currentTimer, wasteSegmentStart, wasteTime } = get();
+    const { currentTimer, wasteTime } = get();
 
     if (currentTimer) {
       get().stopTimer(currentTimer);

@@ -15,8 +15,8 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setError(null);
     setIsLoading(true);
 
@@ -109,7 +109,7 @@ export function LoginPage() {
                   variant="ghost"
                   className="w-full"
                   disabled={isLoading}
-                  onClick={handleSubmit as any}
+                  onClick={() => void handleSubmit()}
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Link erneut senden

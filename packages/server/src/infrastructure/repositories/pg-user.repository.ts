@@ -1,8 +1,8 @@
 import { eq, and } from 'drizzle-orm';
 import type { DbClient } from '../db/client.js';
-import { users, memberships, teams, teamAssignments } from '../db/schema.js';
-import type { UserRepository, MembershipRepository, TeamRepository } from '../../domain/ports/user.repository.js';
-import type { User, Membership, Team } from '@pet/shared';
+import { users, memberships, teamAssignments } from '../db/schema.js';
+import type { UserRepository, MembershipRepository } from '../../domain/ports/user.repository.js';
+import type { User, Membership } from '@pet/shared';
 
 export class PgUserRepository implements UserRepository {
   constructor(private readonly db: DbClient) {}

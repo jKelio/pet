@@ -1,4 +1,4 @@
-import { describe, test, expect, mock, beforeEach } from 'bun:test';
+import { describe, test, expect, mock } from 'bun:test';
 import { SendMagicLinkUseCase } from './send-magic-link.js';
 import { AuthService } from '../../domain/services/auth.service.js';
 import type { UserRepository } from '../../domain/ports/user.repository.js';
