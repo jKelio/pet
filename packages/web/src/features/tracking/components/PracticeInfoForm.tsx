@@ -14,10 +14,16 @@ export function PracticeInfoForm() {
   const tenant = useAdminStore((s) => s.tenant);
 
   useEffect(() => {
-    if (tenant?.name && !practiceInfo.clubName) {
-      setPracticeInfo({ ...practiceInfo, clubName: tenant.name });
+    if (tenant?.name) {
+      setPracticeInfo((prev) => prev.clubName ? prev : { ...prev, clubName: tenant.name });
     }
-  }, [tenant?.name]);
+  }, [tenant?.name]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (teams.length > 0) {
+      setPracticeInfo((prev) => prev.teamName ? prev : { ...prev, teamName: teams[0].name });
+    }
+  }, [teams.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const update = (field: string, value: string | number) =>
     setPracticeInfo({ ...practiceInfo, [field]: value });
