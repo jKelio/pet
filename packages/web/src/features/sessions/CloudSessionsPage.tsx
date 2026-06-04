@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Cloud, Clock, Users, User, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
@@ -7,10 +8,11 @@ import { useAdminStore } from '../admin/stores/admin.store.js';
 import { useTrackingStore } from '../tracking/stores/tracking.store.js';
 import { useTimerStore } from '../tracking/stores/timer.store.js';
 import { sessionApi } from './api/session.api.js';
+import i18n from '../../lib/i18n.js';
 import type { PracticeSession } from '@pet/shared';
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('de-DE', {
+  return new Date(iso).toLocaleDateString(i18n.language, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -25,6 +27,7 @@ function formatDuration(minutes: number): string {
 }
 
 export function CloudSessionsPage() {
+  const { t } = useTranslation('pet');
   const navigate = useNavigate();
   const accessToken = useAuthStore((s) => s.accessToken);
   const teams = useAdminStore((s) => s.teams);
@@ -50,7 +53,7 @@ export function CloudSessionsPage() {
     sessionApi
       .listByTeam(selectedTeamId, accessToken)
       .then(setSessions)
-      .catch(() => setError('Sitzungen konnten nicht geladen werden.'))
+      .catch(() => setError(t('sessions.loadError')))
       .finally(() => setLoading(false));
   }, [selectedTeamId, accessToken]);
 
@@ -67,10 +70,10 @@ export function CloudSessionsPage() {
       <div className="px-6 py-4 border-b border-border bg-card">
         <div className="flex items-center gap-2">
           <Cloud className="h-5 w-5 text-primary" />
-          <h1 className="text-xl font-bold">Cloud-Sitzungen</h1>
+          <h1 className="text-xl font-bold">{t('sessions.cloudTitle')}</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Synchronisierte Trainingseinheiten
+          {t('sessions.cloudSubtitle')}
         </p>
       </div>
 
@@ -106,14 +109,14 @@ export function CloudSessionsPage() {
               onClick={() => setSelectedTeamId((id) => id)}
             >
               <RefreshCw className="mr-1.5 h-4 w-4" />
-              Erneut versuchen
+              {t('sessions.retry')}
             </Button>
           </div>
         )}
 
         {!loading && !error && sessions.length === 0 && selectedTeamId && (
           <p className="text-center text-muted-foreground py-16 text-sm">
-            Noch keine synchronisierten Sitzungen für dieses Team.
+            {t('sessions.noCloudSessions')}
           </p>
         )}
 
@@ -134,7 +137,7 @@ export function CloudSessionsPage() {
                     </p>
                   </div>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
-                    Synced
+                    {t('sessions.synced')}
                   </span>
                 </div>
 
@@ -145,7 +148,7 @@ export function CloudSessionsPage() {
                   </span>
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" />
-                    {session.practiceInfo.athletesNumber} Athleten
+                    {session.practiceInfo.athletesNumber} {t('sessions.athletesLabel')}
                   </span>
                   <span className="flex items-center gap-1">
                     <User className="h-3.5 w-3.5" />
@@ -160,7 +163,7 @@ export function CloudSessionsPage() {
                     onClick={() => handleOpen(session)}
                     className="text-xs"
                   >
-                    Ergebnisse ansehen
+                    {t('sessions.viewResultsLink')}
                     <ChevronRight className="ml-1 h-3.5 w-3.5" />
                   </Button>
                 </div>

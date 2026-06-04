@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Trash2, Plus, UserPlus } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
@@ -10,6 +11,7 @@ import { ApiClientError } from '../../shared/lib/api-client.js';
 import type { Tenant } from '@pet/shared';
 
 export function SuperAdminPage() {
+  const { t } = useTranslation('pet');
   const accessToken = useAuthStore((s) => s.accessToken);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,19 +48,19 @@ export function SuperAdminPage() {
       const updated = await superAdminApi.listTenants(accessToken);
       setTenants(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Erstellen');
+      setError(err instanceof Error ? err.message : t('superadmin.errorCreate'));
     } finally {
       setCreating(false);
     }
   };
 
   const handleDelete = async (tenantId: string) => {
-    if (!accessToken || !confirm('Tenant wirklich löschen? Alle Daten werden gelöscht.')) return;
+    if (!accessToken || !confirm(t('superadmin.confirmDelete'))) return;
     try {
       await superAdminApi.deleteTenant(tenantId, accessToken);
-      setTenants((prev) => prev.filter((t) => t.id !== tenantId));
+      setTenants((prev) => prev.filter((tnt) => tnt.id !== tenantId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Löschen');
+      setError(err instanceof Error ? err.message : t('superadmin.errorDelete'));
     }
   };
 
@@ -71,7 +73,7 @@ export function SuperAdminPage() {
       await superAdminApi.addClubAdmin(tenantId, email, accessToken);
       setAddAdminEmail((prev) => ({ ...prev, [tenantId]: '' }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Hinzufügen');
+      setError(err instanceof Error ? err.message : t('superadmin.errorAdd'));
     } finally {
       setAddAdminLoading((prev) => ({ ...prev, [tenantId]: false }));
     }
@@ -88,14 +90,14 @@ export function SuperAdminPage() {
   if (forbidden) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Kein Zugriff. SuperAdmin-Berechtigung erforderlich.</p>
+        <p className="text-muted-foreground">{t('superadmin.forbidden')}</p>
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-8 max-w-3xl mx-auto">
-      <h1 className="text-xl font-bold">SuperAdmin — Tenant-Verwaltung</h1>
+      <h1 className="text-xl font-bold">{t('superadmin.title')}</h1>
 
       {error && (
         <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">{error}</p>
@@ -104,36 +106,36 @@ export function SuperAdminPage() {
       {/* Create tenant */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Neuen Tenant erstellen</CardTitle>
+          <CardTitle className="text-base">{t('superadmin.createTenant')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreate} className="grid sm:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <Label htmlFor="tenantName">Club-Name</Label>
+              <Label htmlFor="tenantName">{t('superadmin.clubNameLabel')}</Label>
               <Input
                 id="tenantName"
-                placeholder="EHC Musterstadt"
+                placeholder={t('superadmin.clubNamePlaceholder')}
                 value={createForm.tenantName}
                 onChange={(e) => setCreateForm((f) => ({ ...f, tenantName: e.target.value }))}
                 required
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="teamName">Erstes Team</Label>
+              <Label htmlFor="teamName">{t('superadmin.firstTeamLabel')}</Label>
               <Input
                 id="teamName"
-                placeholder="U16 A"
+                placeholder={t('superadmin.firstTeamPlaceholder')}
                 value={createForm.teamName}
                 onChange={(e) => setCreateForm((f) => ({ ...f, teamName: e.target.value }))}
                 required
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="adminEmail">Club-Admin E-Mail</Label>
+              <Label htmlFor="adminEmail">{t('superadmin.adminEmailLabel')}</Label>
               <Input
                 id="adminEmail"
                 type="email"
-                placeholder="coach@club.de"
+                placeholder={t('superadmin.adminEmailPlaceholder')}
                 value={createForm.adminEmail}
                 onChange={(e) => setCreateForm((f) => ({ ...f, adminEmail: e.target.value }))}
                 required
@@ -142,7 +144,7 @@ export function SuperAdminPage() {
             <div className="sm:col-span-3">
               <Button type="submit" disabled={creating} size="sm">
                 {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                Tenant erstellen
+                {t('superadmin.createTenantButton')}
               </Button>
             </div>
           </form>
@@ -152,10 +154,10 @@ export function SuperAdminPage() {
       {/* Tenant list */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          Tenants ({tenants.length})
+          {t('superadmin.tenants')} ({tenants.length})
         </h2>
         {tenants.length === 0 && (
-          <p className="text-sm text-muted-foreground">Noch keine Tenants vorhanden.</p>
+          <p className="text-sm text-muted-foreground">{t('superadmin.noTenants')}</p>
         )}
         {tenants.map((tenant) => (
           <Card key={tenant.id}>
@@ -179,7 +181,7 @@ export function SuperAdminPage() {
               <div className="flex gap-2">
                 <Input
                   type="email"
-                  placeholder="Club-Admin E-Mail hinzufügen"
+                  placeholder={t('superadmin.addAdminPlaceholder')}
                   className="text-sm h-8"
                   value={addAdminEmail[tenant.id] ?? ''}
                   onChange={(e) => setAddAdminEmail((prev) => ({ ...prev, [tenant.id]: e.target.value }))}

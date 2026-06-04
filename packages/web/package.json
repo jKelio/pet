@@ -29,6 +29,7 @@
     "clsx": "2.1.1",
     "dexie": "4.4.1",
     "i18next": "26.0.2",
+    "i18next-browser-languagedetector": "8.2.1",
     "jspdf": "4.2.1",
     "lucide-react": "1.7.0",
     "modern-screenshot": "4.6.8",

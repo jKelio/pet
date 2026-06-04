@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../../shared/components/ui/button.js';
 import { Input } from '../../../shared/components/ui/input.js';
 import { Label } from '../../../shared/components/ui/label.js';
@@ -10,6 +11,7 @@ import { Mail, Loader2 } from 'lucide-react';
 type Step = 'email' | 'sent';
 
 export function LoginPage() {
+  const { t } = useTranslation('pet');
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +29,7 @@ export function LoginPage() {
       if (err instanceof ApiClientError) {
         setError(err.message);
       } else {
-        setError('Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.');
+        setError(t('auth.unexpectedError'));
       }
     } finally {
       setIsLoading(false);
@@ -39,26 +41,26 @@ export function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary">PROTRACK</h1>
-          <p className="text-muted-foreground mt-1">Practice Efficiency Tracking</p>
+          <p className="text-muted-foreground mt-1">{t('auth.tagline')}</p>
         </div>
 
         <Card>
           {step === 'email' ? (
             <>
               <CardHeader>
-                <CardTitle>Einloggen</CardTitle>
+                <CardTitle>{t('auth.login')}</CardTitle>
                 <CardDescription>
-                  Gib deine E-Mail-Adresse ein. Wir senden dir einen Login-Link.
+                  {t('auth.loginDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-Mail-Adresse</Label>
+                    <Label htmlFor="email">{t('auth.emailLabel')}</Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="coach@hcclub.de"
+                      placeholder={t('auth.emailPlaceholder')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -77,7 +79,7 @@ export function LoginPage() {
                     ) : (
                       <Mail className="h-4 w-4" />
                     )}
-                    Login-Link senden
+                    {t('auth.sendLink')}
                   </Button>
                 </form>
               </CardContent>
@@ -85,10 +87,9 @@ export function LoginPage() {
           ) : (
             <>
               <CardHeader>
-                <CardTitle>Prüfe deine E-Mails</CardTitle>
+                <CardTitle>{t('auth.checkEmailTitle')}</CardTitle>
                 <CardDescription>
-                  Wir haben einen Login-Link an <strong>{email}</strong> gesendet.
-                  Der Link ist 15 Minuten gültig.
+                  {t('auth.checkEmailPre')} <strong>{email}</strong>{t('auth.checkEmailPost')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -103,7 +104,7 @@ export function LoginPage() {
                     setError(null);
                   }}
                 >
-                  Andere E-Mail verwenden
+                  {t('auth.useAnotherEmail')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -112,7 +113,7 @@ export function LoginPage() {
                   onClick={() => void handleSubmit()}
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Link erneut senden
+                  {t('auth.resendLink')}
                 </Button>
               </CardContent>
             </>

@@ -2,6 +2,10 @@ import { create } from 'zustand';
 import type { Team, Tenant, Membership, User, UserRole } from '@pet/shared';
 import { adminApi, type MemberWithUser } from '../api/admin.api.js';
 import { useAuthStore } from '../../auth/stores/auth.store.js';
+import i18n from '../../../lib/i18n.js';
+
+// Resolves a localized fallback message for the active language (used outside React).
+const tr = (key: string) => i18n.t(key, { ns: 'pet' });
 
 interface AdminState {
   user: User | null;
@@ -45,7 +49,7 @@ export const useAdminStore = create<AdminState>()((set) => ({
         loading: false,
       });
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : 'Fehler beim Laden' });
+      set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorLoad') });
     }
   },
 
@@ -69,7 +73,7 @@ export const useAdminStore = create<AdminState>()((set) => ({
         }
       }
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : 'Fehler beim Einrichten' });
+      set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorSetup') });
       throw err;
     }
   },
@@ -80,7 +84,7 @@ export const useAdminStore = create<AdminState>()((set) => ({
       const team = await adminApi.createTeam(name, accessToken);
       set((s) => ({ teams: [...s.teams, team], loading: false }));
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : 'Fehler beim Erstellen' });
+      set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorCreate') });
       throw err;
     }
   },
@@ -91,7 +95,7 @@ export const useAdminStore = create<AdminState>()((set) => ({
       const members = await adminApi.listMembers(accessToken);
       set({ members, loading: false });
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : 'Fehler beim Laden' });
+      set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorLoad') });
     }
   },
 
@@ -103,7 +107,7 @@ export const useAdminStore = create<AdminState>()((set) => ({
       const members = await adminApi.listMembers(accessToken);
       set({ members, loading: false });
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : 'Fehler beim Einladen' });
+      set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorInvite') });
       throw err;
     }
   },
@@ -117,7 +121,7 @@ export const useAdminStore = create<AdminState>()((set) => ({
         loading: false,
       }));
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : 'Fehler beim Entfernen' });
+      set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorRemove') });
       throw err;
     }
   },

@@ -8,12 +8,6 @@ import { DrillsForm } from './components/DrillsForm.js';
 import { TimeWatcher } from './components/TimeWatcher.js';
 import { useDraftPersistence } from './hooks/useDraftPersistence.js';
 
-const STEP_TITLES: Record<string, string> = {
-  practiceInfo: 'Trainingsinfo',
-  drills: 'Drills konfigurieren',
-  timeWatcher: 'Time Watcher',
-};
-
 export function TrackingPage() {
   const { t } = useTranslation('pet');
   const navigate = useNavigate();
@@ -33,7 +27,7 @@ export function TrackingPage() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Page header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
-        <h1 className="text-xl font-bold">{STEP_TITLES[mode] ?? 'Tracking'}</h1>
+        <h1 className="text-xl font-bold">{t(`steps.${mode}`, { defaultValue: t('steps.fallback') })}</h1>
 
         {/* Step indicator (practiceInfo / drills only) */}
         {mode !== 'timeWatcher' && (

@@ -1,5 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useTranslation } from 'react-i18next';
 import { GripVertical, Timer, Hash } from 'lucide-react';
 import type { ActionButton } from '@pet/shared';
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function SortableActionItem({ action, label, typeLabel, onToggle }: Props) {
+  const { t } = useTranslation('pet');
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: action.id });
 
@@ -31,7 +33,7 @@ export function SortableActionItem({ action, label, typeLabel, onToggle }: Props
         {...attributes}
         {...listeners}
         className="text-muted-foreground cursor-grab active:cursor-grabbing touch-none"
-        aria-label="Drag to reorder"
+        aria-label={t('actions.dragToReorder')}
       >
         <GripVertical className="h-4 w-4" />
       </button>

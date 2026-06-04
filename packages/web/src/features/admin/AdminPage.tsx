@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Building2, Users, Plus, Loader2, Trash2, UserPlus } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
@@ -8,15 +9,10 @@ import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from './stores/admin.store.js';
 import type { UserRole } from '@pet/shared';
 
-const ROLE_LABELS: Record<UserRole, string> = {
-  club_admin: 'Club Admin',
-  coach: 'Trainer',
-  assistant: 'Assistent',
-  analyst: 'Analyst',
-  viewer: 'Betrachter',
-};
+const ROLE_KEYS: UserRole[] = ['club_admin', 'coach', 'assistant', 'analyst', 'viewer'];
 
 function OnboardingForm({ accessToken }: { accessToken: string }) {
+  const { t } = useTranslation('pet');
   const [tenantName, setTenantName] = useState('');
   const [teamName, setTeamName] = useState('');
   const { onboard, loading, error } = useAdminStore();
@@ -32,31 +28,31 @@ function OnboardingForm({ accessToken }: { accessToken: string }) {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
           <Building2 className="h-10 w-10 mx-auto text-primary" />
-          <h2 className="text-xl font-bold">Club einrichten</h2>
+          <h2 className="text-xl font-bold">{t('admin.setupClubTitle')}</h2>
           <p className="text-sm text-muted-foreground">
-            Erstelle deinen Club und das erste Team.
+            {t('admin.setupClubDescription')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="tenantName">Club-Name</Label>
+            <Label htmlFor="tenantName">{t('admin.clubNameLabel')}</Label>
             <Input
               id="tenantName"
               value={tenantName}
               onChange={(e) => setTenantName(e.target.value)}
-              placeholder="z.B. EHC Musterhausen"
+              placeholder={t('admin.clubNamePlaceholder')}
               required
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="teamName">Erstes Team</Label>
+            <Label htmlFor="teamName">{t('admin.firstTeamLabel')}</Label>
             <Input
               id="teamName"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              placeholder="z.B. U16 A"
+              placeholder={t('admin.firstTeamPlaceholder')}
               required
             />
           </div>
@@ -67,7 +63,7 @@ function OnboardingForm({ accessToken }: { accessToken: string }) {
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Club erstellen
+            {t('admin.createClub')}
           </Button>
         </form>
       </div>
@@ -76,6 +72,7 @@ function OnboardingForm({ accessToken }: { accessToken: string }) {
 }
 
 function CreateTeamForm({ accessToken }: { accessToken: string }) {
+  const { t } = useTranslation('pet');
   const [name, setName] = useState('');
   const [open, setOpen] = useState(false);
   const { createTeam, loading } = useAdminStore();
@@ -92,7 +89,7 @@ function CreateTeamForm({ accessToken }: { accessToken: string }) {
     return (
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
         <Plus className="mr-1.5 h-4 w-4" />
-        Team hinzufügen
+        {t('admin.addTeam')}
       </Button>
     );
   }
@@ -103,20 +100,21 @@ function CreateTeamForm({ accessToken }: { accessToken: string }) {
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Team-Name"
+        placeholder={t('admin.teamNamePlaceholder')}
         className="h-9"
       />
       <Button type="submit" size="sm" disabled={loading}>
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Erstellen'}
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('admin.create')}
       </Button>
       <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-        Abbrechen
+        {t('admin.cancel')}
       </Button>
     </form>
   );
 }
 
 function InviteMemberForm({ accessToken }: { accessToken: string }) {
+  const { t } = useTranslation('pet');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('coach');
   const [open, setOpen] = useState(false);
@@ -134,7 +132,7 @@ function InviteMemberForm({ accessToken }: { accessToken: string }) {
     return (
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
         <UserPlus className="mr-1.5 h-4 w-4" />
-        Mitglied einladen
+        {t('admin.inviteMember')}
       </Button>
     );
   }
@@ -142,7 +140,7 @@ function InviteMemberForm({ accessToken }: { accessToken: string }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-end">
       <div className="space-y-1">
-        <Label htmlFor="inviteEmail" className="text-xs">E-Mail</Label>
+        <Label htmlFor="inviteEmail" className="text-xs">{t('admin.emailLabel')}</Label>
         <Input
           id="inviteEmail"
           autoFocus
@@ -155,29 +153,30 @@ function InviteMemberForm({ accessToken }: { accessToken: string }) {
         />
       </div>
       <div className="space-y-1">
-        <Label htmlFor="inviteRole" className="text-xs">Rolle</Label>
+        <Label htmlFor="inviteRole" className="text-xs">{t('admin.roleLabel')}</Label>
         <select
           id="inviteRole"
           value={role}
           onChange={(e) => setRole(e.target.value as UserRole)}
           className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
-          {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
-            <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+          {ROLE_KEYS.map((r) => (
+            <option key={r} value={r}>{t(`roles.${r}`)}</option>
           ))}
         </select>
       </div>
       <Button type="submit" size="sm" disabled={loading}>
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Einladen'}
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('admin.invite')}
       </Button>
       <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-        Abbrechen
+        {t('admin.cancel')}
       </Button>
     </form>
   );
 }
 
 export function AdminPage() {
+  const { t } = useTranslation('pet');
   const accessToken = useAuthStore((s) => s.accessToken);
   const { tenant, membership, teams, members, loading, error, loadProfile, loadMembers, removeMember } =
     useAdminStore();
@@ -213,7 +212,7 @@ export function AdminPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="px-6 py-4 border-b border-border bg-card">
-        <h1 className="text-xl font-bold">Team-Verwaltung</h1>
+        <h1 className="text-xl font-bold">{t('admin.teamManagement')}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{tenant.name}</p>
       </div>
 
@@ -223,7 +222,7 @@ export function AdminPage() {
         )}
 
         <Card className="p-4 space-y-1">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Club</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t('admin.club')}</p>
           <p className="font-medium">{tenant.name}</p>
           <p className="text-sm text-muted-foreground capitalize">{tenant.plan}</p>
         </Card>
@@ -232,14 +231,14 @@ export function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Users className="h-4 w-4" />
-              Teams ({teams.length})
+              {t('admin.teams')} ({teams.length})
             </h2>
             {isAdmin && <CreateTeamForm accessToken={accessToken} />}
           </div>
 
           {teams.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Noch keine Teams vorhanden.
+              {t('admin.noTeams')}
             </p>
           )}
 
@@ -260,14 +259,14 @@ export function AdminPage() {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Users className="h-4 w-4" />
-              Mitglieder ({members.length})
+              {t('admin.members')} ({members.length})
             </h2>
             {isAdmin && <InviteMemberForm accessToken={accessToken} />}
           </div>
 
           {members.length === 0 && !loading && (
             <p className="text-sm text-muted-foreground text-center py-6">
-              Noch keine Mitglieder.
+              {t('admin.noMembers')}
             </p>
           )}
 
@@ -286,7 +285,7 @@ export function AdminPage() {
                   )}
                 </div>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
-                  {ROLE_LABELS[m.role]}
+                  {t(`roles.${m.role}`)}
                 </span>
                 {isAdmin && m.userId !== membership.userId && (
                   <Button
@@ -294,7 +293,7 @@ export function AdminPage() {
                     variant="ghost"
                     className="text-destructive hover:text-destructive shrink-0"
                     onClick={() => removeMember(m.id, accessToken)}
-                    title="Mitglied entfernen"
+                    title={t('admin.removeMember')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

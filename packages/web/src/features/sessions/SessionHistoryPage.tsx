@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Users, User, Trash2, ChevronRight, CloudOff, Cloud, Loader2 } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
@@ -8,6 +9,7 @@ import { useTimerStore } from '../tracking/stores/timer.store.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from '../admin/stores/admin.store.js';
 import { sessionApi } from './api/session.api.js';
+import i18n from '../../lib/i18n.js';
 import type { TimerData, Drill, PracticeInfo } from '@pet/shared';
 
 // Normalizes time segments saved with old field names (start/end → startTime/endTime/duration).
@@ -43,7 +45,7 @@ function normalizePracticeInfo(pi: PracticeInfo): PracticeInfo {
 }
 
 function formatDate(ts: number): string {
-  return new Date(ts).toLocaleDateString('de-DE', {
+  return new Date(ts).toLocaleDateString(i18n.language, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -73,6 +75,7 @@ function sessionTotalTime(session: SavedSession): number {
 }
 
 export function SessionHistoryPage() {
+  const { t } = useTranslation('pet');
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<SavedSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,7 +148,7 @@ export function SessionHistoryPage() {
     } catch (err) {
       setSyncError({
         id: session.id,
-        message: err instanceof Error ? err.message : 'Sync fehlgeschlagen',
+        message: err instanceof Error ? err.message : t('sessions.syncError'),
       });
     } finally {
       setSyncingId(null);
@@ -155,22 +158,22 @@ export function SessionHistoryPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="px-6 py-4 border-b border-border bg-card">
-        <h1 className="text-xl font-bold">Session-History</h1>
+        <h1 className="text-xl font-bold">{t('sessions.historyTitle')}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Lokal gespeicherte Trainingseinheiten
+          {t('sessions.historySubtitle')}
         </p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
         {loading && (
-          <p className="text-center text-muted-foreground py-12">Lädt…</p>
+          <p className="text-center text-muted-foreground py-12">{t('sessions.loading')}</p>
         )}
 
         {!loading && sessions.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
             <CloudOff className="h-10 w-10 text-muted-foreground/40" />
-            <p className="text-muted-foreground">Noch keine Sessions gespeichert.</p>
-            <Button onClick={() => navigate('/')}>Tracking starten</Button>
+            <p className="text-muted-foreground">{t('sessions.noSessions')}</p>
+            <Button onClick={() => navigate('/')}>{t('sessions.startTracking')}</Button>
           </div>
         )}
 
@@ -187,12 +190,12 @@ export function SessionHistoryPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="font-semibold truncate">
-                        {pi.clubName || pi.teamName || 'Unbekannter Club'}
+                        {pi.clubName || pi.teamName || t('sessions.unknownClub')}
                         {pi.teamName && pi.clubName && ` — ${pi.teamName}`}
                       </span>
                       {!session.syncedAt && (
                         <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600">
-                          Lokal
+                          {t('sessions.local')}
                         </span>
                       )}
                     </div>
@@ -220,7 +223,7 @@ export function SessionHistoryPage() {
                           {pi.coachName}
                         </span>
                       )}
-                      <span>{session.drills.length} Drills</span>
+                      <span>{session.drills.length} {t('sessions.drillsLabel')}</span>
                     </div>
                     {syncError?.id === session.id && (
                       <p className="text-xs text-destructive mt-1">{syncError.message}</p>
@@ -236,8 +239,8 @@ export function SessionHistoryPage() {
                         disabled={syncingId === session.id}
                         title={
                           syncError?.id === session.id
-                            ? `Fehler: ${syncError.message}`
-                            : 'In Cloud synchronisieren'
+                            ? `${t('sessions.errorPrefix')}: ${syncError.message}`
+                            : t('sessions.syncToCloud')
                         }
                         className={syncError?.id === session.id ? 'text-destructive hover:text-destructive' : ''}
                       >
@@ -252,7 +255,7 @@ export function SessionHistoryPage() {
                       size="icon"
                       variant="ghost"
                       onClick={() => handleViewResults(session)}
-                      title="Ergebnisse anzeigen"
+                      title={t('sessions.viewResults')}
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -260,7 +263,7 @@ export function SessionHistoryPage() {
                       size="icon"
                       variant="ghost"
                       onClick={() => handleReopen(session)}
-                      title="Session fortsetzen"
+                      title={t('sessions.continueSession')}
                     >
                       <Clock className="h-4 w-4" />
                     </Button>
@@ -269,7 +272,7 @@ export function SessionHistoryPage() {
                       variant="ghost"
                       className="text-destructive hover:text-destructive"
                       onClick={() => handleDelete(session.id)}
-                      title="Löschen"
+                      title={t('sessions.delete')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

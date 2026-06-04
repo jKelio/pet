@@ -64,6 +64,7 @@
         "clsx": "2.1.1",
         "dexie": "4.4.1",
         "i18next": "26.0.2",
+        "i18next-browser-languagedetector": "8.2.1",
         "jspdf": "4.2.1",
         "lucide-react": "1.7.0",
         "modern-screenshot": "4.6.8",
@@ -995,6 +996,8 @@
     "html2canvas": ["html2canvas@1.4.1", "", { "dependencies": { "css-line-break": "^2.1.0", "text-segmentation": "^1.0.3" } }, "sha512-fPU6BHNpsyIhr8yyMpTLLxAbkaK8ArIBcmZIRiBLiDhjeqvXolaEmDGmELFuX9I4xDcaKKcJl+TKZLqruBbmWA=="],
 
     "i18next": ["i18next@26.0.2", "", { "dependencies": { "@babel/runtime": "^7.29.2" }, "peerDependencies": { "typescript": "^5 || ^6" }, "optionalPeers": ["typescript"] }, "sha512-WsK0SdP+7tGzsxpT+Us1s2nvOyx657DatBodaNZe4KcPTPYzkVfRKUygN69mB+sCbbnifRuKz+Ya5JRzd8DNHw=="],
+
+    "i18next-browser-languagedetector": ["i18next-browser-languagedetector@8.2.1", "", { "dependencies": { "@babel/runtime": "^7.23.2" } }, "sha512-bZg8+4bdmaOiApD7N7BPT9W8MLZG+nPTOFlLiJiT8uzKXFjhxw4v2ierCXOwB5sFDMtuA5G4kgYZ0AznZxQ/cw=="],
 
     "idb": ["idb@7.1.1", "", {}, "sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ=="],
 

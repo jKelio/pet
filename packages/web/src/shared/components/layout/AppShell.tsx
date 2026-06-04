@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Timer,
   BarChart2,
@@ -17,9 +18,10 @@ import { cn } from '../../lib/utils.js';
 import { useAuth } from '../../../features/auth/hooks/useAuth.js';
 import { useAdminStore } from '../../../features/admin/stores/admin.store.js';
 import { TenantSwitcher } from './TenantSwitcher.js';
+import { LanguageSwitcher } from './LanguageSwitcher.js';
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   requiresAuth: boolean;
@@ -27,13 +29,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Tracking', href: '/', icon: Timer, requiresAuth: true },
-  { label: 'Ergebnisse', href: '/sessions', icon: BarChart2, requiresAuth: true },
-  { label: 'Verlauf', href: '/sessions/history', icon: FolderOpen, requiresAuth: true },
-  { label: 'Cloud', href: '/sessions/cloud', icon: Cloud, requiresAuth: true },
-  { label: 'Glossar', href: '/glossary', icon: BookOpen, requiresAuth: false },
-  { label: 'Team', href: '/admin', icon: Users, requiresAuth: true },
-  { label: 'SuperAdmin', href: '/superadmin', icon: Shield, requiresAuth: true, requiresSuperAdmin: true },
+  { labelKey: 'nav.tracking', href: '/', icon: Timer, requiresAuth: true },
+  { labelKey: 'nav.results', href: '/sessions', icon: BarChart2, requiresAuth: true },
+  { labelKey: 'nav.history', href: '/sessions/history', icon: FolderOpen, requiresAuth: true },
+  { labelKey: 'nav.cloud', href: '/sessions/cloud', icon: Cloud, requiresAuth: true },
+  { labelKey: 'nav.glossary', href: '/glossary', icon: BookOpen, requiresAuth: false },
+  { labelKey: 'nav.team', href: '/admin', icon: Users, requiresAuth: true },
+  { labelKey: 'nav.superAdmin', href: '/superadmin', icon: Shield, requiresAuth: true, requiresSuperAdmin: true },
 ];
 
 interface SidebarNavProps {
@@ -55,6 +57,7 @@ function SidebarNav({
   onLinkClick,
   onLogout,
 }: SidebarNavProps) {
+  const { t } = useTranslation('pet');
   return (
     <nav
       className={cn(
@@ -92,25 +95,26 @@ function SidebarNav({
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           );
         })}
       </div>
 
-      {/* Logout */}
-      {isAuthenticated && (
-        <div className="p-4 border-t border-border">
+      {/* Footer: language + logout */}
+      <div className="p-4 border-t border-border space-y-1">
+        <LanguageSwitcher />
+        {isAuthenticated && (
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-muted-foreground"
             onClick={onLogout}
           >
             <LogOut className="h-4 w-4" />
-            Abmelden
+            {t('nav.logout')}
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   );
 }

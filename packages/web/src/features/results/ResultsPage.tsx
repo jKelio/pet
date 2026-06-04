@@ -140,7 +140,7 @@ export function ResultsPage() {
       let first = true;
 
       for (let i = 0; i < sections.length; i++) {
-        setExportStatus(`Exportiere Abschnitt ${i + 1} von ${sections.length}…`);
+        setExportStatus(t('results.exportSection', { current: i + 1, total: sections.length }));
         try {
           const dataUrl = await domToPng(sections[i], {
             scale: 2,
@@ -192,10 +192,10 @@ export function ResultsPage() {
   if (drills.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
-        <p className="text-muted-foreground">Keine Tracking-Daten vorhanden.</p>
+        <p className="text-muted-foreground">{t('results.noData')}</p>
         <Button onClick={() => navigate('/')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Neues Training
+          {t('results.newTraining')}
         </Button>
       </div>
     );
@@ -205,7 +205,7 @@ export function ResultsPage() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card gap-3 flex-wrap">
-        <h1 className="text-xl font-bold">Trainingsergebnisse</h1>
+        <h1 className="text-xl font-bold">{t('results.title')}</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={exportToPdf} disabled={isExporting}>
             {isExporting ? (
@@ -214,18 +214,18 @@ export function ResultsPage() {
               <Download className="h-4 w-4" />
             )}
             <span className="ml-1.5 hidden sm:inline">
-              {isExporting ? exportStatus || 'Exportiere…' : 'PDF Export'}
+              {isExporting ? exportStatus || t('results.exporting') : t('results.pdfExport')}
             </span>
           </Button>
           {viewOnly ? (
             <Button variant="outline" size="sm" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4" />
-              <span className="ml-1.5 hidden sm:inline">Zurück</span>
+              <span className="ml-1.5 hidden sm:inline">{t('results.back')}</span>
             </Button>
           ) : (
             <Button variant="outline" size="sm" onClick={handleReset}>
               <RotateCcw className="h-4 w-4" />
-              <span className="ml-1.5 hidden sm:inline">Neues Training</span>
+              <span className="ml-1.5 hidden sm:inline">{t('results.newTraining')}</span>
             </Button>
           )}
         </div>
@@ -237,27 +237,27 @@ export function ResultsPage() {
         {/* ── Summary cards ─────────────────────────────────────────────── */}
         <section className="pdf-section">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-            Zusammenfassung
+            {t('results.summary')}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <SummaryCard
               icon={<Layers className="h-5 w-5" />}
-              label="Drills"
+              label={t('results.drills')}
               value={String(drills.length)}
             />
             <SummaryCard
               icon={<Clock className="h-5 w-5" />}
-              label="Gesamtzeit"
+              label={t('results.totalTime')}
               value={formatDuration(totalTime)}
             />
             <SummaryCard
               icon={<TrendingDown className="h-5 w-5" />}
-              label="Waste Time"
+              label={t('results.wasteTime')}
               value={formatDuration(totalWasteTime)}
             />
             <SummaryCard
               icon={<TrendingDown className="h-5 w-5 text-destructive" />}
-              label="Waste %"
+              label={t('results.wastePercent')}
               value={`${wastePercent}%`}
               highlight={wastePercent > 30}
             />
@@ -267,19 +267,19 @@ export function ResultsPage() {
           {practiceInfo.clubName && (
             <div className="mt-4 rounded-lg border border-border bg-card p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               {practiceInfo.clubName && (
-                <InfoRow label="Club" value={practiceInfo.clubName} />
+                <InfoRow label={t('results.club')} value={practiceInfo.clubName} />
               )}
               {practiceInfo.teamName && (
-                <InfoRow label="Team" value={practiceInfo.teamName} />
+                <InfoRow label={t('results.team')} value={practiceInfo.teamName} />
               )}
               {practiceInfo.coachName && (
-                <InfoRow label="Trainer" value={practiceInfo.coachName} />
+                <InfoRow label={t('results.coach')} value={practiceInfo.coachName} />
               )}
               {practiceInfo.trackedPlayerName && (
-                <InfoRow label="Spieler" value={practiceInfo.trackedPlayerName} />
+                <InfoRow label={t('results.player')} value={practiceInfo.trackedPlayerName} />
               )}
               {practiceInfo.date && (
-                <InfoRow label="Datum" value={new Date(practiceInfo.date).toLocaleDateString()} />
+                <InfoRow label={t('results.date')} value={new Date(practiceInfo.date).toLocaleDateString()} />
               )}
             </div>
           )}
@@ -289,7 +289,7 @@ export function ResultsPage() {
         {drillDurations.length > 0 && (
           <section className="pdf-section space-y-3">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Trainings-Zeitleiste
+              {t('results.trainingTimeline')}
             </h2>
             <div className="rounded-lg border border-border bg-card p-4">
               <DrillOverviewTimeline
@@ -304,7 +304,7 @@ export function ResultsPage() {
         {drillTimeData.length > 0 && (
           <section className="pdf-section space-y-3">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Zeit pro Drill
+              {t('results.timePerDrill')}
             </h2>
             <div className="rounded-lg border border-border bg-card p-4">
               <ResponsiveContainer width="100%" height={Math.max(200, drillTimeData.length * 40 + 60)}>
@@ -369,7 +369,7 @@ export function ResultsPage() {
                 <div className="rounded-lg border border-border bg-card p-4 grid sm:grid-cols-2 gap-6">
                   {/* Pie chart */}
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">Zeit pro Aktion</p>
+                    <p className="text-xs text-muted-foreground mb-2">{t('results.timePerAction')}</p>
                     <ResponsiveContainer width="100%" height={200}>
                       <PieChart>
                         <Pie
@@ -393,9 +393,9 @@ export function ResultsPage() {
                     </ResponsiveContainer>
                   </div>
 
-                  {/* Bar chart: Zeit pro Aktion */}
+                  {/* Bar chart */}
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">Zeit pro Aktion</p>
+                    <p className="text-xs text-muted-foreground mb-2">{t('results.timePerAction')}</p>
                     <ResponsiveContainer width="100%" height={200}>
                       <BarChart data={actionData} layout="vertical" margin={{ left: 10, right: 20 }}>
                         <XAxis
@@ -424,13 +424,13 @@ export function ResultsPage() {
                   {/* Gestoppte Zeiten */}
                   {timerData.length > 0 && (
                     <div className="rounded-lg border border-border bg-card p-4">
-                      <p className="text-xs text-muted-foreground mb-3">Gestoppte Zeiten</p>
+                      <p className="text-xs text-muted-foreground mb-3">{t('results.stoppedTimes')}</p>
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-border text-xs text-muted-foreground">
-                            <th className="text-left pb-2 font-medium">Aktion</th>
-                            <th className="text-right pb-2 font-medium">Segmente</th>
-                            <th className="text-right pb-2 font-medium">Gesamt</th>
+                            <th className="text-left pb-2 font-medium">{t('results.action')}</th>
+                            <th className="text-right pb-2 font-medium">{t('results.segments')}</th>
+                            <th className="text-right pb-2 font-medium">{t('results.total')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -459,12 +459,12 @@ export function ResultsPage() {
                   {/* Zähler */}
                   {counterData.length > 0 && (
                     <div className="rounded-lg border border-border bg-card p-4">
-                      <p className="text-xs text-muted-foreground mb-3">Zähler</p>
+                      <p className="text-xs text-muted-foreground mb-3">{t('results.counters')}</p>
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-border text-xs text-muted-foreground">
-                            <th className="text-left pb-2 font-medium">Aktion</th>
-                            <th className="text-right pb-2 font-medium">Anzahl</th>
+                            <th className="text-left pb-2 font-medium">{t('results.action')}</th>
+                            <th className="text-right pb-2 font-medium">{t('results.count')}</th>
                           </tr>
                         </thead>
                         <tbody>

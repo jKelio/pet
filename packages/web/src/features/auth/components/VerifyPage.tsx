@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/auth.api.js';
 import { useAuthStore } from '../stores/auth.store.js';
@@ -9,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 type Status = 'verifying' | 'success' | 'error';
 
 export function VerifyPage() {
+  const { t } = useTranslation('pet');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -20,7 +22,7 @@ export function VerifyPage() {
 
     if (!token) {
       setStatus('error');
-      setErrorMessage('Ungültiger Link. Bitte fordere einen neuen Login-Link an.');
+      setErrorMessage(t('auth.invalidLink'));
       return;
     }
 
@@ -32,7 +34,7 @@ export function VerifyPage() {
       })
       .catch((err) => {
         setStatus('error');
-        setErrorMessage(err.message ?? 'Der Login-Link ist ungültig oder abgelaufen.');
+        setErrorMessage(err.message ?? t('auth.linkExpired'));
       });
   }, []);
 
@@ -41,9 +43,9 @@ export function VerifyPage() {
       <div className="w-full max-w-md">
         <Card>
           <CardHeader className="text-center">
-            {status === 'verifying' && <CardTitle>Anmeldung wird überprüft…</CardTitle>}
-            {status === 'success' && <CardTitle>Erfolgreich eingeloggt!</CardTitle>}
-            {status === 'error' && <CardTitle>Anmeldung fehlgeschlagen</CardTitle>}
+            {status === 'verifying' && <CardTitle>{t('auth.verifying')}</CardTitle>}
+            {status === 'success' && <CardTitle>{t('auth.verifySuccess')}</CardTitle>}
+            {status === 'error' && <CardTitle>{t('auth.verifyFailed')}</CardTitle>}
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4 py-4">
             {status === 'verifying' && <Loader2 className="h-12 w-12 animate-spin text-primary" />}
@@ -53,7 +55,7 @@ export function VerifyPage() {
                 <XCircle className="h-12 w-12 text-destructive" />
                 <CardDescription className="text-center">{errorMessage}</CardDescription>
                 <Button variant="outline" onClick={() => navigate('/auth/login')}>
-                  Neuen Link anfordern
+                  {t('auth.requestNewLink')}
                 </Button>
               </>
             )}
