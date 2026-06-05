@@ -2,7 +2,7 @@ import { describe, test, expect, mock } from 'bun:test';
 import { SyncSessionUseCase, UnauthorizedError } from './sync-session.js';
 import type { SessionRepository } from '../../domain/ports/session.repository.js';
 import type { MembershipRepository } from '../../domain/ports/user.repository.js';
-import type { SyncSessionInput } from '@pet/shared';
+import type { SyncSessionInput, UserRole } from '@pet/shared';
 
 const SESSION_INPUT: SyncSessionInput = {
   id: 'session-1',
@@ -26,7 +26,7 @@ const SESSION_INPUT: SyncSessionInput = {
 const CTX = { userId: 'user-1', tenantId: 'tenant-1' };
 
 function makeMembershipRepo(opts: {
-  membership: { id: string; userId: string; role: 'coach' } | null;
+  membership: { id: string; userId: string; role: UserRole } | null;
   teamIds: string[];
 }): MembershipRepository {
   return {
@@ -84,6 +84,34 @@ describe('SyncSessionUseCase', () => {
     const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo });
 
     expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
+  });
+
+  test('throws UnauthorizedError when role may not track (analyst)', async () => {
+    const membershipRepo = makeMembershipRepo({
+      membership: { id: 'mem-1', userId: 'user-1', role: 'analyst' },
+      teamIds: ['team-1'],
+    });
+    const sessionRepo = makeSessionRepo();
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo });
+
+    expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
+    expect(sessionRepo.save).not.toHaveBeenCalled();
+  });
+
+  test('club_admin may track for a team it is not assigned to', async () => {
+    const membershipRepo = makeMembershipRepo({
+      membership: { id: 'mem-1', userId: 'user-1', role: 'club_admin' },
+      teamIds: [], // not on any roster
+    });
+    const sessionRepo = makeSessionRepo();
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo });
+
+    const result = await useCase.execute(SESSION_INPUT, CTX);
+
+    expect(result.teamId).toBe('team-1');
+    expect(sessionRepo.save).toHaveBeenCalledTimes(1);
+    // team-assignment lookup must be skipped for club_admin
+    expect(membershipRepo.getTeamIds).not.toHaveBeenCalled();
   });
 
   test('preserves createdAt from existing session on re-sync', async () => {

@@ -15,6 +15,8 @@ interface AdminState {
   members: MemberWithUser[];
   isSuperAdmin: boolean;
   loading: boolean;
+  /** True once loadProfile has resolved at least once (success or failure). */
+  loaded: boolean;
   error: string | null;
 
   loadProfile: (accessToken: string) => Promise<void>;
@@ -36,6 +38,7 @@ export const useAdminStore = create<AdminState>()((set) => ({
   members: [],
   isSuperAdmin: false,
   loading: false,
+  loaded: false,
   error: null,
 
   loadProfile: async (accessToken) => {
@@ -49,9 +52,10 @@ export const useAdminStore = create<AdminState>()((set) => ({
         teams: profile.teams,
         isSuperAdmin: profile.isSuperAdmin,
         loading: false,
+        loaded: true,
       });
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorLoad') });
+      set({ loading: false, loaded: true, error: err instanceof Error ? err.message : tr('admin.errorLoad') });
     }
   },
 
@@ -162,5 +166,5 @@ export const useAdminStore = create<AdminState>()((set) => ({
   },
 
   reset: () =>
-    set({ user: null, membership: null, tenant: null, teams: [], members: [], isSuperAdmin: false, loading: false, error: null }),
+    set({ user: null, membership: null, tenant: null, teams: [], members: [], isSuperAdmin: false, loading: false, loaded: false, error: null }),
 }));

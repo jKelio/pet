@@ -6,7 +6,7 @@ import {
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 export const tenantPlanEnum = pgEnum('tenant_plan', ['free', 'pro', 'enterprise']);
-export const userRoleEnum = pgEnum('user_role', ['club_admin', 'coach', 'assistant', 'analyst', 'viewer']);
+export const userRoleEnum = pgEnum('user_role', ['club_admin', 'coach', 'analyst']);
 export const sessionStatusEnum = pgEnum('session_status', ['draft', 'in_progress', 'completed']);
 
 // ─── Tenants ──────────────────────────────────────────────────────────────────

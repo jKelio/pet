@@ -1,10 +1,13 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import type { Permission } from '@pet/shared';
 import { AppShell } from './shared/components/layout/AppShell.js';
 import { LoginPage } from './features/auth/components/LoginPage.js';
 import { VerifyPage } from './features/auth/components/VerifyPage.js';
 import { TrackingPage } from './features/tracking/TrackingPage.js';
 import { useAuthStore } from './features/auth/stores/auth.store.js';
+import { useAdminStore } from './features/admin/stores/admin.store.js';
+import { useAuth } from './features/auth/hooks/useAuth.js';
 
 const ResultsPage = lazy(() =>
   import('./features/results/ResultsPage.js').then((m) => ({ default: m.ResultsPage })),
@@ -28,6 +31,28 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Guards a route behind a role permission. Waits for the profile to load before
+ * deciding, then redirects callers without the permission to the History view.
+ */
+function PermissionRoute({
+  permission,
+  children,
+}: {
+  permission: Permission;
+  children: React.ReactNode;
+}) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const loaded = useAdminStore((s) => s.loaded);
+  const { can } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
+  if (!loaded) {
+    return <div className="p-8 text-center text-muted-foreground">Lädt…</div>;
+  }
+  if (!can(permission)) return <Navigate to="/history" replace />;
+  return <>{children}</>;
+}
+
 
 export const router = createBrowserRouter([
   {
@@ -42,9 +67,9 @@ export const router = createBrowserRouter([
     path: '/',
     element: (
       <AppShell>
-        <ProtectedRoute>
+        <PermissionRoute permission="sessions:track">
           <TrackingPage />
-        </ProtectedRoute>
+        </PermissionRoute>
       </AppShell>
     ),
   },

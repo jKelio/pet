@@ -89,7 +89,7 @@ export const SyncSessionSchema = z.object({
 export const InviteUserSchema = z.object({
   email: EmailSchema,
   name: z.string().trim().max(100).optional(),
-  role: z.enum(['club_admin', 'coach', 'assistant', 'analyst', 'viewer']),
+  role: z.enum(['club_admin', 'coach', 'analyst']),
   teamIds: z.array(UUIDSchema).optional(),
 });
 

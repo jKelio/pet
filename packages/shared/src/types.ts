@@ -76,7 +76,7 @@ export interface PracticeSession {
 
 // ─── Auth & Identity ──────────────────────────────────────────────────────────
 
-export type UserRole = 'club_admin' | 'coach' | 'assistant' | 'analyst' | 'viewer';
+export type UserRole = 'club_admin' | 'coach' | 'analyst';
 
 export interface User {
   id: string;

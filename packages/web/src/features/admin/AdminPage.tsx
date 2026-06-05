@@ -10,7 +10,7 @@ import { useAdminStore } from './stores/admin.store.js';
 import type { Team, UserRole } from '@pet/shared';
 import type { MemberWithUser } from './api/admin.api.js';
 
-const ROLE_KEYS: UserRole[] = ['club_admin', 'coach', 'assistant', 'analyst', 'viewer'];
+const ROLE_KEYS: UserRole[] = ['club_admin', 'coach', 'analyst'];
 
 function OnboardingForm({ accessToken }: { accessToken: string }) {
   const { t } = useTranslation('pet');

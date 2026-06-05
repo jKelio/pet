@@ -2,6 +2,7 @@ import type { SessionRepository } from '../../domain/ports/session.repository.js
 import type { MembershipRepository } from '../../domain/ports/user.repository.js';
 import type { PracticeSession } from '@pet/shared';
 import type { SyncSessionInput } from '@pet/shared';
+import { hasPermission } from '@pet/shared';
 
 export interface SyncSessionDeps {
   sessionRepository: SessionRepository;
@@ -26,9 +27,17 @@ export class SyncSessionUseCase {
       throw new UnauthorizedError('User is not a member of this tenant');
     }
 
-    const teamIds = await this.deps.membershipRepository.getTeamIds(membership.id);
-    if (!teamIds.includes(input.teamId)) {
-      throw new UnauthorizedError('User is not assigned to this team');
+    if (!hasPermission(membership.role, 'sessions:track')) {
+      throw new UnauthorizedError('Role is not allowed to track sessions');
+    }
+
+    // club_admin may track for any team in the tenant; everyone else must be
+    // assigned to the team they are tracking for.
+    if (membership.role !== 'club_admin') {
+      const teamIds = await this.deps.membershipRepository.getTeamIds(membership.id);
+      if (!teamIds.includes(input.teamId)) {
+        throw new UnauthorizedError('User is not assigned to this team');
+      }
     }
 
     const now = new Date().toISOString();

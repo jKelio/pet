@@ -74,8 +74,20 @@ The set of Members assigned to a specific Team. Managed by the club_admin; coach
 _Avoid_: Team members (ambiguous with the broader Membership concept).
 
 **Role**:
-The permission level of a Membership within its Tenant (`club_admin`, `coach`, `assistant`, `analyst`, `viewer`). A single Role per Membership — not per Team.
+The permission level of a Membership within its Tenant. One of three: `club_admin`, `coach`, `analyst`. A single Role per Membership — not per Team.
 _Avoid_: Permission, access level.
+
+**club_admin**:
+The person who runs the club in the app: manages Teams, Memberships and Roles, and the club's settings. Tenant-wide in everything — sees every Team's sessions and may track for any Team without being on its Roster.
+_Avoid_: owner, manager.
+
+**coach**:
+A trainer who runs practices for the Team(s) they are assigned to. Tracks sessions (creates, tracks and syncs them) and reads/exports sessions — but only for their own Roster(s). Has no club-management rights.
+_Avoid_: trainer (use in UI copy only), head coach.
+
+**analyst**:
+A read-only, club-wide role: reads and exports the sessions of every Team but never tracks and never manages the club. The dedicated data/video analyst who evaluates but does not run on-ice tracking.
+_Avoid_: viewer, observer.
 
 ### Actions & counters
 

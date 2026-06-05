@@ -6,7 +6,6 @@ export type Permission =
   | 'users:manage'
   | 'roles:manage'
   | 'teams:manage'
-  | 'sessions:create'
   | 'sessions:track'
   | 'sessions:view:own_team'
   | 'sessions:view:all'
@@ -20,7 +19,6 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'users:manage',
     'roles:manage',
     'teams:manage',
-    'sessions:create',
     'sessions:track',
     'sessions:view:own_team',
     'sessions:view:all',
@@ -30,22 +28,14 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'club:settings',
   ],
   coach: [
-    'sessions:create',
     'sessions:track',
     'sessions:view:own_team',
     'sessions:delete:own',
     'reports:export',
   ],
-  assistant: [
-    'sessions:track',
-    'sessions:view:own_team',
-  ],
   analyst: [
     'sessions:view:all',
     'reports:export',
-  ],
-  viewer: [
-    'sessions:view:own_team',
   ],
 };
 
@@ -59,10 +49,6 @@ export function getPermissions(role: UserRole): Permission[] {
 
 export function canManageUsers(role: UserRole): boolean {
   return hasPermission(role, 'users:manage');
-}
-
-export function canCreateSession(role: UserRole): boolean {
-  return hasPermission(role, 'sessions:create');
 }
 
 export function canTrackSession(role: UserRole): boolean {

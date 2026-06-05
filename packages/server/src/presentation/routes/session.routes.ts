@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import type { SyncSessionUseCase } from '../../application/use-cases/sync-session.js';
 import type { DeleteSessionUseCase } from '../../application/use-cases/delete-session.js';
-import type { SessionRepository } from '../../domain/ports/session.repository.js';
+import type { ListTeamSessionsUseCase } from '../../application/use-cases/list-team-sessions.js';
+import type { GetSessionUseCase } from '../../application/use-cases/get-session.js';
 import { SyncSessionSchema } from '@pet/shared';
 import { UnauthorizedError } from '../../application/use-cases/sync-session.js';
 import { ForbiddenError, NotFoundError } from '../../application/use-cases/delete-session.js';
@@ -9,7 +10,8 @@ import { ForbiddenError, NotFoundError } from '../../application/use-cases/delet
 interface SessionRoutesDeps {
   syncSession: SyncSessionUseCase;
   deleteSession: DeleteSessionUseCase;
-  sessionRepository: SessionRepository;
+  listTeamSessions: ListTeamSessionsUseCase;
+  getSession: GetSessionUseCase;
 }
 
 export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRoutesDeps): void {
@@ -52,7 +54,7 @@ export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRou
     }
   });
 
-  // GET /sessions?teamId=xxx — list sessions for a team
+  // GET /sessions?teamId=xxx — list sessions for a team (view-scope enforced)
   fastify.get('/sessions', async (request, reply) => {
     const { teamId } = request.query as { teamId?: string };
     const tenantId = request.tenantId;
@@ -65,11 +67,21 @@ export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRou
       });
     }
 
-    const sessions = await deps.sessionRepository.findByTeam(teamId, tenantId);
-    return reply.code(200).send(sessions);
+    try {
+      const sessions = await deps.listTeamSessions.execute(teamId, {
+        userId: request.userId,
+        tenantId,
+      });
+      return reply.code(200).send(sessions);
+    } catch (error) {
+      if (error instanceof ForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: error.message, statusCode: 403 });
+      }
+      throw error;
+    }
   });
 
-  // GET /sessions/:id — get a single session
+  // GET /sessions/:id — get a single session (view-scope enforced)
   fastify.get('/sessions/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const tenantId = request.tenantId;
@@ -78,12 +90,15 @@ export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRou
       return reply.code(403).send({ code: 'NO_TENANT', message: 'No active tenant', statusCode: 403 });
     }
 
-    const session = await deps.sessionRepository.findById(id, tenantId);
-    if (!session) {
-      return reply.code(404).send({ code: 'NOT_FOUND', message: 'Session not found', statusCode: 404 });
+    try {
+      const session = await deps.getSession.execute(id, { userId: request.userId, tenantId });
+      return reply.code(200).send(session);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: error.message, statusCode: 404 });
+      }
+      throw error;
     }
-
-    return reply.code(200).send(session);
   });
 
   // DELETE /sessions/:id — delete a synced session (creator or club_admin)

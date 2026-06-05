@@ -12,6 +12,7 @@ import {
   X,
   Shield,
 } from 'lucide-react';
+import type { Permission } from '@pet/shared';
 import { Button } from '../ui/button.js';
 import { cn } from '../../lib/utils.js';
 import { useAuth } from '../../../features/auth/hooks/useAuth.js';
@@ -26,10 +27,11 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   requiresAuth: boolean;
   requiresSuperAdmin?: boolean;
+  requiresPermission?: Permission;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { labelKey: 'nav.tracking', href: '/', icon: Timer, requiresAuth: true },
+  { labelKey: 'nav.tracking', href: '/', icon: Timer, requiresAuth: true, requiresPermission: 'sessions:track' },
   { labelKey: 'nav.results', href: '/sessions', icon: BarChart2, requiresAuth: true },
   { labelKey: 'nav.history', href: '/history', icon: History, requiresAuth: true },
   { labelKey: 'nav.glossary', href: '/glossary', icon: BookOpen, requiresAuth: false },
@@ -122,7 +124,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const { isAuthenticated, user, accessToken, logout } = useAuth();
+  const { isAuthenticated, user, accessToken, logout, can } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -150,7 +152,8 @@ export function AppShell({ children }: AppShellProps) {
   const visibleItems = NAV_ITEMS.filter(
     (item) =>
       (!item.requiresAuth || isAuthenticated) &&
-      (!item.requiresSuperAdmin || isSuperAdmin),
+      (!item.requiresSuperAdmin || isSuperAdmin) &&
+      (!item.requiresPermission || can(item.requiresPermission)),
   );
 
   const sidebarProps = {

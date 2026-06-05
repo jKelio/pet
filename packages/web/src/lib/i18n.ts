@@ -23,9 +23,7 @@ const resources = {
       roles: {
         club_admin: 'Club Admin',
         coach: 'Coach',
-        assistant: 'Assistant',
         analyst: 'Analyst',
-        viewer: 'Viewer',
       },
       auth: {
         tagline: 'Practice Efficiency Tracking',
@@ -277,9 +275,7 @@ const resources = {
       roles: {
         club_admin: 'Club Admin',
         coach: 'Trainer',
-        assistant: 'Assistent',
         analyst: 'Analyst',
-        viewer: 'Betrachter',
       },
       auth: {
         tagline: 'Practice Efficiency Tracking',
