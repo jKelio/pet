@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '../../../shared/components/ui/input.js';
 import { Label } from '../../../shared/components/ui/label.js';
+import { Switch } from '../../../shared/components/ui/switch.js';
 import { useTrackingStore } from '../stores/tracking.store.js';
 import { useAdminStore } from '../../admin/stores/admin.store.js';
 import { useAuthStore } from '../../auth/stores/auth.store.js';
@@ -139,15 +140,15 @@ export function PracticeInfoForm() {
                 ))}
               </datalist>
             )}
-            <label className="flex items-start gap-2 pt-1 text-xs text-muted-foreground cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={localOnly}
-                onChange={(e) => setLocalOnly(e.target.checked)}
-                className="mt-0.5 h-3.5 w-3.5 rounded border-input accent-primary"
-              />
-              <span>{t('sessions.localOnlyLabel')}</span>
-            </label>
+            <div className="flex items-center gap-2 pt-1">
+              <Switch id="localOnly" checked={localOnly} onCheckedChange={setLocalOnly} />
+              <Label
+                htmlFor="localOnly"
+                className="text-xs font-normal text-muted-foreground cursor-pointer"
+              >
+                {t('sessions.localOnlyLabel')}
+              </Label>
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="date">{t('general.dateLabel')}</Label>
