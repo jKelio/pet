@@ -37,6 +37,8 @@ export function PracticeInfoForm() {
   const initDrills = useTrackingStore((s) => s.initDrills);
   const sessionType = useTrackingStore((s) => s.sessionType);
   const setSessionType = useTrackingStore((s) => s.setSessionType);
+  const localOnly = useTrackingStore((s) => s.localOnly);
+  const setLocalOnly = useTrackingStore((s) => s.setLocalOnly);
   const teams = useAdminStore((s) => s.teams);
   const tenant = useAdminStore((s) => s.tenant);
   const members = useAdminStore((s) => s.members);
@@ -124,7 +126,11 @@ export function PracticeInfoForm() {
               id="teamName"
               list="team-suggestions"
               value={practiceInfo.teamName}
-              onChange={(e) => update('teamName', e.target.value)}
+              onChange={(e) => {
+                const teamName = e.target.value;
+                const match = teams.find((tm) => tm.name === teamName);
+                setPracticeInfo({ ...practiceInfo, teamName, teamId: match?.id });
+              }}
             />
             {teams.length > 0 && (
               <datalist id="team-suggestions">
@@ -133,6 +139,15 @@ export function PracticeInfoForm() {
                 ))}
               </datalist>
             )}
+            <label className="flex items-start gap-2 pt-1 text-xs text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={localOnly}
+                onChange={(e) => setLocalOnly(e.target.checked)}
+                className="mt-0.5 h-3.5 w-3.5 rounded border-input accent-primary"
+              />
+              <span>{t('sessions.localOnlyLabel')}</span>
+            </label>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="date">{t('general.dateLabel')}</Label>

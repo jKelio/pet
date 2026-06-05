@@ -62,6 +62,7 @@ export const DrillSchema = z.object({
 export const PracticeInfoSchema = z.object({
   clubName: z.string().trim(),
   teamName: z.string().trim(),
+  teamId: UUIDSchema.optional(),
   date: z.string().datetime(),
   coachName: z.string().trim(),
   evaluation: z.number().int().min(0).max(10),

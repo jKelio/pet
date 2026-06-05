@@ -25,14 +25,13 @@ import {
   TrendingDown,
   Cloud,
 } from 'lucide-react';
-import type { TimerData, Drill, PracticeInfo } from '@pet/shared';
 import { Button } from '../../shared/components/ui/button.js';
 import { useTrackingStore } from '../tracking/stores/tracking.store.js';
 import { completeSession } from '../tracking/hooks/useDraftPersistence.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from '../admin/stores/admin.store.js';
-import { sessionApi } from '../sessions/api/session.api.js';
-import { db } from '../sessions/lib/db.js';
+import type { SavedSession } from '../sessions/lib/db.js';
+import { syncSession, resolveSyncTeamId } from '../sessions/lib/sessionSync.js';
 import {
   extractDrillDurations,
   extractTimelineSegmentsForDrill,
@@ -59,43 +58,6 @@ function formatDuration(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')} min`;
 }
 
-// ── Data normalizers (backward compat for sessions saved with old field names) ──
-
-function normalizeTimerData(raw: unknown): TimerData {
-  const td = raw as Record<string, unknown>;
-  const segs = Array.isArray(td?.timeSegments) ? td.timeSegments : [];
-  return {
-    totalTime: typeof td?.totalTime === 'number' ? td.totalTime : 0,
-    timeSegments: segs.map((s: Record<string, unknown>) => {
-      const startTime = typeof s.startTime === 'number' ? s.startTime : (s.start as number ?? 0);
-      const endTime = typeof s.endTime === 'number' ? s.endTime
-        : typeof s.end === 'number' ? s.end
-        : null;
-      const duration = typeof s.duration === 'number' ? s.duration
-        : (endTime != null ? endTime - startTime : 0);
-      return { startTime, endTime, duration };
-    }),
-  };
-}
-
-function normalizeDrill(drill: Drill): Drill {
-  return {
-    ...drill,
-    wasteTime: normalizeTimerData(drill.wasteTime),
-    timerData: Object.fromEntries(
-      Object.entries(drill.timerData ?? {}).map(([k, v]) => [k, normalizeTimerData(v)]),
-    ),
-  };
-}
-
-function normalizePracticeInfo(pi: PracticeInfo): PracticeInfo {
-  return {
-    ...pi,
-    totalTime: Math.round(pi.totalTime * 3_600_000),
-    wasteTime: normalizeTimerData(pi.wasteTime),
-  };
-}
-
 export function ResultsPage() {
   const { t } = useTranslation('pet');
   const navigate = useNavigate();
@@ -109,6 +71,9 @@ export function ResultsPage() {
   const [localSessionId] = useState(() => useTrackingStore.getState().sessionId);
   const [localDrills] = useState(() => useTrackingStore.getState().drills);
   const [localPracticeInfo] = useState(() => useTrackingStore.getState().practiceInfo);
+  const [localOnly] = useState(() => useTrackingStore.getState().localOnly);
+  // The id under which the completed session was actually stored (normalized to a UUID).
+  const savedIdRef = useRef(localSessionId);
 
   const resetAllData = useTrackingStore((s) => s.resetAllData);
   const tenantId = useAuthStore((s) => s.tenantId);
@@ -126,14 +91,37 @@ export function ResultsPage() {
     if (accessToken && !membership) loadProfile(accessToken);
   }, [accessToken, membership]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Save completed session to IndexedDB, then clear the store so the auto-save
-  // hook on TrackingPage can't recreate a stale draft. Skipped in view-only mode.
+  const buildLocalSession = (id: string): SavedSession => ({
+    id,
+    practiceInfo: localPracticeInfo,
+    drills: localDrills,
+    completedAt: Date.now(),
+    syncedAt: null,
+    teamId: null,
+    tenantId,
+    localOnly,
+  });
+
+  // Save completed session to the local outbox, clear the store so the auto-save
+  // hook on TrackingPage can't recreate a stale draft, then try to sync right away.
+  // A failed sync (offline / no team yet) just leaves it pending for later retry.
+  // Skipped in view-only mode.
   useEffect(() => {
-    if (!viewOnly && localDrills.length > 0) {
-      completeSession(localSessionId, localPracticeInfo, localDrills, tenantId)
-        .then(() => resetAllData())
-        .catch(() => {});
-    }
+    if (viewOnly || localDrills.length === 0) return;
+    completeSession(localSessionId, localPracticeInfo, localDrills, tenantId, localOnly)
+      .then((savedId) => {
+        savedIdRef.current = savedId;
+        resetAllData();
+        if (localOnly) return; // foreign/scouting session — never sync
+        const session = buildLocalSession(savedId);
+        const teamId = resolveSyncTeamId(session, useAdminStore.getState().teams);
+        if (accessToken && teamId && navigator.onLine) {
+          syncSession(session, accessToken, teamId)
+            .then(() => setSynced(true))
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // In view-only mode (cloud session preview) the store is never reset above,
@@ -146,26 +134,16 @@ export function ResultsPage() {
 
   const handleSync = async () => {
     if (!accessToken) return;
-    const teamId = teams[0]?.id;
+    const session = buildLocalSession(savedIdRef.current);
+    const teamId = resolveSyncTeamId(session, teams);
     if (!teamId) {
-      setSyncError(t('sessions.noTeamError'));
+      setSyncError(teams.length === 0 ? t('sessions.noTeamError') : t('sessions.teamAmbiguousHint'));
       return;
     }
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const syncId = UUID_RE.test(localSessionId) ? localSessionId : crypto.randomUUID();
     setSyncing(true);
     setSyncError(null);
     try {
-      await sessionApi.sync(
-        {
-          id: syncId,
-          teamId,
-          practiceInfo: normalizePracticeInfo(localPracticeInfo),
-          drills: localDrills.map(normalizeDrill),
-        },
-        accessToken,
-      );
-      await db.sessions.update(localSessionId, { syncedAt: Date.now(), teamId });
+      await syncSession(session, accessToken, teamId);
       setSynced(true);
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : t('sessions.syncError'));
@@ -319,7 +297,7 @@ export function ResultsPage() {
                 {isExporting ? exportStatus || t('results.exporting') : t('results.pdfExport')}
               </span>
             </Button>
-            {accessToken && !viewOnly && !synced && (
+            {accessToken && !viewOnly && !synced && !localOnly && (
               <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                 {syncing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -328,6 +306,11 @@ export function ResultsPage() {
                 )}
                 <span className="ml-1.5 hidden sm:inline">{t('sessions.syncToCloud')}</span>
               </Button>
+            )}
+            {!viewOnly && localOnly && (
+              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">
+                {t('sessions.localBadge')}
+              </span>
             )}
             {viewOnly ? (
               <Button variant="outline" size="sm" onClick={handleBack}>

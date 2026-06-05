@@ -10,6 +10,7 @@ import { AuthService } from '../../domain/services/auth.service.js';
 import { SendMagicLinkUseCase } from '../../application/use-cases/send-magic-link.js';
 import { VerifyMagicLinkUseCase } from '../../application/use-cases/verify-magic-link.js';
 import { SyncSessionUseCase } from '../../application/use-cases/sync-session.js';
+import { DeleteSessionUseCase } from '../../application/use-cases/delete-session.js';
 import { GetMyProfileUseCase } from '../../application/use-cases/get-my-profile.js';
 import { OnboardTenantUseCase } from '../../application/use-cases/onboard-tenant.js';
 import { CreateTeamUseCase } from '../../application/use-cases/create-team.js';
@@ -48,6 +49,7 @@ declare module 'fastify' {
       sendMagicLink: SendMagicLinkUseCase;
       verifyMagicLink: VerifyMagicLinkUseCase;
       syncSession: SyncSessionUseCase;
+      deleteSession: DeleteSessionUseCase;
       getMyProfile: GetMyProfileUseCase;
       onboardTenant: OnboardTenantUseCase;
       createTeam: CreateTeamUseCase;
@@ -108,6 +110,11 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     membershipRepository,
   });
 
+  const deleteSession = new DeleteSessionUseCase({
+    sessionRepository,
+    membershipRepository,
+  });
+
   const getMyProfile = new GetMyProfileUseCase({
     userRepository,
     tenantRepository,
@@ -158,6 +165,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     sendMagicLink,
     verifyMagicLink,
     syncSession,
+    deleteSession,
     getMyProfile,
     onboardTenant,
     createTeam,

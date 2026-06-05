@@ -12,6 +12,7 @@ export function useDraftPersistence() {
   const sessionId = useTrackingStore((s) => s.sessionId);
   const practiceInfo = useTrackingStore((s) => s.practiceInfo);
   const drills = useTrackingStore((s) => s.drills);
+  const localOnly = useTrackingStore((s) => s.localOnly);
   const restoreFromDraft = useTrackingStore((s) => s.restoreFromDraft);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -27,7 +28,7 @@ export function useDraftPersistence() {
       .last()
       .then((draft) => {
         if (draft && draft.drills.length > 0) {
-          restoreFromDraft(draft.id, draft.practiceInfo, draft.drills);
+          restoreFromDraft(draft.id, draft.practiceInfo, draft.drills, draft.localOnly ?? false);
         }
       })
       .catch(() => {
@@ -37,8 +38,8 @@ export function useDraftPersistence() {
 
   // Debounced auto-save on state changes
   useEffect(() => {
-    // Don't persist cloud-session previews as drafts
-    if (sessionId.startsWith('cloud-')) return;
+    // Don't persist read-only previews (cloud sessions or local pending sessions) as drafts
+    if (sessionId.startsWith('cloud-') || sessionId.startsWith('local-')) return;
     // Don't save an empty session
     if (drills.length === 0 && !practiceInfo.clubName) return;
 
@@ -50,6 +51,7 @@ export function useDraftPersistence() {
         practiceInfo,
         drills,
         savedAt: Date.now(),
+        localOnly,
       }).catch(() => {
         // Silently ignore storage errors
       });
@@ -58,7 +60,7 @@ export function useDraftPersistence() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [sessionId, practiceInfo, drills]);
+  }, [sessionId, practiceInfo, drills, localOnly]);
 }
 
 /** Call after a session is completed to remove the draft and save to sessions table. */
@@ -67,18 +69,22 @@ export async function completeSession(
   practiceInfo: ReturnType<typeof useTrackingStore.getState>['practiceInfo'],
   drills: ReturnType<typeof useTrackingStore.getState>['drills'],
   tenantId: string | null = null,
-): Promise<void> {
+  localOnly = false,
+): Promise<string> {
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const id = UUID_RE.test(sessionId) ? sessionId : crypto.randomUUID();
-  await db.sessions.clear();
+  // Keep previously completed (still-unsynced) sessions — db.sessions acts as a
+  // pending-sync outbox; rows are removed only once successfully synced.
   await db.sessions.put({
     id,
     practiceInfo,
     drills,
     completedAt: Date.now(),
     syncedAt: null,
-    teamId: null,
+    teamId: practiceInfo.teamId ?? null,
     tenantId,
+    localOnly,
   });
   await db.drafts.delete(sessionId);
+  return id;
 }

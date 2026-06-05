@@ -44,6 +44,8 @@ export type SessionType = 'planned' | 'open';
 export interface PracticeInfo {
   clubName: string;
   teamName: string;
+  /** Id of the registered Team this session belongs to, when teamName resolves to one. Used to route the sync. */
+  teamId?: string;
   date: string;
   coachName: string;
   evaluation: number;

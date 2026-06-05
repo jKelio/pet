@@ -85,6 +85,7 @@ async function build() {
   await fastify.register(async (scope) => {
     registerSessionRoutes(scope, {
       syncSession: fastify.useCases.syncSession,
+      deleteSession: fastify.useCases.deleteSession,
       sessionRepository: fastify.repos.session,
     });
   });

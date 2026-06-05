@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Timer,
   BarChart2,
-  Cloud,
+  History,
   Users,
   BookOpen,
   LogOut,
@@ -16,6 +16,7 @@ import { Button } from '../ui/button.js';
 import { cn } from '../../lib/utils.js';
 import { useAuth } from '../../../features/auth/hooks/useAuth.js';
 import { useAdminStore } from '../../../features/admin/stores/admin.store.js';
+import { useSyncPending } from '../../../features/sessions/hooks/useSyncPending.js';
 import { TenantSwitcher } from './TenantSwitcher.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
 
@@ -30,7 +31,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.tracking', href: '/', icon: Timer, requiresAuth: true },
   { labelKey: 'nav.results', href: '/sessions', icon: BarChart2, requiresAuth: true },
-  { labelKey: 'nav.cloud', href: '/sessions/cloud', icon: Cloud, requiresAuth: true },
+  { labelKey: 'nav.history', href: '/history', icon: History, requiresAuth: true },
   { labelKey: 'nav.glossary', href: '/glossary', icon: BookOpen, requiresAuth: false },
   { labelKey: 'nav.team', href: '/admin', icon: Users, requiresAuth: true },
   { labelKey: 'nav.superAdmin', href: '/superadmin', icon: Shield, requiresAuth: true, requiresSuperAdmin: true },
@@ -128,6 +129,9 @@ export function AppShell({ children }: AppShellProps) {
   const loadProfile = useAdminStore((s) => s.loadProfile);
   const membership = useAdminStore((s) => s.membership);
   const isSuperAdmin = useAdminStore((s) => s.isSuperAdmin);
+
+  // Drain the local pending-sync outbox when online + authenticated + team present.
+  useSyncPending();
 
   // Load profile once on first authenticated render so teams/tenant are available app-wide
   useEffect(() => {

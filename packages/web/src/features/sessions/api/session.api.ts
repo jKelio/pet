@@ -8,4 +8,7 @@ export const sessionApi = {
 
   listByTeam: (teamId: string, accessToken: string) =>
     apiClient.get<PracticeSession[]>(`/sessions?teamId=${encodeURIComponent(teamId)}`, accessToken),
+
+  remove: (id: string, accessToken: string) =>
+    apiClient.delete<void>(`/sessions/${encodeURIComponent(id)}`, accessToken),
 };

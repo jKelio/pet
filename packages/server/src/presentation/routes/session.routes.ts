@@ -1,11 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import type { SyncSessionUseCase } from '../../application/use-cases/sync-session.js';
+import type { DeleteSessionUseCase } from '../../application/use-cases/delete-session.js';
 import type { SessionRepository } from '../../domain/ports/session.repository.js';
 import { SyncSessionSchema } from '@pet/shared';
 import { UnauthorizedError } from '../../application/use-cases/sync-session.js';
+import { ForbiddenError, NotFoundError } from '../../application/use-cases/delete-session.js';
 
 interface SessionRoutesDeps {
   syncSession: SyncSessionUseCase;
+  deleteSession: DeleteSessionUseCase;
   sessionRepository: SessionRepository;
 }
 
@@ -81,5 +84,28 @@ export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRou
     }
 
     return reply.code(200).send(session);
+  });
+
+  // DELETE /sessions/:id — delete a synced session (creator or club_admin)
+  fastify.delete('/sessions/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const tenantId = request.tenantId;
+
+    if (!tenantId) {
+      return reply.code(403).send({ code: 'NO_TENANT', message: 'No active tenant', statusCode: 403 });
+    }
+
+    try {
+      await deps.deleteSession.execute(id, { userId: request.userId, tenantId });
+      return reply.code(204).send();
+    } catch (error) {
+      if (error instanceof ForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: error.message, statusCode: 403 });
+      }
+      if (error instanceof NotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: error.message, statusCode: 404 });
+      }
+      throw error;
+    }
   });
 }

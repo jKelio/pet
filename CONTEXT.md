@@ -38,6 +38,22 @@ _Avoid_: structured, preset.
 A practice session where the drill structure is not known in advance. Drills are added one by one as the training progresses.
 _Avoid_: Observer Mode, Live Mode, unstructured.
 
+**Completed Session**:
+A session whose live tracking has finished and which has been stored locally in IndexedDB (`db.sessions`). Distinct from a *Draft* (the in-progress autosave in `db.drafts`).
+_Avoid_: Saved Session (use in code only), finished session.
+
+**Pending Sync (Outbox)**:
+The set of Completed Sessions not yet transferred to the backend. The local `db.sessions` table *is* this outbox — it holds only sessions awaiting sync. Surfaced to the coach in the "Pending — not synced" section of the History view.
+_Avoid_: queue, unsynced backlog.
+
+**Synced Session**:
+A Completed Session that has been transferred to the backend. On a successful sync the local copy is **deleted** (delete-on-sync), so a Synced Session lives only in the cloud and is re-viewed via the History list.
+_Avoid_: uploaded session.
+
+**Local-Only Session**:
+A Completed Session the coach has explicitly marked as **not for the cloud** — typically a foreign/scouting team from another club, which has no registered Team to sync to. Marked via a checkbox at tracking time so it is never auto-synced; it stays in the local outbox under a "Local only" section (re-viewable, PDF-exportable) until deleted. Distinct from [[Pending Sync (Outbox)]], which *is* awaiting sync.
+_Avoid_: draft, offline session.
+
 ### Multi-tenant admin
 
 **Tenant**:
@@ -47,6 +63,7 @@ _Avoid_: Organisation, account, club (use Tenant in code; "club" is fine in UI c
 **Team**:
 A group within a Tenant (e.g. "U16", "Herren 1"). A Tenant has one or more Teams. A Member can be assigned to multiple Teams.
 _Avoid_: Group, squad.
+_Note_: A practice session carries a free-text **team name** (a display label, possibly typed ad hoc). It is bound to an actual registered Team only when that name matches one; that binding is what decides which Team the session syncs into. An unmatched name leaves the session's Team ambiguous.
 
 **Membership**:
 The relationship between a User and a Tenant, carrying a single Role. A User has at most one Membership per Tenant.

@@ -42,11 +42,14 @@ interface TrackingStore {
   practiceInfo: PracticeInfo;
   drills: Drill[];
   currentDrillIndex: number;
+  /** Foreign/scouting session: keep local only, never sync to the cloud */
+  localOnly: boolean;
 
   setPracticeInfo: (info: PracticeInfo | ((prev: PracticeInfo) => PracticeInfo)) => void;
   setDrills: (drills: Drill[] | ((prev: Drill[]) => Drill[])) => void;
   setCurrentDrillIndex: (i: number) => void;
   setSessionType: (t: SessionType) => void;
+  setLocalOnly: (v: boolean) => void;
   initDrills: (n: number) => void;
   appendDrill: () => void;
   updateDrillAction: (drillIndex: number, actionId: string, partial: Partial<ActionButton>) => void;
@@ -55,7 +58,7 @@ interface TrackingStore {
   goToPrevStep: () => void;
   resetAllData: () => void;
   /** Restore session state from a persisted draft */
-  restoreFromDraft: (sessionId: string, practiceInfo: PracticeInfo, drills: Drill[]) => void;
+  restoreFromDraft: (sessionId: string, practiceInfo: PracticeInfo, drills: Drill[], localOnly?: boolean) => void;
 }
 
 export const useTrackingStore = create<TrackingStore>()((set, get) => ({
@@ -65,6 +68,7 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
   practiceInfo: { ...initialPracticeInfo },
   drills: [],
   currentDrillIndex: 0,
+  localOnly: false,
 
   setPracticeInfo: (info) =>
     set((state) => ({
@@ -83,6 +87,8 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
       sessionType: t,
       practiceInfo: { ...state.practiceInfo, sessionType: t },
     })),
+
+  setLocalOnly: (v) => set({ localOnly: v }),
 
   initDrills: (n) => {
     const current = get().drills;
@@ -150,9 +156,10 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
       practiceInfo: { ...initialPracticeInfo, date: new Date().toISOString() },
       drills: [],
       currentDrillIndex: 0,
+      localOnly: false,
     }),
 
-  restoreFromDraft: (sessionId, practiceInfo, drills) =>
+  restoreFromDraft: (sessionId, practiceInfo, drills, localOnly = false) =>
     set({
       sessionId,
       practiceInfo,
@@ -160,5 +167,6 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
       sessionType: practiceInfo.sessionType ?? 'planned',
       mode: drills.length > 0 ? 'timeWatcher' : 'practiceInfo',
       currentDrillIndex: 0,
+      localOnly,
     }),
 }));

@@ -9,6 +9,8 @@ export interface DraftSession {
   practiceInfo: PracticeInfo;
   drills: Drill[];
   savedAt: number;
+  /** Marked as a foreign/scouting session that must never be synced to the cloud */
+  localOnly?: boolean;
 }
 
 export interface SavedSession {
@@ -20,6 +22,8 @@ export interface SavedSession {
   syncedAt: number | null;
   teamId: string | null;
   tenantId: string | null;
+  /** Foreign/scouting session: kept local only, never auto-synced */
+  localOnly?: boolean;
 }
 
 // ── Database ──────────────────────────────────────────────────────────────────
