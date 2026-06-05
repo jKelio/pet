@@ -5,6 +5,7 @@ import { Input } from '../../../shared/components/ui/input.js';
 import { Label } from '../../../shared/components/ui/label.js';
 import { useTrackingStore } from '../stores/tracking.store.js';
 import { useAdminStore } from '../../admin/stores/admin.store.js';
+import { useAuthStore } from '../../auth/stores/auth.store.js';
 import type { SessionType } from '@pet/shared';
 
 function ClearableInput({
@@ -38,6 +39,9 @@ export function PracticeInfoForm() {
   const setSessionType = useTrackingStore((s) => s.setSessionType);
   const teams = useAdminStore((s) => s.teams);
   const tenant = useAdminStore((s) => s.tenant);
+  const members = useAdminStore((s) => s.members);
+  const loadMembers = useAdminStore((s) => s.loadMembers);
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   useEffect(() => {
     if (tenant?.name) {
@@ -45,8 +49,19 @@ export function PracticeInfoForm() {
     }
   }, [tenant?.name]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (members.length === 0 && accessToken) {
+      loadMembers(accessToken);
+    }
+  }, [accessToken, loadMembers, members.length]);
+
   const update = (field: string, value: string | number) =>
     setPracticeInfo({ ...practiceInfo, [field]: value });
+
+  const selectedTeam = teams.find((t) => t.name === practiceInfo.teamName);
+  const coachSuggestions = members
+    .filter((m) => m.membership.role === 'coach')
+    .filter((m) => !selectedTeam || m.teamIds.includes(selectedTeam.id));
 
   const handleDrillsNumber = (value: string) => {
     const n = parseInt(value, 10) || 0;
@@ -132,9 +147,17 @@ export function PracticeInfoForm() {
             <Label htmlFor="coachName">{t('general.coachLabel')}</Label>
             <ClearableInput
               id="coachName"
+              list="coach-suggestions"
               value={practiceInfo.coachName}
               onChange={(e) => update('coachName', e.target.value)}
             />
+            {coachSuggestions.length > 0 && (
+              <datalist id="coach-suggestions">
+                {coachSuggestions.map((m) => (
+                  <option key={m.membership.id} value={m.user.name} />
+                ))}
+              </datalist>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="evaluation">{t('general.evaluationLabel')}</Label>
