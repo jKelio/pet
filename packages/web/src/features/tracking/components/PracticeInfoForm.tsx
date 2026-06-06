@@ -1,35 +1,13 @@
 import { useEffect } from 'react';
-import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '../../../shared/components/ui/input.js';
 import { Label } from '../../../shared/components/ui/label.js';
 import { Switch } from '../../../shared/components/ui/switch.js';
+import { AutocompleteInput } from '../../../shared/components/ui/autocomplete-input.js';
 import { useTrackingStore } from '../stores/tracking.store.js';
 import { useAdminStore } from '../../admin/stores/admin.store.js';
 import { useAuthStore } from '../../auth/stores/auth.store.js';
 import type { SessionType } from '@pet/shared';
-
-function ClearableInput({
-  id,
-  value,
-  onChange,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
-  return (
-    <div className="relative">
-      <Input id={id} value={value} onChange={onChange} className={value ? 'pr-8' : ''} {...props} />
-      {value && (
-        <button
-          type="button"
-          onClick={() => onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
-  );
-}
 
 export function PracticeInfoForm() {
   const { t } = useTranslation('pet');
@@ -115,31 +93,24 @@ export function PracticeInfoForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="clubName">{t('general.clubLabel')}</Label>
-            <ClearableInput
+            <AutocompleteInput
               id="clubName"
               value={practiceInfo.clubName}
-              onChange={(e) => update('clubName', e.target.value)}
+              suggestions={[]}
+              onChange={(clubName) => update('clubName', clubName)}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="teamName">{t('general.teamLabel')}</Label>
-            <ClearableInput
+            <AutocompleteInput
               id="teamName"
-              list="team-suggestions"
               value={practiceInfo.teamName}
-              onChange={(e) => {
-                const teamName = e.target.value;
+              suggestions={teams.map((t) => t.name)}
+              onChange={(teamName) => {
                 const match = teams.find((tm) => tm.name === teamName);
                 setPracticeInfo({ ...practiceInfo, teamName, teamId: match?.id });
               }}
             />
-            {teams.length > 0 && (
-              <datalist id="team-suggestions">
-                {teams.map((team) => (
-                  <option key={team.id} value={team.name} />
-                ))}
-              </datalist>
-            )}
             <div className="flex items-center gap-2 pt-1">
               <Switch id="localOnly" checked={localOnly} onCheckedChange={setLocalOnly} />
               <Label
@@ -161,19 +132,12 @@ export function PracticeInfoForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="coachName">{t('general.coachLabel')}</Label>
-            <ClearableInput
+            <AutocompleteInput
               id="coachName"
-              list="coach-suggestions"
               value={practiceInfo.coachName}
-              onChange={(e) => update('coachName', e.target.value)}
+              suggestions={coachSuggestions.map((m) => m.user.name)}
+              onChange={(coachName) => update('coachName', coachName)}
             />
-            {coachSuggestions.length > 0 && (
-              <datalist id="coach-suggestions">
-                {coachSuggestions.map((m) => (
-                  <option key={m.membership.id} value={m.user.name} />
-                ))}
-              </datalist>
-            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="evaluation">{t('general.evaluationLabel')}</Label>
@@ -227,10 +191,11 @@ export function PracticeInfoForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="trackedPlayerName">{t('practice.trackedPlayerNameLabel')}</Label>
-            <ClearableInput
+            <AutocompleteInput
               id="trackedPlayerName"
               value={practiceInfo.trackedPlayerName}
-              onChange={(e) => update('trackedPlayerName', e.target.value)}
+              suggestions={[]}
+              onChange={(trackedPlayerName) => update('trackedPlayerName', trackedPlayerName)}
             />
           </div>
           {sessionType !== 'open' && (
