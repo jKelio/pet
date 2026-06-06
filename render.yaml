@@ -1,0 +1,62 @@
+services:
+  - type: web
+    name: pet-server
+    env: docker
+    dockerfilePath: ./packages/server/Dockerfile
+    dockerContext: .
+    branch: feature/pet-v2-greenfield   # switch to master after merge
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: HOST
+        value: "0.0.0.0"
+      # Update these two once Render assigns a URL to pet-web:
+      - key: APP_BASE_URL
+        value: https://pet-web.onrender.com
+      - key: CORS_ORIGIN
+        value: https://pet-web.onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pet-postgres
+          property: connectionString
+      # Set these secrets manually in the Render dashboard after first deploy:
+      - key: JWT_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      # Comma-separated — must include your own email for the first SuperAdmin login:
+      - key: SUPER_ADMIN_EMAILS
+        sync: false
+
+  - type: web
+    name: pet-web
+    env: docker
+    dockerfilePath: ./packages/web/Dockerfile
+    dockerContext: .
+    branch: feature/pet-v2-greenfield   # switch to master after merge
+    plan: free
+    envVars:
+      - key: SERVER_URL
+        fromService:
+          type: web
+          name: pet-server
+          property: url   # full https:// URL, e.g. "https://pet-server.onrender.com"
+
+databases:
+  - name: pet-postgres
+    databaseName: pet
+    user: pet
+    plan: free

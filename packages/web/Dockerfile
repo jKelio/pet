@@ -22,10 +22,12 @@ RUN bun run build
 FROM nginx:1.27-alpine AS runner
 
 # SPA + API proxy config
-COPY packages/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY packages/web/nginx.conf /etc/nginx/conf.d/default.conf.template
 
 COPY --from=builder /app/packages/web/dist /usr/share/nginx/html
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# envsubst substitutes only ${SERVER_URL}; all other nginx vars ($uri, $host, etc.) are left intact.
+# docker-compose: SERVER_URL=http://server:3000  |  Render: https://<host> via fromService.
+CMD ["/bin/sh", "-c", "envsubst '${SERVER_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
