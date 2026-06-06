@@ -89,6 +89,25 @@ _Avoid_: trainer (use in UI copy only), head coach.
 A read-only, club-wide role: reads and exports the sessions of every Team but never tracks and never manages the club. The dedicated data/video analyst who evaluates but does not run on-ice tracking.
 _Avoid_: viewer, observer.
 
+### Drills & tags
+
+**Drill**:
+The structural unit a practice session is divided into. Actions are logged against the currently active Drill; a session is an ordered list of Drills (declared upfront in a [[Planned Session]], or added one by one in an [[Open Session]]).
+_Avoid_: Exercise, segment.
+
+**Drill Tag**:
+An optional classification label applied to a Drill from a fixed vocabulary (`station`, `drill`, `technique`, `tactic`, `smallareagame`, `skating`, `passing`, `shot`, `puckhandling`, `battlechecking`). A Drill carries zero or more. Tags *classify* a Drill — they are not logged [[Action]]s and produce no timing or counts.
+_Avoid_: Category, type, drill kind.
+
+**Waste Time**:
+Idle time *within* an active Drill — elapsed while no [[Timer Action]] is running. Measured per Drill.
+_Note_: stored per-Drill under the `wasteTime` key.
+
+**Gap Time**:
+Idle time *between* Drills — before the first Drill, between Drills, and after the last. Measured at the session level.
+_Note_: shares the `wasteTime` storage key with [[Waste Time]] despite being a distinct, separately-scoped concept (between-drill vs within-drill).
+_Avoid_: Pause (use in UI copy only), break.
+
 ### Actions & counters
 
 **Action**:
