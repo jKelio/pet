@@ -1,0 +1,440 @@
+import type { TFunction } from 'i18next';
+import type { Drill, TimeSegment } from '@pet/shared';
+import { ACTION_COLORS as SHARED_COLORS, PUCK_TIMER_IDS } from '@pet/shared';
+
+export const ACTION_COLORS: Record<string, string> = SHARED_COLORS;
+
+export interface GanttSegment {
+  drillId: number;
+  drillLabel: string;
+  actionId: string;
+  actionLabel: string;
+  startOffset: number;
+  endOffset: number;
+  duration: number;
+  color: string;
+}
+
+export interface CounterEvent {
+  actionId: string;
+  actionLabel: string;
+  timestamp: number;
+  drillId: number;
+}
+
+export interface DrillBoundary {
+  drillId: number;
+  drillLabel: string;
+  startOffset: number;
+}
+
+export interface DrillDuration {
+  drillId: number;
+  drillLabel: string;
+  startOffset: number;
+  endOffset: number;
+  duration: number;
+  tags: string[];
+}
+
+export function formatRelativeTime(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+export function extractDrillDurations(
+  drills: Drill[],
+  t: TFunction,
+  trainingStartTime?: number,
+): DrillDuration[] {
+  const drillTimes: Array<{
+    drillId: number;
+    startTime: number;
+    endTime: number;
+    tags: string[];
+  }> = [];
+
+  drills.forEach((drill) => {
+    let earliestTime = Infinity;
+    let latestTime = -Infinity;
+
+    Object.values(drill.timerData ?? {}).forEach((td) => {
+      td.timeSegments?.forEach((seg) => {
+        if (seg.startTime && seg.startTime < earliestTime) earliestTime = seg.startTime;
+        if (seg.endTime && seg.endTime > latestTime) latestTime = seg.endTime;
+      });
+    });
+
+    Object.values(drill.counterData ?? {}).forEach((cd) => {
+      cd.timestamps?.forEach((ts) => {
+        if (ts < earliestTime) earliestTime = ts;
+        if (ts > latestTime) latestTime = ts;
+      });
+    });
+
+    // Include waste-time segments so the drill span matches the "Zeit pro Drill"
+    // bar, which adds wasteTime to the total.
+    drill.wasteTime?.timeSegments?.forEach((seg) => {
+      if (seg.startTime && seg.startTime < earliestTime) earliestTime = seg.startTime;
+      if (seg.endTime && seg.endTime > latestTime) latestTime = seg.endTime;
+    });
+
+    if (earliestTime !== Infinity && latestTime !== -Infinity) {
+      drillTimes.push({
+        drillId: drill.id,
+        startTime: earliestTime,
+        endTime: latestTime,
+        tags: drill.tags as string[],
+      });
+    }
+  });
+
+  if (drillTimes.length === 0) return [];
+
+  const minStartTime = trainingStartTime ?? Math.min(...drillTimes.map((d) => d.startTime));
+
+  return drillTimes
+    .map((d) => ({
+      drillId: d.drillId,
+      drillLabel: `${t('results.drill', { defaultValue: 'Drill' })} ${d.drillId}`,
+      startOffset: d.startTime - minStartTime,
+      endOffset: d.endTime - minStartTime,
+      duration: d.endTime - d.startTime,
+      tags: d.tags,
+    }))
+    .sort((a, b) => a.startOffset - b.startOffset);
+}
+
+export function extractTimelineSegments(
+  drills: Drill[],
+  t: TFunction,
+  extraGapSegments?: TimeSegment[],
+): {
+  segments: Array<{
+    actionId: string;
+    actionLabel: string;
+    startOffset: number;
+    endOffset: number;
+    duration: number;
+  }>;
+  counterEvents: CounterEvent[];
+  drillBoundaries: DrillBoundary[];
+  actionLabels: Array<{ actionId: string; actionLabel: string }>;
+} {
+  const rawSegments: Array<{
+    actionId: string;
+    startTime: number;
+    endTime: number;
+    duration: number;
+  }> = [];
+
+  const rawCounterEvents: Array<{
+    actionId: string;
+    timestamp: number;
+    drillId: number;
+  }> = [];
+
+  drills.forEach((drill) => {
+    Object.entries(drill.timerData ?? {}).forEach(([actionId, td]) => {
+      td.timeSegments?.forEach((seg) => {
+        if (seg.startTime && seg.endTime) {
+          rawSegments.push({
+            actionId,
+            startTime: seg.startTime,
+            endTime: seg.endTime,
+            duration: seg.duration,
+          });
+        }
+      });
+    });
+
+    drill.wasteTime?.timeSegments?.forEach((seg) => {
+      if (seg.startTime && seg.endTime) {
+        rawSegments.push({
+          actionId: 'wasteTime',
+          startTime: seg.startTime,
+          endTime: seg.endTime,
+          duration: seg.duration,
+        });
+      }
+    });
+
+    Object.entries(drill.counterData ?? {}).forEach(([actionId, cd]) => {
+      cd.timestamps?.forEach((ts) => {
+        rawCounterEvents.push({ actionId, timestamp: ts, drillId: drill.id });
+      });
+    });
+  });
+
+  extraGapSegments?.forEach((seg) => {
+    if (seg.startTime && seg.endTime) {
+      rawSegments.push({
+        actionId: 'wasteTime',
+        startTime: seg.startTime,
+        endTime: seg.endTime,
+        duration: seg.duration,
+      });
+    }
+  });
+
+  const allTimestamps = [
+    ...rawSegments.map((s) => s.startTime),
+    ...rawSegments.map((s) => s.endTime),
+    ...rawCounterEvents.map((e) => e.timestamp),
+  ];
+
+  if (allTimestamps.length === 0) {
+    return { segments: [], counterEvents: [], drillBoundaries: [], actionLabels: [] };
+  }
+
+  const minStartTime = Math.min(...allTimestamps);
+
+  const segments = rawSegments.map((seg) => ({
+    actionId: seg.actionId,
+    actionLabel: t(`actions.${seg.actionId}`, { defaultValue: seg.actionId }),
+    startOffset: seg.startTime - minStartTime,
+    endOffset: seg.endTime - minStartTime,
+    duration: seg.duration,
+  }));
+
+  const counterEvents: CounterEvent[] = rawCounterEvents.map((evt) => ({
+    actionId: evt.actionId,
+    actionLabel: t(`actions.${evt.actionId}`, { defaultValue: evt.actionId }),
+    timestamp: evt.timestamp - minStartTime,
+    drillId: evt.drillId,
+  }));
+
+  // Drill boundaries
+  const drillStartMap = new Map<number, number>();
+  drills.forEach((drill) => {
+    let earliest = Infinity;
+    Object.values(drill.timerData ?? {}).forEach((td) => {
+      td.timeSegments?.forEach((seg) => {
+        if (seg.startTime && seg.startTime < earliest) earliest = seg.startTime;
+      });
+    });
+    Object.values(drill.counterData ?? {}).forEach((cd) => {
+      cd.timestamps?.forEach((ts) => {
+        if (ts < earliest) earliest = ts;
+      });
+    });
+    if (earliest !== Infinity) drillStartMap.set(drill.id, earliest);
+  });
+
+  const drillBoundaries: DrillBoundary[] = Array.from(drillStartMap.entries())
+    .sort((a, b) => a[1] - b[1])
+    .map(([drillId, startTime]) => ({
+      drillId,
+      drillLabel: `${t('results.drill', { defaultValue: 'Drill' })} ${drillId}`,
+      startOffset: startTime - minStartTime,
+    }));
+
+  const seenActions = new Set<string>();
+  const actionLabels: Array<{ actionId: string; actionLabel: string }> = [];
+
+  segments.forEach((seg) => {
+    if (!seenActions.has(seg.actionId)) {
+      seenActions.add(seg.actionId);
+      actionLabels.push({ actionId: seg.actionId, actionLabel: seg.actionLabel });
+    }
+  });
+  counterEvents.forEach((evt) => {
+    if (!seenActions.has(evt.actionId)) {
+      seenActions.add(evt.actionId);
+      actionLabels.push({ actionId: evt.actionId, actionLabel: evt.actionLabel });
+    }
+  });
+
+  return { segments, counterEvents, drillBoundaries, actionLabels };
+}
+
+export function extractTimelineSegmentsForDrill(
+  drill: Drill,
+  t: TFunction,
+): {
+  segments: Array<{
+    actionId: string;
+    actionLabel: string;
+    startOffset: number;
+    endOffset: number;
+    duration: number;
+  }>;
+  counterEvents: CounterEvent[];
+  actionLabels: Array<{ actionId: string; actionLabel: string }>;
+} {
+  const rawSegments: Array<{
+    actionId: string;
+    startTime: number;
+    endTime: number;
+    duration: number;
+  }> = [];
+
+  const rawCounterEvents: Array<{ actionId: string; timestamp: number }> = [];
+
+  Object.entries(drill.timerData ?? {}).forEach(([actionId, td]) => {
+    td.timeSegments?.forEach((seg) => {
+      if (seg.startTime && seg.endTime) {
+        rawSegments.push({
+          actionId,
+          startTime: seg.startTime,
+          endTime: seg.endTime,
+          duration: seg.duration,
+        });
+      }
+    });
+  });
+
+  Object.entries(drill.counterData ?? {}).forEach(([actionId, cd]) => {
+    cd.timestamps?.forEach((ts) => {
+      rawCounterEvents.push({ actionId, timestamp: ts });
+    });
+  });
+
+  const allTimestamps = [
+    ...rawSegments.map((s) => s.startTime),
+    ...rawSegments.map((s) => s.endTime),
+    ...rawCounterEvents.map((e) => e.timestamp),
+  ];
+
+  if (allTimestamps.length === 0) {
+    return { segments: [], counterEvents: [], actionLabels: [] };
+  }
+
+  const minStartTime = Math.min(...allTimestamps);
+
+  const segments = rawSegments.map((seg) => ({
+    actionId: seg.actionId,
+    actionLabel: t(`actions.${seg.actionId}`, { defaultValue: seg.actionId }),
+    startOffset: seg.startTime - minStartTime,
+    endOffset: seg.endTime - minStartTime,
+    duration: seg.duration,
+  }));
+
+  const counterEvents: CounterEvent[] = rawCounterEvents.map((evt) => ({
+    actionId: evt.actionId,
+    actionLabel: t(`actions.${evt.actionId}`, { defaultValue: evt.actionId }),
+    timestamp: evt.timestamp - minStartTime,
+    drillId: drill.id,
+  }));
+
+  const seenActions = new Set<string>();
+  const actionLabels: Array<{ actionId: string; actionLabel: string }> = [];
+
+  segments.forEach((seg) => {
+    if (!seenActions.has(seg.actionId)) {
+      seenActions.add(seg.actionId);
+      actionLabels.push({ actionId: seg.actionId, actionLabel: seg.actionLabel });
+    }
+  });
+  counterEvents.forEach((evt) => {
+    if (!seenActions.has(evt.actionId)) {
+      seenActions.add(evt.actionId);
+      actionLabels.push({ actionId: evt.actionId, actionLabel: evt.actionLabel });
+    }
+  });
+
+  return { segments, counterEvents, actionLabels };
+}
+
+export function aggregateTimeByActionForDrill(
+  drill: Drill,
+  t: TFunction,
+): Array<{ actionId: string; actionLabel: string; totalTime: number }> {
+  const result: Array<{ actionId: string; actionLabel: string; totalTime: number }> = [];
+
+  // Time Moving = with Puck + without Puck. Merge the two into one combined
+  // slice so the per-action pie/bar shows the total without double-counting.
+  // The with/without split stays visible in the Gantt timeline and the table.
+  let timeMovingTotal = 0;
+
+  Object.entries(drill.timerData ?? {}).forEach(([actionId, td]) => {
+    if ((PUCK_TIMER_IDS as readonly string[]).includes(actionId)) {
+      timeMovingTotal += td.totalTime ?? 0;
+      return;
+    }
+    if (td.totalTime > 0) {
+      result.push({
+        actionId,
+        actionLabel: t(`actions.${actionId}`, { defaultValue: actionId }),
+        totalTime: td.totalTime,
+      });
+    }
+  });
+
+  if (timeMovingTotal > 0) {
+    result.push({
+      actionId: 'timemoving',
+      actionLabel: t('actions.timemoving', { defaultValue: 'Time moving' }),
+      totalTime: timeMovingTotal,
+    });
+  }
+
+  if ((drill.wasteTime?.totalTime ?? 0) > 0) {
+    result.push({
+      actionId: 'wasteTime',
+      actionLabel: t('timeWatcher.wasteTime', { defaultValue: 'Waste Time' }),
+      totalTime: drill.wasteTime.totalTime,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Sums every timer action across all drills into one session-wide row per
+ * actionId. Mirrors the per-drill "Stopped times" table: with/without puck stay
+ * separate (no Time-Moving merge) and waste time is excluded.
+ */
+export function aggregateTimersAcrossDrills(
+  drills: Drill[],
+  t: TFunction,
+): Array<{ actionId: string; actionLabel: string; segments: number; totalTime: number }> {
+  const totals = new Map<string, { segments: number; totalTime: number }>();
+
+  drills.forEach((drill) => {
+    Object.entries(drill.timerData ?? {}).forEach(([actionId, td]) => {
+      const entry = totals.get(actionId) ?? { segments: 0, totalTime: 0 };
+      entry.totalTime += td.totalTime ?? 0;
+      entry.segments += td.timeSegments?.length ?? 0;
+      totals.set(actionId, entry);
+    });
+  });
+
+  return Array.from(totals.entries())
+    .filter(([, v]) => v.totalTime > 0)
+    .map(([actionId, v]) => ({
+      actionId,
+      actionLabel: t(`actions.${actionId}`, { defaultValue: actionId }),
+      segments: v.segments,
+      totalTime: v.totalTime,
+    }))
+    .sort((a, b) => b.totalTime - a.totalTime);
+}
+
+/**
+ * Sums every counter across all drills into one session-wide row per actionId.
+ * Mirrors the per-drill "Counters" table.
+ */
+export function aggregateCountersAcrossDrills(
+  drills: Drill[],
+  t: TFunction,
+): Array<{ actionId: string; actionLabel: string; count: number }> {
+  const totals = new Map<string, number>();
+
+  drills.forEach((drill) => {
+    Object.entries(drill.counterData ?? {}).forEach(([actionId, cd]) => {
+      totals.set(actionId, (totals.get(actionId) ?? 0) + (cd.count ?? 0));
+    });
+  });
+
+  return Array.from(totals.entries())
+    .filter(([, count]) => count > 0)
+    .map(([actionId, count]) => ({
+      actionId,
+      actionLabel: t(`actions.${actionId}`, { defaultValue: actionId }),
+      count,
+    }))
+    .sort((a, b) => b.count - a.count);
+}

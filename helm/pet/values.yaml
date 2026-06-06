@@ -1,0 +1,90 @@
+# ── Global ────────────────────────────────────────────────────────────────────
+nameOverride: ""
+fullnameOverride: ""
+
+# ── Server ────────────────────────────────────────────────────────────────────
+server:
+  image:
+    repository: ghcr.io/your-org/pet-server
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  port: 3000
+
+  env:
+    NODE_ENV: production
+    PORT: "3000"
+    HOST: "0.0.0.0"
+    # APP_BASE_URL and CORS_ORIGIN set via ingress hostname below
+    APP_BASE_URL: ""
+    CORS_ORIGIN: ""
+
+  # Reference an existing secret for sensitive values
+  # Must contain: DATABASE_URL, JWT_SECRET, RESEND_API_KEY, EMAIL_FROM
+  existingSecret: "pet-server-secrets"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 3000
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 3000
+    initialDelaySeconds: 15
+    periodSeconds: 20
+
+# ── Web (nginx) ───────────────────────────────────────────────────────────────
+web:
+  image:
+    repository: ghcr.io/your-org/pet-web
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  port: 80
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# ── Ingress ───────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  host: pet.example.com
+  tls:
+    enabled: true
+    secretName: pet-tls
+
+# ── PostgreSQL (bitnami subchart) ─────────────────────────────────────────────
+postgresql:
+  enabled: true
+  auth:
+    database: pet
+    username: pet
+    existingSecret: pet-postgres-secret
+    secretKeys:
+      userPasswordKey: password
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi

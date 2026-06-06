@@ -1,0 +1,38 @@
+{
+  "name": "@pet/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/presentation/index.ts",
+    "build": "bun build src/presentation/index.ts --outdir=dist --target=bun",
+    "start": "bun run dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "eslint src/",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "bun run src/infrastructure/db/seed.ts",
+    "db:truncate": "bun run src/infrastructure/db/truncate.ts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11",
+    "@fastify/cors": "^10",
+    "@fastify/rate-limit": "10.3.0",
+    "@pet/shared": "workspace:*",
+    "drizzle-orm": "^0.38",
+    "fastify": "^5",
+    "fastify-plugin": "5.1.0",
+    "jose": "^6",
+    "nodemailer": "8.0.4",
+    "postgres": "^3",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/nodemailer": "7.0.11",
+    "drizzle-kit": "^0.30",
+    "typescript": "^5.7"
+  }
+}
