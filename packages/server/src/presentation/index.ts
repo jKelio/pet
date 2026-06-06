@@ -28,6 +28,7 @@ function getConfig() {
       pass: process.env.SMTP_PASS || undefined,
       from: process.env.SMTP_FROM!,
     },
+    resendApiKey: process.env.RESEND_API_KEY || undefined,
     appBaseUrl: process.env.APP_BASE_URL!,
     isProduction: process.env.NODE_ENV === 'production',
     port: parseInt(process.env.PORT ?? '3000', 10),

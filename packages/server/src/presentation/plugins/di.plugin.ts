@@ -5,6 +5,7 @@ import { PgUserRepository, PgMembershipRepository } from '../../infrastructure/r
 import { PgTeamRepository, PgTenantRepository } from '../../infrastructure/repositories/pg-team.repository.js';
 import { PgSessionRepository } from '../../infrastructure/repositories/pg-session.repository.js';
 import { SmtpEmailSender } from '../../infrastructure/services/smtp-email.sender.js';
+import { ResendEmailSender } from '../../infrastructure/services/resend-email.sender.js';
 import { JoseTokenService } from '../../infrastructure/services/jose-token.service.js';
 import { AuthService } from '../../domain/services/auth.service.js';
 import { SendMagicLinkUseCase } from '../../application/use-cases/send-magic-link.js';
@@ -39,6 +40,7 @@ export interface AppConfig {
     pass?: string;
     from: string;
   };
+  resendApiKey?: string;
   appBaseUrl: string;
   isProduction: boolean;
   superAdminEmails: string[];
@@ -83,7 +85,9 @@ declare module 'fastify' {
 const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const db = createDbClient(config.databaseUrl);
   const tokenService = new JoseTokenService(config.jwtSecret);
-  const emailSender = new SmtpEmailSender(config.smtp);
+  const emailSender = config.resendApiKey
+    ? new ResendEmailSender(config.resendApiKey, config.smtp.from)
+    : new SmtpEmailSender(config.smtp);
   const authService = new AuthService();
 
   // Repositories
