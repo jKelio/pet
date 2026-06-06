@@ -4,7 +4,7 @@ services:
     env: docker
     dockerfilePath: ./packages/server/Dockerfile
     dockerContext: .
-    branch: feature/pet-v2-greenfield   # switch to master after merge
+    branch: master
     plan: free
     envVars:
       - key: NODE_ENV
@@ -46,7 +46,7 @@ services:
     env: docker
     dockerfilePath: ./packages/web/Dockerfile
     dockerContext: .
-    branch: feature/pet-v2-greenfield   # switch to master after merge
+    branch: master
     plan: free
     envVars:
       # Set manually after pet-server is live: https://pet-server.onrender.com
