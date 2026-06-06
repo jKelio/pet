@@ -49,11 +49,9 @@ services:
     branch: feature/pet-v2-greenfield   # switch to master after merge
     plan: free
     envVars:
+      # Set manually after pet-server is live: https://pet-server.onrender.com
       - key: SERVER_URL
-        fromService:
-          type: web
-          name: pet-server
-          property: url   # full https:// URL, e.g. "https://pet-server.onrender.com"
+        sync: false
 
 databases:
   - name: pet-postgres
