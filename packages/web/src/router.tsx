@@ -21,6 +21,9 @@ const HistoryPage = lazy(() =>
 const GlossaryPage = lazy(() =>
   import('./features/glossary/GlossaryPage.js').then((m) => ({ default: m.GlossaryPage })),
 );
+const AppFeedbackPage = lazy(() =>
+  import('./features/app-feedback/AppFeedbackPage.js').then((m) => ({ default: m.AppFeedbackPage })),
+);
 const SuperAdminPage = lazy(() =>
   import('./features/superadmin/SuperAdminPage.js').then((m) => ({ default: m.SuperAdminPage })),
 );
@@ -109,6 +112,18 @@ export const router = createBrowserRouter([
         <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
           <GlossaryPage />
         </Suspense>
+      </AppShell>
+    ),
+  },
+  {
+    path: '/app-feedback',
+    element: (
+      <AppShell>
+        <ProtectedRoute>
+          <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
+            <AppFeedbackPage />
+          </Suspense>
+        </ProtectedRoute>
       </AppShell>
     ),
   },

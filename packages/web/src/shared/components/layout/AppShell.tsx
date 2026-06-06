@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   Shield,
+  MessageSquare,
 } from 'lucide-react';
 import type { Permission } from '@pet/shared';
 import { Button } from '../ui/button.js';
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.glossary', href: '/glossary', icon: BookOpen, requiresAuth: false },
   { labelKey: 'nav.team', href: '/admin', icon: Users, requiresAuth: true },
   { labelKey: 'nav.superAdmin', href: '/superadmin', icon: Shield, requiresAuth: true, requiresSuperAdmin: true },
+  { labelKey: 'nav.appFeedback', href: '/app-feedback', icon: MessageSquare, requiresAuth: true },
 ];
 
 interface SidebarNavProps {

@@ -101,3 +101,9 @@ An Action measured as *elapsed time* (e.g. Explanation, Demonstration, `with Puc
 **Counter**:
 An Action measured as a *number of occurrences* (e.g. Repetition, Shot, Pass, Feedback to a player). Each trigger records one event; there is no duration.
 _Avoid_: Tally, hit count.
+
+### Support / meta
+
+**App Feedback**:
+A coach's report *about the application itself* — a bug, a feature request, or a general comment — submitted from the App Feedback page. Realised as a prefilled GitHub issue in the project repo (`jKelio/pet`), opened in the coach's browser and submitted under their own GitHub identity; it is **not** stored in PET's own data. The issue body carries the coach's display name only (the repo is public), never their email.
+_Avoid_: using bare "Feedback" in code for this — it collides with the on-ice **Feedback** Counter ("Feedback to a player"), a drill [[Action]]. Use `appFeedback` in code/routes/i18n.
