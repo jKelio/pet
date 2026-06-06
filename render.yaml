@@ -15,9 +15,9 @@ services:
         value: "0.0.0.0"
       # Update these two once Render assigns a URL to pet-web:
       - key: APP_BASE_URL
-        value: https://pet-web.onrender.com
+        value: https://pet-web-bt7t.onrender.com
       - key: CORS_ORIGIN
-        value: https://pet-web.onrender.com
+        value: https://pet-web-bt7t.onrender.com
       - key: DATABASE_URL
         fromDatabase:
           name: pet-postgres
