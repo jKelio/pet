@@ -107,6 +107,71 @@ export const apiClient = {
   post: <T>(path: string, body: unknown, accessToken?: string) =>
     request<T>(path, { method: 'POST', body: JSON.stringify(body) }, accessToken),
 
+  patch: <T>(path: string, body: unknown, accessToken?: string) =>
+    request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }, accessToken),
+
   delete: <T>(path: string, accessToken?: string) =>
     request<T>(path, { method: 'DELETE' }, accessToken),
+
+  /**
+   * Opens a fetch-based SSE stream (so JWT can be sent as a header).
+   * The caller receives an AsyncIterable of parsed SSE event objects: { event, data }.
+   */
+  async *sse(path: string, body: unknown, accessToken?: string): AsyncIterable<{ event: string; data: unknown }> {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    };
+
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      credentials: 'include',
+    });
+
+    if (!res.ok || !res.body) {
+      const error: ApiError = await res.json().catch(() => ({
+        code: 'STREAM_ERROR',
+        message: 'Failed to open SSE stream',
+        statusCode: res.status,
+      }));
+      throw new ApiClientError(error.code, error.message, error.statusCode);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const messages = buffer.split('\n\n');
+        buffer = messages.pop() ?? '';
+
+        for (const message of messages) {
+          const lines = message.split('\n');
+          let event = 'message';
+          let dataStr = '';
+          for (const line of lines) {
+            if (line.startsWith('event: ')) event = line.slice(7).trim();
+            else if (line.startsWith('data: ')) dataStr = line.slice(6).trim();
+          }
+          if (dataStr) {
+            try {
+              yield { event, data: JSON.parse(dataStr) };
+            } catch {
+              // skip malformed
+            }
+          }
+        }
+      }
+    } finally {
+      reader.cancel();
+    }
+  },
 };

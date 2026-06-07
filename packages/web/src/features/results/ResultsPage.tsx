@@ -43,6 +43,7 @@ import {
 } from './lib/ganttUtils.js';
 import { ActionTimeline } from './components/ActionTimeline.js';
 import { DrillOverviewTimeline } from './components/DrillOverviewTimeline.js';
+import { RecommendationPanel } from '../recommendations/components/RecommendationPanel.js';
 
 const DRILL_COLORS = [
   '#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE',
@@ -306,6 +307,20 @@ export function ResultsPage() {
                 )}
                 <span className="ml-1.5 hidden sm:inline">{t('sessions.syncToCloud')}</span>
               </Button>
+            )}
+            {accessToken && (synced || viewOnly) && !localOnly && (
+              <RecommendationPanel
+                sessionId={savedIdRef.current}
+                accessToken={accessToken}
+              />
+            )}
+            {accessToken && !synced && !viewOnly && !localOnly && (
+              <RecommendationPanel
+                sessionId={savedIdRef.current}
+                accessToken={accessToken}
+                disabled
+                disabledReason={t('results.analyseNotSynced')}
+              />
             )}
             {!viewOnly && localOnly && (
               <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">

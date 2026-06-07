@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Building2, Users, Plus, Loader2, Trash2, UserPlus, ChevronDown, X } from 'lucide-react';
+import { SourceLibrarySection } from '../recommendations/components/SourceLibrarySection.js';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
 import { Label } from '../../shared/components/ui/label.js';
@@ -237,8 +238,8 @@ function TeamRosterAccordion({
   const [expanded, setExpanded] = useState(false);
   const [addSelect, setAddSelect] = useState('');
 
-  const roster = members.filter((m) => m.teamIds.includes(team.id));
-  const available = members.filter((m) => !m.teamIds.includes(team.id));
+  const roster = members.filter((m) => m.teamIds?.includes(team.id));
+  const available = members.filter((m) => !m.teamIds?.includes(team.id));
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -437,6 +438,11 @@ export function AdminPage() {
             ))}
           </div>
         </section>
+
+        <SourceLibrarySection
+          accessToken={accessToken}
+          canEdit={membership.role !== 'analyst'}
+        />
       </div>
     </div>
   );
