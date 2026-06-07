@@ -336,11 +336,11 @@ export function ResultsPage() {
       <div ref={exportRef} className="flex-1 overflow-y-auto p-6 space-y-8">
 
         {/* ── Summary cards ─────────────────────────────────────────────── */}
-        <section className="pdf-section">
+        <section className="pdf-section @container">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
             {t('results.summary')}
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 @sm:grid-cols-4 gap-4">
             <SummaryCard
               icon={<Layers className="h-5 w-5" />}
               label={t('results.drills')}
@@ -366,7 +366,7 @@ export function ResultsPage() {
 
           {/* Practice info */}
           {localPracticeInfo.clubName && (
-            <div className="mt-4 rounded-lg border border-border bg-card p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+            <div className="mt-4 rounded-lg border border-border bg-card p-4 grid grid-cols-2 @sm:grid-cols-3 gap-3 text-sm">
               {localPracticeInfo.clubName && (
                 <InfoRow label={t('results.club')} value={localPracticeInfo.clubName} />
               )}
@@ -388,7 +388,7 @@ export function ResultsPage() {
 
         {/* ── Drill overview timeline ───────────────────────────────────── */}
         {drillDurations.length > 0 && (
-          <section className="pdf-section space-y-3">
+          <section className="pdf-section space-y-3 @container">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               {t('results.trainingTimeline')}
             </h2>
@@ -403,11 +403,11 @@ export function ResultsPage() {
 
         {/* ── Zeit pro Drill (Bar chart) ────────────────────────────────── */}
         {drillTimeData.length > 0 && (
-          <section className="pdf-section space-y-3">
+          <section className="pdf-section space-y-3 @container">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               {t('results.timePerDrill')}
             </h2>
-            <div className="rounded-lg border border-border bg-card p-4 grid sm:grid-cols-2 gap-6">
+            <div className="rounded-lg border border-border bg-card p-4 grid @sm:grid-cols-2 gap-6">
               {/* Pie chart */}
               <ResponsiveContainer width="100%" height={Math.max(200, drillTimeData.length * 40 + 60)}>
                 <PieChart>
@@ -451,11 +451,11 @@ export function ResultsPage() {
 
         {/* ── Aktionen & Zähler über alle Drills ───────────────────────────── */}
         {(overallTimers.length > 0 || overallCounters.length > 0) && (
-          <section className="pdf-section space-y-3">
+          <section className="pdf-section space-y-3 @container">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               {t('results.overall')}
             </h2>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid @sm:grid-cols-2 gap-4">
               {overallTimers.length > 0 && (
                 <div className="rounded-lg border border-border bg-card p-4">
                   <p className="text-xs text-muted-foreground mb-3">{t('results.stoppedTimes')}</p>
@@ -535,7 +535,7 @@ export function ResultsPage() {
           const timerData = Object.entries(drill.timerData ?? {}).filter(([, td]) => td.totalTime > 0);
 
           return (
-            <section key={drill.id} className="pdf-section space-y-4">
+            <section key={drill.id} className="pdf-section space-y-4 @container">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 {t('drills.drill')} {drill.id}
                 {(drill.tags as string[]).map((tag) => (
@@ -561,7 +561,7 @@ export function ResultsPage() {
 
               {/* Pie + Bar charts */}
               {actionData.length > 0 && (
-                <div className="rounded-lg border border-border bg-card p-4 grid sm:grid-cols-2 gap-6">
+                <div className="rounded-lg border border-border bg-card p-4 grid @sm:grid-cols-2 gap-6">
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">{t('results.timePerAction')}</p>
                     <ResponsiveContainer width="100%" height={200}>
@@ -614,7 +614,7 @@ export function ResultsPage() {
 
               {/* Timer + Counter tables */}
               {(timerData.length > 0 || counterData.length > 0) && (
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid @sm:grid-cols-2 gap-4">
                   {timerData.length > 0 && (
                     <div className="rounded-lg border border-border bg-card p-4">
                       <p className="text-xs text-muted-foreground mb-3">{t('results.stoppedTimes')}</p>
