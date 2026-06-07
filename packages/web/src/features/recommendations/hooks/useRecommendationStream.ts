@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Recommendation } from '@pet/shared';
 import { streamRecommendation } from '../api/recommendation.api.js';
 
@@ -12,6 +13,7 @@ interface UseRecommendationStreamResult {
 }
 
 export function useRecommendationStream(): UseRecommendationStreamResult {
+  const { i18n } = useTranslation();
   const [status, setStatus] = useState<StreamStatus>('idle');
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,8 +22,10 @@ export function useRecommendationStream(): UseRecommendationStreamResult {
     setStatus('fetching');
     setError(null);
 
+    const language = i18n.language.split('-')[0];
+
     try {
-      for await (const { event, data } of streamRecommendation(sessionId, sourceIds, accessToken)) {
+      for await (const { event, data } of streamRecommendation(sessionId, sourceIds, language, accessToken)) {
         if (event === 'progress') {
           const progress = data as { status: string };
           if (progress.status === 'fetching') setStatus('fetching');
@@ -39,7 +43,7 @@ export function useRecommendationStream(): UseRecommendationStreamResult {
       setError(e instanceof Error ? e.message : 'An error occurred');
       setStatus('error');
     }
-  }, []);
+  }, [i18n]);
 
   return { status, recommendation, error, generate };
 }

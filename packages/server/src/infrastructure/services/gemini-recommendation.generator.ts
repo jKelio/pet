@@ -51,6 +51,12 @@ function formatSessionSummary(session: PracticeSession): string {
   ].join('\n');
 }
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  de: 'German (Deutsch)',
+  ru: 'Russian (Русский)',
+  en: 'English',
+};
+
 export class GeminiRecommendationGenerator implements AiRecommendationGenerator {
   constructor(
     private readonly apiKey: string,
@@ -63,11 +69,13 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
     const sessionSummary = formatSessionSummary(input.session);
     const urlList = input.sourceUrls.map((url, i) => `${i + 1}. ${url}`).join('\n');
 
+    const languageName = LANGUAGE_NAMES[input.language] ?? 'English';
     const prompt = [
       `You are an expert ice hockey development coach. Analyze the following practice session tracking data`,
       `and the provided reference sources to produce a structured coaching recommendation report.`,
       ``,
-      `Respond in language: ${input.language}`,
+      `IMPORTANT: Write ALL text exclusively in ${languageName}. This includes every field in the JSON output`,
+      `(summary, strengths, concerns, recommendations, sourceReferences). Do not use any other language.`,
       ``,
       `## Tracked Session Data`,
       sessionSummary,

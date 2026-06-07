@@ -24,11 +24,12 @@ export async function getRecommendation(sessionId: string, accessToken: string):
 export function streamRecommendation(
   sessionId: string,
   sourceIds: string[],
+  language: string,
   accessToken: string,
 ): AsyncIterable<{ event: string; data: unknown }> {
   return apiClient.sse(
     `/sessions/${sessionId}/recommendation`,
-    { sourceIds },
+    { sourceIds, language },
     accessToken,
   );
 }

@@ -113,6 +113,7 @@ export const UpdateSourceSchema = z.object({
 
 export const GenerateRecommendationSchema = z.object({
   sourceIds: z.array(UUIDSchema).min(1).max(5),
+  language: z.enum(['en', 'de', 'ru']).default('en'),
 });
 
 // ─── Inferred Types ───────────────────────────────────────────────────────────

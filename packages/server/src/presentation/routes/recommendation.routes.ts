@@ -55,8 +55,7 @@ export function registerRecommendationRoutes(fastify: FastifyInstance, deps: Rec
       return reply.code(400).send({ code: 'VALIDATION_ERROR', message: issue.message, statusCode: 400 });
     }
 
-    const acceptLang = (request.headers['accept-language'] ?? 'en').split(',')[0].trim().split('-')[0];
-    const language = ['de', 'ru', 'en'].includes(acceptLang) ? acceptLang : 'en';
+    const language = result.data.language;
 
     reply.raw.writeHead(200, {
       'Content-Type': 'text/event-stream',
