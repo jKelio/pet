@@ -9,6 +9,7 @@ export interface DraftSession {
   practiceInfo: PracticeInfo;
   drills: Drill[];
   savedAt: number;
+  currentDrillIndex?: number;
   /** Marked as a foreign/scouting session that must never be synced to the cloud */
   localOnly?: boolean;
 }

@@ -12,6 +12,7 @@ export function useDraftPersistence() {
   const sessionId = useTrackingStore((s) => s.sessionId);
   const practiceInfo = useTrackingStore((s) => s.practiceInfo);
   const drills = useTrackingStore((s) => s.drills);
+  const currentDrillIndex = useTrackingStore((s) => s.currentDrillIndex);
   const localOnly = useTrackingStore((s) => s.localOnly);
   const restoreFromDraft = useTrackingStore((s) => s.restoreFromDraft);
 
@@ -28,7 +29,7 @@ export function useDraftPersistence() {
       .last()
       .then((draft) => {
         if (draft && draft.drills.length > 0) {
-          restoreFromDraft(draft.id, draft.practiceInfo, draft.drills, draft.localOnly ?? false);
+          restoreFromDraft(draft.id, draft.practiceInfo, draft.drills, draft.localOnly ?? false, draft.currentDrillIndex ?? 0);
         }
       })
       .catch(() => {
@@ -51,6 +52,7 @@ export function useDraftPersistence() {
         practiceInfo,
         drills,
         savedAt: Date.now(),
+        currentDrillIndex,
         localOnly,
       }).catch(() => {
         // Silently ignore storage errors
@@ -60,7 +62,11 @@ export function useDraftPersistence() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [sessionId, practiceInfo, drills, localOnly]);
+  }, [sessionId, practiceInfo, drills, currentDrillIndex, localOnly]);
+}
+
+export async function discardDraft(sessionId: string): Promise<void> {
+  await db.drafts.delete(sessionId);
 }
 
 /** Call after a session is completed to remove the draft and save to sessions table. */

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useBlocker } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import {
@@ -18,12 +18,13 @@ import { useAdminStore } from '../admin/stores/admin.store.js';
 import { PracticeInfoForm } from './components/PracticeInfoForm.js';
 import { DrillsForm } from './components/DrillsForm.js';
 import { TimeWatcher } from './components/TimeWatcher.js';
-import { useDraftPersistence } from './hooks/useDraftPersistence.js';
+import { useDraftPersistence, discardDraft } from './hooks/useDraftPersistence.js';
 
 export function TrackingPage() {
   const { t } = useTranslation('pet');
   const navigate = useNavigate();
   useDraftPersistence();
+  const sessionId = useTrackingStore((s) => s.sessionId);
   const mode = useTrackingStore((s) => s.mode);
   const drillsNumber = useTrackingStore((s) => s.practiceInfo.drillsNumber);
   const sessionType = useTrackingStore((s) => s.sessionType);
@@ -34,15 +35,47 @@ export function TrackingPage() {
   const tenant = useAdminStore((s) => s.tenant);
 
   const [showStartConfirm, setShowStartConfirm] = useState(false);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const hasStartedManuallyRef = useRef(false);
+
+  // beforeunload — warn on browser refresh/close during active tracking
+  useEffect(() => {
+    if (mode !== 'timeWatcher') return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [mode]);
+
+  // Detect draft-restored timeWatcher (not triggered by user clicking Start)
+  useEffect(() => {
+    if (mode === 'timeWatcher' && !hasStartedManuallyRef.current) {
+      setShowResumePrompt(true);
+    }
+  }, [mode]);
 
   const isLastSetupStep =
     (mode === 'practiceInfo' && sessionType === 'open') || mode === 'drills';
+
+  // Sidebar navigation guard — blocks React Router navigation during active tracking
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      mode === 'timeWatcher' && currentLocation.pathname !== nextLocation.pathname,
+  );
 
   const handleReset = () => {
     resetAllData();
     if (tenant?.name) {
       setPracticeInfo((prev) => ({ ...prev, clubName: tenant.name }));
     }
+  };
+
+  const handleNewSession = async () => {
+    await discardDraft(sessionId);
+    resetAllData();
+    if (tenant?.name) {
+      setPracticeInfo((prev) => ({ ...prev, clubName: tenant.name }));
+    }
+    setShowResumePrompt(false);
   };
 
   const canAdvance = mode === 'practiceInfo' ? (sessionType === 'open' || drillsNumber > 0) : true;
@@ -127,8 +160,44 @@ export function TrackingPage() {
             <AlertDialogCancel onClick={() => setShowStartConfirm(false)}>
               {t('buttons.cancel')}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={() => { setShowStartConfirm(false); goToNextStep(); }}>
+            <AlertDialogAction onClick={() => { hasStartedManuallyRef.current = true; setShowStartConfirm(false); goToNextStep(); }}>
               {t('buttons.startTraining')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leave-confirm dialog — triggered by useBlocker when navigating away during tracking */}
+      <AlertDialog open={blocker.state === 'blocked'} onOpenChange={() => blocker.reset?.()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('timeWatcher.leaveConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('timeWatcher.leaveConfirmBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>
+              {t('buttons.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => blocker.proceed?.()}>
+              {t('buttons.leave')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Resume-draft dialog — shown when draft restores directly into timeWatcher mode */}
+      <AlertDialog open={showResumePrompt} onOpenChange={() => {}}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('timeWatcher.resumeDraftTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('timeWatcher.resumeDraftBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowResumePrompt(false)}>
+              {t('buttons.resumeSession')}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleNewSession}>
+              {t('buttons.newSession')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

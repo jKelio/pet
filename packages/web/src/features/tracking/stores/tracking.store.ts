@@ -58,7 +58,7 @@ interface TrackingStore {
   goToPrevStep: () => void;
   resetAllData: () => void;
   /** Restore session state from a persisted draft */
-  restoreFromDraft: (sessionId: string, practiceInfo: PracticeInfo, drills: Drill[], localOnly?: boolean) => void;
+  restoreFromDraft: (sessionId: string, practiceInfo: PracticeInfo, drills: Drill[], localOnly?: boolean, currentDrillIndex?: number) => void;
 }
 
 export const useTrackingStore = create<TrackingStore>()((set, get) => ({
@@ -159,14 +159,14 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
       localOnly: false,
     }),
 
-  restoreFromDraft: (sessionId, practiceInfo, drills, localOnly = false) =>
+  restoreFromDraft: (sessionId, practiceInfo, drills, localOnly = false, currentDrillIndex = 0) =>
     set({
       sessionId,
       practiceInfo,
       drills,
       sessionType: practiceInfo.sessionType ?? 'planned',
       mode: drills.length > 0 ? 'timeWatcher' : 'practiceInfo',
-      currentDrillIndex: 0,
+      currentDrillIndex,
       localOnly,
     }),
 }));
