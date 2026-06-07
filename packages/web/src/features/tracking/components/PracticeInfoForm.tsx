@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '../../../shared/components/ui/input.js';
 import { Label } from '../../../shared/components/ui/label.js';
+import { NumberInput } from '../../../shared/components/ui/number-input.js';
 import { Switch } from '../../../shared/components/ui/switch.js';
 import { AutocompleteInput } from '../../../shared/components/ui/autocomplete-input.js';
 import { useTrackingStore } from '../stores/tracking.store.js';
@@ -44,8 +45,7 @@ export function PracticeInfoForm() {
     .filter((m) => m.membership.role === 'coach')
     .filter((m) => !selectedTeam || m.teamIds.includes(selectedTeam.id));
 
-  const handleDrillsNumber = (value: string) => {
-    const n = parseInt(value, 10) || 0;
+  const handleDrillsNumber = (n: number) => {
     setPracticeInfo({ ...practiceInfo, drillsNumber: n });
     initDrills(n);
   };
@@ -141,13 +141,12 @@ export function PracticeInfoForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="evaluation">{t('general.evaluationLabel')}</Label>
-            <Input
+            <NumberInput
               id="evaluation"
-              type="number"
               min={0}
               max={10}
               value={practiceInfo.evaluation}
-              onChange={(e) => update('evaluation', parseFloat(e.target.value) || 0)}
+              onChange={(v) => update('evaluation', v)}
             />
           </div>
         </div>
@@ -160,33 +159,31 @@ export function PracticeInfoForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="athletesNumber">{t('practice.athletesNumberLabel')}</Label>
-            <Input
+            <NumberInput
               id="athletesNumber"
-              type="number"
               min={0}
               value={practiceInfo.athletesNumber}
-              onChange={(e) => update('athletesNumber', parseInt(e.target.value, 10) || 0)}
+              onChange={(v) => update('athletesNumber', v)}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="coachesNumber">{t('practice.coachesNumberLabel')}</Label>
-            <Input
+            <NumberInput
               id="coachesNumber"
-              type="number"
               min={0}
               value={practiceInfo.coachesNumber}
-              onChange={(e) => update('coachesNumber', parseInt(e.target.value, 10) || 0)}
+              onChange={(v) => update('coachesNumber', v)}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="totalTime">{t('practice.totalTimeLabel')}</Label>
-            <Input
+            <NumberInput
               id="totalTime"
-              type="number"
               min={0}
               step={0.5}
+              inputMode="decimal"
               value={practiceInfo.totalTime}
-              onChange={(e) => update('totalTime', parseFloat(e.target.value) || 0)}
+              onChange={(v) => update('totalTime', v)}
             />
           </div>
           <div className="space-y-1.5">
@@ -201,13 +198,12 @@ export function PracticeInfoForm() {
           {sessionType !== 'open' && (
             <div className="space-y-1.5">
               <Label htmlFor="drillsNumber">{t('practice.drillsNumberLabel')}</Label>
-              <Input
+              <NumberInput
                 id="drillsNumber"
-                type="number"
                 min={1}
                 max={20}
                 value={practiceInfo.drillsNumber}
-                onChange={(e) => handleDrillsNumber(e.target.value)}
+                onChange={handleDrillsNumber}
               />
             </div>
           )}
