@@ -163,6 +163,8 @@ const resources = {
         nextButtenText: 'Next',
         previousButtonText: 'Previous',
         startTracking: 'Start Tracking',
+        startTraining: 'Start Training',
+        cancel: 'Cancel',
         resetForm: 'Reset',
       },
       drills: {
@@ -245,6 +247,8 @@ const resources = {
         addDrill: 'Add Drill {{n}}',
         noTimers: 'No timer actions enabled',
         noCounters: 'No counter actions enabled',
+        startConfirmTitle: 'Start Training?',
+        startConfirmBody: 'Gap Time will start immediately. This action cannot be undone.',
       },
     },
     glossary: {
@@ -448,6 +452,8 @@ const resources = {
         nextButtenText: 'Weiter',
         previousButtonText: 'Zurück',
         startTracking: 'Tracking starten',
+        startTraining: 'Training starten',
+        cancel: 'Abbrechen',
         resetForm: 'Zurücksetzen',
       },
       drills: {
@@ -530,6 +536,8 @@ const resources = {
         addDrill: 'Drill {{n}} hinzufügen',
         noTimers: 'Keine Timer-Aktionen aktiviert',
         noCounters: 'Keine Zähler-Aktionen aktiviert',
+        startConfirmTitle: 'Training starten?',
+        startConfirmBody: 'Die Gap-Zeit beginnt sofort zu laufen. Diese Aktion kann nicht rückgängig gemacht werden.',
       },
     },
     glossary: {

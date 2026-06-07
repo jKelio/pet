@@ -1,7 +1,18 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '../../shared/components/ui/alert-dialog.js';
 import { useTrackingStore } from './stores/tracking.store.js';
 import { useAdminStore } from '../admin/stores/admin.store.js';
 import { PracticeInfoForm } from './components/PracticeInfoForm.js';
@@ -22,6 +33,11 @@ export function TrackingPage() {
   const setPracticeInfo = useTrackingStore((s) => s.setPracticeInfo);
   const tenant = useAdminStore((s) => s.tenant);
 
+  const [showStartConfirm, setShowStartConfirm] = useState(false);
+
+  const isLastSetupStep =
+    (mode === 'practiceInfo' && sessionType === 'open') || mode === 'drills';
+
   const handleReset = () => {
     resetAllData();
     if (tenant?.name) {
@@ -40,6 +56,11 @@ export function TrackingPage() {
       {/* Page header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
         <h1 className="text-xl font-bold">{t(`steps.${mode}`, { defaultValue: t('steps.fallback') })}</h1>
+
+        {/* Live indicator — visible for the entire TimeWatcher session */}
+        {mode === 'timeWatcher' && (
+          <span className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+        )}
 
         {/* Step indicator (practiceInfo / drills only, planned sessions only) */}
         {mode !== 'timeWatcher' && sessionType === 'planned' && (
@@ -85,12 +106,33 @@ export function TrackingPage() {
               <RotateCcw className="h-4 w-4" />
             </Button>
           )}
-          <Button onClick={goToNextStep} disabled={!canAdvance} className="flex-1">
-            {t('buttons.nextButtenText')}
+          <Button
+            onClick={() => isLastSetupStep ? setShowStartConfirm(true) : goToNextStep()}
+            disabled={!canAdvance}
+            className="flex-1"
+          >
+            {isLastSetupStep ? t('buttons.startTraining') : t('buttons.nextButtenText')}
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
       )}
+
+      <AlertDialog open={showStartConfirm} onOpenChange={setShowStartConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('timeWatcher.startConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('timeWatcher.startConfirmBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowStartConfirm(false)}>
+              {t('buttons.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setShowStartConfirm(false); goToNextStep(); }}>
+              {t('buttons.startTraining')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
