@@ -122,32 +122,6 @@ export function RecommendationView({ recommendation }: RecommendationViewProps) 
           </section>
         )}
 
-        {doc.sourceReferences.length > 0 && (
-          <section className="pdf-section space-y-2 rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50">
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              {t('recommendation.sectionSourceReferences')}
-            </h3>
-            <BulletSection items={doc.sourceReferences} className="text-gray-800 dark:text-gray-200" />
-          </section>
-        )}
-
-        <section className="pdf-section text-xs text-muted-foreground space-y-1 pt-2">
-          <p>{t('recommendation.generatedWith')} {recommendation.model}</p>
-          {recommendation.sourceUrls.length > 0 && (
-            <div>
-              <p className="font-medium">{t('recommendation.usedSources')}:</p>
-              <ul className="space-y-0.5 mt-1">
-                {recommendation.sourceUrls.map((url, i) => (
-                  <li key={i}>
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="underline break-all">
-                      {url}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
       </div>
     </div>
   );
