@@ -10,6 +10,8 @@ import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerSessionRoutes } from './routes/session.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerSuperAdminRoutes } from './routes/superadmin.routes.js';
+import { registerSourceRoutes } from './routes/source.routes.js';
+import { registerRecommendationRoutes } from './routes/recommendation.routes.js';
 
 function getConfig() {
   const required = ['DATABASE_URL', 'JWT_SECRET', 'APP_BASE_URL', 'SMTP_FROM'];
@@ -29,6 +31,8 @@ function getConfig() {
       from: process.env.SMTP_FROM!,
     },
     resendApiKey: process.env.RESEND_API_KEY || undefined,
+    geminiApiKey: process.env.GEMINI_API_KEY || undefined,
+    geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
     appBaseUrl: process.env.APP_BASE_URL!,
     isProduction: process.env.NODE_ENV === 'production',
     port: parseInt(process.env.PORT ?? '3000', 10),
@@ -112,6 +116,23 @@ async function build() {
       deleteTenant: fastify.useCases.superAdminDeleteTenant,
       addClubAdmin: fastify.useCases.superAdminAddClubAdmin,
       onboardTenant: fastify.useCases.onboardTenant,
+    });
+  });
+
+  await fastify.register(async (scope) => {
+    registerSourceRoutes(scope, {
+      listSources: fastify.useCases.listSources,
+      createSource: fastify.useCases.createSource,
+      updateSource: fastify.useCases.updateSource,
+      deleteSource: fastify.useCases.deleteSource,
+    });
+  });
+
+  await fastify.register(async (scope) => {
+    registerRecommendationRoutes(scope, {
+      generateRecommendation: fastify.useCases.generateRecommendation,
+      getRecommendation: fastify.useCases.getRecommendation,
+      geminiEnabled: fastify.geminiEnabled,
     });
   });
 

@@ -2,6 +2,7 @@ import {
   pgTable, uuid, text, integer, timestamp, date,
   jsonb, uniqueIndex, index, pgEnum,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -103,4 +104,35 @@ export const drills = pgTable('drills', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('drills_session_id_idx').on(t.sessionId),
+]);
+
+// ─── Sources ──────────────────────────────────────────────────────────────────
+
+export const sources = pgTable('sources', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  title: text('title').notNull(),
+  createdBy: uuid('created_by').notNull().references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('sources_tenant_id_idx').on(t.tenantId),
+]);
+
+// ─── Session Recommendations ──────────────────────────────────────────────────
+
+export const sessionRecommendations = pgTable('session_recommendations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id').notNull().references(() => practiceSessions.id, { onDelete: 'cascade' }),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  document: jsonb('document').notNull(),
+  sourceUrls: text('source_urls').array().notNull().default(sql`ARRAY[]::text[]`),
+  model: text('model').notNull(),
+  createdBy: uuid('created_by').notNull().references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('session_recommendations_session_id_unique').on(t.sessionId),
+  index('session_recommendations_tenant_id_idx').on(t.tenantId),
 ]);

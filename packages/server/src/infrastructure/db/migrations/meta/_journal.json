@@ -15,6 +15,13 @@
       "when": 1780000000000,
       "tag": "0001_reduce_user_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780836347881,
+      "tag": "0002_clean_arclight",
+      "breakpoints": true
     }
   ]
 }

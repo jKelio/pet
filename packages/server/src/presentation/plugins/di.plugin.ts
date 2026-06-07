@@ -28,6 +28,16 @@ import { SuperAdminDeleteTenantUseCase } from '../../application/use-cases/super
 import { SuperAdminAddClubAdminUseCase } from '../../application/use-cases/superadmin-add-club-admin.js';
 import { GetMyTenantsUseCase } from '../../application/use-cases/get-my-tenants.js';
 import { SwitchTenantUseCase } from '../../application/use-cases/switch-tenant.js';
+import { ListSourcesUseCase } from '../../application/use-cases/list-sources.js';
+import { CreateSourceUseCase } from '../../application/use-cases/create-source.js';
+import { UpdateSourceUseCase } from '../../application/use-cases/update-source.js';
+import { DeleteSourceUseCase } from '../../application/use-cases/delete-source.js';
+import { GenerateRecommendationUseCase } from '../../application/use-cases/generate-recommendation.js';
+import { GetRecommendationUseCase } from '../../application/use-cases/get-recommendation.js';
+import { PgSourceRepository } from '../../infrastructure/repositories/pg-source.repository.js';
+import { PgRecommendationRepository } from '../../infrastructure/repositories/pg-recommendation.repository.js';
+import { GeminiRecommendationGenerator } from '../../infrastructure/services/gemini-recommendation.generator.js';
+import { NoOpRecommendationGenerator } from '../../infrastructure/services/noop-recommendation.generator.js';
 
 export interface AppConfig {
   databaseUrl: string;
@@ -44,6 +54,8 @@ export interface AppConfig {
   appBaseUrl: string;
   isProduction: boolean;
   superAdminEmails: string[];
+  geminiApiKey?: string;
+  geminiModel: string;
 }
 
 declare module 'fastify' {
@@ -70,6 +82,12 @@ declare module 'fastify' {
       superAdminAddClubAdmin: SuperAdminAddClubAdminUseCase;
       getMyTenants: GetMyTenantsUseCase;
       switchTenant: SwitchTenantUseCase;
+      listSources: ListSourcesUseCase;
+      createSource: CreateSourceUseCase;
+      updateSource: UpdateSourceUseCase;
+      deleteSource: DeleteSourceUseCase;
+      generateRecommendation: GenerateRecommendationUseCase;
+      getRecommendation: GetRecommendationUseCase;
     };
     repos: {
       session: PgSessionRepository;
@@ -79,6 +97,7 @@ declare module 'fastify' {
       tenant: PgTenantRepository;
     };
     tokenService: JoseTokenService;
+    geminiEnabled: boolean;
   }
 }
 
@@ -89,6 +108,9 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     ? new ResendEmailSender(config.resendApiKey, config.smtp.from)
     : new SmtpEmailSender(config.smtp);
   const authService = new AuthService();
+  const aiGenerator = config.geminiApiKey
+    ? new GeminiRecommendationGenerator(config.geminiApiKey, config.geminiModel)
+    : new NoOpRecommendationGenerator();
 
   // Repositories
   const userRepository = new PgUserRepository(db);
@@ -96,6 +118,8 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const sessionRepository = new PgSessionRepository(db);
   const teamRepository = new PgTeamRepository(db);
   const tenantRepository = new PgTenantRepository(db);
+  const sourceRepository = new PgSourceRepository(db);
+  const recommendationRepository = new PgRecommendationRepository(db);
 
   // Use Cases
   const sendMagicLink = new SendMagicLinkUseCase({
@@ -177,7 +201,26 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const assignTeamMember = new AssignTeamMemberUseCase({ membershipRepository, teamRepository });
   const removeTeamMember = new RemoveTeamMemberUseCase({ membershipRepository, teamRepository });
 
+  const listSources = new ListSourcesUseCase({ sourceRepository, membershipRepository });
+  const createSource = new CreateSourceUseCase({ sourceRepository, membershipRepository });
+  const updateSource = new UpdateSourceUseCase({ sourceRepository, membershipRepository });
+  const deleteSource = new DeleteSourceUseCase({ sourceRepository, membershipRepository });
+  const generateRecommendation = new GenerateRecommendationUseCase({
+    recommendationRepository,
+    sessionRepository,
+    sourceRepository,
+    membershipRepository,
+    aiGenerator,
+    geminiModel: config.geminiModel,
+  });
+  const getRecommendation = new GetRecommendationUseCase({
+    recommendationRepository,
+    sessionRepository,
+    membershipRepository,
+  });
+
   fastify.decorate('config', config);
+  fastify.decorate('geminiEnabled', !!config.geminiApiKey);
   fastify.decorate('tokenService', tokenService);
   fastify.decorate('useCases', {
     sendMagicLink,
@@ -200,6 +243,12 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     superAdminAddClubAdmin,
     getMyTenants,
     switchTenant,
+    listSources,
+    createSource,
+    updateSource,
+    deleteSource,
+    generateRecommendation,
+    getRecommendation,
   });
   fastify.decorate('repos', {
     session: sessionRepository,

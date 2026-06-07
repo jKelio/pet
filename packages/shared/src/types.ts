@@ -134,3 +134,45 @@ export interface ApiError {
   message: string;
   statusCode: number;
 }
+
+// ─── Sources ──────────────────────────────────────────────────────────────────
+
+export interface Source {
+  id: string;
+  tenantId: string;
+  url: string;
+  title: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Recommendations ──────────────────────────────────────────────────────────
+
+export interface RecommendationDocument {
+  summary: string;
+  strengths: string[];
+  concerns: string[];
+  recommendations: string[];
+  sourceReferences: string[];
+}
+
+export interface Recommendation {
+  id: string;
+  sessionId: string;
+  tenantId: string;
+  document: RecommendationDocument;
+  sourceUrls: string[];
+  model: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type RecommendationProgressStatus = 'fetching' | 'generating' | 'ready' | 'error';
+
+export interface RecommendationProgressEvent {
+  status: RecommendationProgressStatus;
+  recommendation?: Recommendation;
+  error?: string;
+}

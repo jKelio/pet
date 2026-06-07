@@ -121,6 +121,20 @@ An Action measured as *elapsed time* (e.g. Explanation, Demonstration, `with Puc
 An Action measured as a *number of occurrences* (e.g. Repetition, Shot, Pass, Feedback to a player). Each trigger records one event; there is no duration.
 _Avoid_: Tally, hit count.
 
+### AI recommendations
+
+**Source**:
+A URL-based reference provided by a coach — a link to a training philosophy document, drill catalogue, or sports article — used as context for AI analysis. Sources are stored in the [[Source Library]] and selected per analysis.
+_Avoid_: context, document, link, reference (these are overloaded; use Source in code and UI).
+
+**Source Library**:
+The club-wide (Tenant-scoped) collection of stored Sources. Managed by `club_admin` and `coach`; the `analyst` role may select Sources but cannot add, edit, or delete them.
+_Avoid_: source repository, link library.
+
+**Recommendation**:
+A structured AI-generated document analysing a [[Synced Session]] against one or more [[Source]]s. Belongs to the `sessions:read` domain — generating a Recommendation is an act of evaluation, not on-ice tracking. Exactly one active Recommendation per Session; re-generating overwrites the previous one.
+_Avoid_: analysis, report, AI summary (use `recommendation` in code).
+
 ### Support / meta
 
 **App Feedback**:

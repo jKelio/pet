@@ -1,0 +1,135 @@
+import type { AiRecommendationGenerator, AiProgressEvent, GenerateRecommendationInput } from '../../domain/ports/ai-recommendation.generator.js';
+import type { RecommendationDocument, PracticeSession, Drill } from '@pet/shared';
+
+export class RecommendationGenerationError extends Error {
+  readonly statusCode = 502;
+  constructor(message: string) {
+    super(message);
+    this.name = 'RecommendationGenerationError';
+  }
+}
+
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+
+function formatSessionSummary(session: PracticeSession): string {
+  const info = session.practiceInfo;
+  const totalMinutes = Math.round(info.totalTime / 60000);
+  const wasteMinutes = Math.round((info.wasteTime?.totalTime ?? 0) / 60000);
+  const wastePercent = totalMinutes > 0 ? Math.round((wasteMinutes / totalMinutes) * 100) : 0;
+
+  const drillSummaries = session.drills.map((drill: Drill, idx: number) => {
+    const timerLines = Object.entries(drill.timerData).map(([action, data]) =>
+      `    - ${action}: ${Math.round(data.totalTime / 1000)}s`,
+    );
+    const counterLines = Object.entries(drill.counterData).map(([action, data]) =>
+      `    - ${action}: ${data.count} times`,
+    );
+    const drillWaste = Math.round((drill.wasteTime?.totalTime ?? 0) / 1000);
+    const tags = drill.tags.length > 0 ? ` [${drill.tags.join(', ')}]` : '';
+    return [
+      `  Drill ${idx + 1}${tags}:`,
+      ...timerLines,
+      ...counterLines,
+      `    - waste time: ${drillWaste}s`,
+    ].join('\n');
+  });
+
+  return [
+    `Session Date: ${info.date.split('T')[0]}`,
+    `Coach: ${info.coachName}`,
+    `Tracked Player: ${info.trackedPlayerName}`,
+    `Team: ${info.teamName}`,
+    `Total Duration: ${totalMinutes} min`,
+    `Gap Time (between drills): ${wasteMinutes} min (${wastePercent}% of total)`,
+    `Number of Drills: ${session.drills.length}`,
+    `Coach Evaluation: ${info.evaluation}/10`,
+    `Athletes: ${info.athletesNumber}, Coaches: ${info.coachesNumber}`,
+    '',
+    'Drill Details:',
+    ...drillSummaries,
+  ].join('\n');
+}
+
+export class GeminiRecommendationGenerator implements AiRecommendationGenerator {
+  constructor(
+    private readonly apiKey: string,
+    private readonly model: string,
+  ) {}
+
+  async *generate(input: GenerateRecommendationInput): AsyncIterable<AiProgressEvent> {
+    yield { status: 'fetching' };
+
+    const sessionSummary = formatSessionSummary(input.session);
+    const urlList = input.sourceUrls.map((url, i) => `${i + 1}. ${url}`).join('\n');
+
+    const prompt = [
+      `You are an expert ice hockey development coach. Analyze the following practice session tracking data`,
+      `and the provided reference sources to produce a structured coaching recommendation report.`,
+      ``,
+      `Respond in language: ${input.language}`,
+      ``,
+      `## Tracked Session Data`,
+      sessionSummary,
+      ``,
+      `## Reference Sources (URLs)`,
+      urlList,
+      ``,
+      `Analyze the session data in the context of the reference material.`,
+      `Be specific, data-driven, and practical. Reference concrete numbers from the session.`,
+      `When a recommendation is informed by a source, name it in sourceReferences.`,
+      ``,
+      `Respond with a single JSON object matching this schema exactly (no markdown, no code fences):`,
+      `{`,
+      `  "summary": "<string>",`,
+      `  "strengths": ["<string>", ...],`,
+      `  "concerns": ["<string>", ...],`,
+      `  "recommendations": ["<string>", ...],`,
+      `  "sourceReferences": ["<string>", ...]`,
+      `}`,
+    ].join('\n');
+
+    yield { status: 'generating' };
+
+    const requestBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      tools: [{ urlContext: {} }],
+      generationConfig: {},
+    };
+
+    const res = await fetch(
+      `${GEMINI_API_BASE}/models/${this.model}:generateContent?key=${this.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      },
+    );
+
+    if (!res.ok) {
+      if (res.status === 429) {
+        const body = await res.json().catch(() => null) as any;
+        const retryDelay = body?.error?.details?.find((d: any) => d.retryDelay)?.retryDelay ?? '60s';
+        throw new RecommendationGenerationError(`Rate limit exceeded. Please retry in ${retryDelay}.`);
+      }
+      const text = await res.text();
+      throw new RecommendationGenerationError(`Gemini API error ${res.status}: ${text}`);
+    }
+
+    const data = await res.json() as any;
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) {
+      throw new RecommendationGenerationError('Gemini returned no content');
+    }
+
+    let document: RecommendationDocument;
+    try {
+      const json = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      document = JSON.parse(json) as RecommendationDocument;
+    } catch {
+      throw new RecommendationGenerationError('Gemini returned invalid JSON');
+    }
+
+    yield { status: 'done', document };
+  }
+}

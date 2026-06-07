@@ -97,6 +97,24 @@ export const CreateTeamSchema = z.object({
   name: z.string().trim().min(1).max(100),
 });
 
+// ─── Source Schemas ───────────────────────────────────────────────────────────
+
+export const CreateSourceSchema = z.object({
+  url: z.string().url().max(2048),
+  title: z.string().trim().min(1).max(200),
+});
+
+export const UpdateSourceSchema = z.object({
+  url: z.string().url().max(2048).optional(),
+  title: z.string().trim().min(1).max(200).optional(),
+});
+
+// ─── Recommendation Schemas ───────────────────────────────────────────────────
+
+export const GenerateRecommendationSchema = z.object({
+  sourceIds: z.array(UUIDSchema).min(1).max(5),
+});
+
 // ─── Inferred Types ───────────────────────────────────────────────────────────
 
 export type SendMagicLinkInput = z.infer<typeof SendMagicLinkSchema>;
@@ -104,3 +122,6 @@ export type VerifyMagicLinkInput = z.infer<typeof VerifyMagicLinkSchema>;
 export type SyncSessionInput = z.infer<typeof SyncSessionSchema>;
 export type InviteUserInput = z.infer<typeof InviteUserSchema>;
 export type CreateTeamInput = z.infer<typeof CreateTeamSchema>;
+export type CreateSourceInput = z.infer<typeof CreateSourceSchema>;
+export type UpdateSourceInput = z.infer<typeof UpdateSourceSchema>;
+export type GenerateRecommendationInput = z.infer<typeof GenerateRecommendationSchema>;
