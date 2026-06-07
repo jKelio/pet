@@ -43,7 +43,6 @@ function formatSessionSummary(session: PracticeSession): string {
     `Total Duration: ${totalMinutes} min`,
     `Gap Time (between drills): ${wasteMinutes} min (${wastePercent}% of total)`,
     `Number of Drills: ${session.drills.length}`,
-    `Coach Evaluation: ${info.evaluation}/10`,
     `Athletes: ${info.athletesNumber}, Coaches: ${info.coachesNumber}`,
     '',
     'Drill Details:',

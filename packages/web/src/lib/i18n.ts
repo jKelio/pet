@@ -144,7 +144,6 @@ const resources = {
         teamLabel: 'Team',
         dateLabel: 'Date',
         coachLabel: 'Name of the coach',
-        evaluationLabel: 'Evaluation #',
       },
       practice: {
         infoHeader: 'Practice',
@@ -487,7 +486,6 @@ const resources = {
         teamLabel: 'Team',
         dateLabel: 'Datum',
         coachLabel: 'Name des Trainers',
-        evaluationLabel: 'Auswertung #',
       },
       practice: {
         infoHeader: 'Training',

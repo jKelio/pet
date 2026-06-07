@@ -72,7 +72,6 @@ if (existingSessions.length === 0) {
     createdBy: coachUser.id,
     date: '2026-03-28',
     coachName: 'Max Mustermann',
-    evaluation: 4,
     athletesCount: 18,
     coachesCount: 2,
     totalTimeMinutes: 90,

@@ -58,7 +58,6 @@ export class PgSessionRepository implements SessionRepository {
           createdBy: session.createdBy,
           date: info.date.split('T')[0],
           coachName: info.coachName,
-          evaluation: info.evaluation,
           athletesCount: info.athletesNumber,
           coachesCount: info.coachesNumber,
           totalTimeMinutes: Math.floor(info.totalTime / 60000),
@@ -72,7 +71,6 @@ export class PgSessionRepository implements SessionRepository {
           target: practiceSessions.id,
           set: {
             coachName: info.coachName,
-            evaluation: info.evaluation,
             athletesCount: info.athletesNumber,
             coachesCount: info.coachesNumber,
             trackedPlayerName: info.trackedPlayerName,
@@ -113,7 +111,6 @@ export class PgSessionRepository implements SessionRepository {
       teamName,
       date: row.date ? new Date(row.date).toISOString() : new Date().toISOString(),
       coachName: row.coachName,
-      evaluation: row.evaluation,
       athletesNumber: row.athletesCount,
       coachesNumber: row.coachesCount,
       totalTime: row.totalTimeMinutes * 60000,

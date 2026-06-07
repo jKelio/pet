@@ -26,7 +26,6 @@ const initialPracticeInfo: PracticeInfo = {
   teamName: '',
   date: new Date().toISOString(),
   coachName: '',
-  evaluation: 0,
   athletesNumber: 0,
   coachesNumber: 0,
   totalTime: 0,

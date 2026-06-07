@@ -75,7 +75,6 @@ export const practiceSessions = pgTable('practice_sessions', {
   createdBy: uuid('created_by').notNull().references(() => users.id),
   date: date('date'),
   coachName: text('coach_name').notNull().default(''),
-  evaluation: integer('evaluation').notNull().default(0),
   athletesCount: integer('athletes_count').notNull().default(0),
   coachesCount: integer('coaches_count').notNull().default(0),
   totalTimeMinutes: integer('total_time_minutes').notNull().default(0),

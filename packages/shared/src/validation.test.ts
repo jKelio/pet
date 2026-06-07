@@ -54,7 +54,6 @@ describe('SyncSessionSchema', () => {
       teamName: 'U16 A',
       date: '2026-01-01T10:00:00.000Z',
       coachName: 'Coach',
-      evaluation: 4,
       athletesNumber: 20,
       coachesNumber: 2,
       totalTime: 60,
@@ -74,8 +73,4 @@ describe('SyncSessionSchema', () => {
     expect(() => SyncSessionSchema.parse({ ...validSession, id: 'bad-id' })).toThrow();
   });
 
-  test('rejects evaluation outside 0-10', () => {
-    const bad = { ...validSession, practiceInfo: { ...validSession.practiceInfo, evaluation: 11 } };
-    expect(() => SyncSessionSchema.parse(bad)).toThrow();
-  });
 });

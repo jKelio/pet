@@ -22,6 +22,13 @@
       "when": 1780836347881,
       "tag": "0002_clean_arclight",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780857638152,
+      "tag": "0003_dry_rawhide_kid",
+      "breakpoints": true
     }
   ]
 }

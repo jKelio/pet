@@ -65,7 +65,6 @@ export const PracticeInfoSchema = z.object({
   teamId: UUIDSchema.optional(),
   date: z.string().datetime(),
   coachName: z.string().trim(),
-  evaluation: z.number().int().min(0).max(10),
   athletesNumber: z.number().int().nonnegative(),
   coachesNumber: z.number().int().nonnegative(),
   totalTime: z.number().int().nonnegative(),

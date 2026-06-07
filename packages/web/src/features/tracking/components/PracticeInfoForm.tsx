@@ -139,16 +139,6 @@ export function PracticeInfoForm() {
               onChange={(coachName) => update('coachName', coachName)}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="evaluation">{t('general.evaluationLabel')}</Label>
-            <NumberInput
-              id="evaluation"
-              min={0}
-              max={10}
-              value={practiceInfo.evaluation}
-              onChange={(v) => update('evaluation', v)}
-            />
-          </div>
         </div>
       </section>
 

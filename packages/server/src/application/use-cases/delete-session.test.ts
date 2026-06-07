@@ -16,7 +16,6 @@ const SESSION: PracticeSession = {
     teamName: 'U16 A',
     date: '2026-01-01',
     coachName: 'Coach Test',
-    evaluation: 4,
     athletesNumber: 20,
     coachesNumber: 2,
     totalTime: 60,

@@ -48,7 +48,6 @@ export interface PracticeInfo {
   teamId?: string;
   date: string;
   coachName: string;
-  evaluation: number;
   athletesNumber: number;
   coachesNumber: number;
   totalTime: number;
