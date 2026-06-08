@@ -2,18 +2,48 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800&family=Saira+Semi+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#05173D" />
-    <meta name="description" content="PROTRACK – Practice Efficiency Tracking für Eishockey-Trainer" />
+    <meta name="theme-color" content="#03101f" />
+    <meta name="description" content="PracMetrics – Train Smarter. Improve Performance." />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="PROTRACK" />
+    <meta name="apple-mobile-web-app-title" content="PracMetrics" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>PROTRACK</title>
+    <title>PracMetrics</title>
+    <style>
+      #splash {
+        position: fixed; inset: 0; z-index: 9999;
+        background: radial-gradient(900px 600px at 50% -5%, #0d1c39, #03101f 60%);
+        display: flex; align-items: center; justify-content: center;
+        transition: opacity 0.25s ease;
+      }
+      #splash.fade { opacity: 0; pointer-events: none; }
+    </style>
   </head>
   <body>
+    <div id="splash">
+      <svg width="96" height="96" viewBox="20 22 380 318" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sp-wh" x1="0" y1="0" x2="0.18" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#c2cddc"/>
+          </linearGradient>
+          <linearGradient id="sp-bl" x1="0.2" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2f8bf9"/>
+            <stop offset="0.55" stop-color="#1066e4"/>
+            <stop offset="1" stop-color="#0246c2"/>
+          </linearGradient>
+        </defs>
+        <path d="M 160,128 L 248,128 L 114,330 L 26,330 Z" fill="url(#sp-bl)"/>
+        <path d="M 96,30 L 344,42 L 388,112 L 200,250 L 235,180 L 330,118 L 150,78 Z" fill="url(#sp-wh)"/>
+      </svg>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

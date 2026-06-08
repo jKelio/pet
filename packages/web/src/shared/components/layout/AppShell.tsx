@@ -21,6 +21,7 @@ import { useAdminStore } from '../../../features/admin/stores/admin.store.js';
 import { useSyncPending } from '../../../features/sessions/hooks/useSyncPending.js';
 import { TenantSwitcher } from './TenantSwitcher.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
+import { PracMetricsLogo } from '../PracMetricsLogo.js';
 
 interface NavItem {
   labelKey: string;
@@ -71,7 +72,7 @@ function SidebarNav({
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <Link to="/" onClick={onLinkClick}>
-          <img src="/icon.png" alt="PROTRACK Hockey" className="h-16 w-16 rounded-xl" />
+          <PracMetricsLogo variant="compact" />
         </Link>
         {user && (
           <p className="text-xs text-muted-foreground mt-2 truncate">{user.email}</p>
@@ -196,7 +197,7 @@ export function AppShell({ children }: AppShellProps) {
           >
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
-          <img src="/icon.png" alt="PROTRACK Hockey" className="h-8 w-8 rounded-md" />
+          <PracMetricsLogo variant="icon" />
         </header>
 
         {/* Page Content */}

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { authApi } from '../api/auth.api.js';
 import { ApiClientError } from '../../../shared/lib/api-client.js';
 import { Mail, Loader2 } from 'lucide-react';
+import { PracMetricsLogo } from '../../../shared/components/PracMetricsLogo.js';
 
 type Step = 'email' | 'sent';
 
@@ -40,8 +41,7 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/icon.png" alt="PROTRACK Hockey" className="h-28 w-28 mx-auto rounded-2xl mb-3" />
-          <p className="text-muted-foreground">{t('auth.tagline')}</p>
+          <PracMetricsLogo variant="stacked" className="mx-auto mb-3" />
         </div>
 
         <Card>

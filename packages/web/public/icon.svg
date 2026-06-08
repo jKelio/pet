@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#14294f"/>
+      <stop offset="0.5" stop-color="#0a182f"/>
+      <stop offset="1" stop-color="#050e20"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0" r="0.9">
+      <stop offset="0" stop-color="rgba(120,170,255,0.22)"/>
+      <stop offset="1" stop-color="rgba(120,170,255,0)"/>
+    </radialGradient>
+    <linearGradient id="wh" x1="0" y1="0" x2="0.18" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c2cddc"/>
+    </linearGradient>
+    <linearGradient id="bl" x1="0.2" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f8bf9"/>
+      <stop offset="0.55" stop-color="#1066e4"/>
+      <stop offset="1" stop-color="#0246c2"/>
+    </linearGradient>
+    <clipPath id="sq"><rect width="512" height="512" rx="114" ry="114"/></clipPath>
+  </defs>
+  <g clip-path="url(#sq)">
+    <rect width="512" height="512" fill="url(#bg)"/>
+    <rect width="512" height="512" fill="url(#glow)"/>
+    <rect x="0.5" y="0.5" width="511" height="511" rx="113.5" fill="none" stroke="rgba(255,255,255,0.07)"/>
+  </g>
+  <g transform="translate(110.8,137.2) scale(0.66)">
+    <path d="M 160,128 L 248,128 L 114,330 L 26,330 Z" fill="url(#bl)"/>
+    <path d="M 96,30 L 344,42 L 388,112 L 200,250 L 235,180 L 330,118 L 150,78 Z" fill="url(#wh)"/>
+  </g>
+</svg>

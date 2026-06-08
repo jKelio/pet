@@ -30,12 +30,12 @@ export class SmtpEmailSender implements EmailSender {
 
     const subject = isInvite
       ? `Du wurdest zu ${params.inviteContext!.tenantName} eingeladen`
-      : 'Dein Login-Link für PROTRACK';
+      : 'Dein Login-Link für PracMetrics';
 
     const body = isInvite
-      ? `<p>Du wurdest als <strong>${params.inviteContext!.role}</strong> zu <strong>${params.inviteContext!.tenantName}</strong> auf PROTRACK eingeladen.</p>
+      ? `<p>Du wurdest als <strong>${params.inviteContext!.role}</strong> zu <strong>${params.inviteContext!.tenantName}</strong> auf PracMetrics eingeladen.</p>
          <p>Klicke auf den Link, um dein Konto zu aktivieren und dich einzuloggen.</p>`
-      : `<p>hier ist dein Login-Link für PROTRACK – Practice Efficiency Tracking.</p>`;
+      : `<p>hier ist dein Login-Link für PracMetrics – Train Smarter. Improve Performance.</p>`;
 
     try {
       await this.transporter.sendMail({
@@ -44,12 +44,12 @@ export class SmtpEmailSender implements EmailSender {
         subject,
         html: `
           <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
-            <h2 style="color: #05173D;">${greeting},</h2>
+            <h2 style="color: #03101f;">${greeting},</h2>
             ${body}
             <p>Der Link ist <strong>15 Minuten</strong> gültig.</p>
             <a href="${params.magicLinkUrl}"
                style="display: inline-block; margin: 24px 0; padding: 14px 28px;
-                      background: #05173D; color: #fff; border-radius: 8px;
+                      background: #03101f; color: #fff; border-radius: 8px;
                       text-decoration: none; font-weight: bold;">
               Jetzt einloggen
             </a>

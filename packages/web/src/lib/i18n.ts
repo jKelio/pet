@@ -38,7 +38,7 @@ const resources = {
         analyst: 'Analyst',
       },
       auth: {
-        tagline: 'Practice Efficiency Tracking',
+        tagline: 'Train Smarter. Improve Performance.',
         login: 'Log in',
         loginDescription: 'Enter your email address. We will send you a login link.',
         emailLabel: 'Email address',
@@ -380,7 +380,7 @@ const resources = {
         analyst: 'Analyst',
       },
       auth: {
-        tagline: 'Practice Efficiency Tracking',
+        tagline: 'Train Smarter. Improve Performance.',
         login: 'Einloggen',
         loginDescription: 'Gib deine E-Mail-Adresse ein. Wir senden dir einen Login-Link.',
         emailLabel: 'E-Mail-Adresse',
