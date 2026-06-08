@@ -13,6 +13,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>,
 );
 
+// Wake up the backend (Render.com free tier spins down after inactivity)
+fetch('/api/health').catch(() => {});
+
 const splash = document.getElementById('splash');
 if (splash) {
   requestAnimationFrame(() =>
