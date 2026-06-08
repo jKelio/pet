@@ -39,7 +39,7 @@ export function VerifyPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="h-screen overflow-hidden flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <Card>
           <CardHeader className="text-center">
