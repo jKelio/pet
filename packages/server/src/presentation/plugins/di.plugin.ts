@@ -21,6 +21,7 @@ import { RefreshSessionUseCase } from '../../application/use-cases/refresh-sessi
 import { ListMembersUseCase } from '../../application/use-cases/list-members.js';
 import { InviteMemberUseCase } from '../../application/use-cases/invite-member.js';
 import { RemoveMemberUseCase } from '../../application/use-cases/remove-member.js';
+import { UpdateMemberUseCase } from '../../application/use-cases/update-member.js';
 import { AssignTeamMemberUseCase } from '../../application/use-cases/assign-team-member.js';
 import { RemoveTeamMemberUseCase } from '../../application/use-cases/remove-team-member.js';
 import { SuperAdminListTenantsUseCase } from '../../application/use-cases/superadmin-list-tenants.js';
@@ -75,6 +76,7 @@ declare module 'fastify' {
       listMembers: ListMembersUseCase;
       inviteMember: InviteMemberUseCase;
       removeMember: RemoveMemberUseCase;
+      updateMember: UpdateMemberUseCase;
       assignTeamMember: AssignTeamMemberUseCase;
       removeTeamMember: RemoveTeamMemberUseCase;
       superAdminListTenants: SuperAdminListTenantsUseCase;
@@ -198,6 +200,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     appBaseUrl: config.appBaseUrl,
   });
   const removeMember = new RemoveMemberUseCase({ membershipRepository });
+  const updateMember = new UpdateMemberUseCase({ userRepository, membershipRepository });
   const assignTeamMember = new AssignTeamMemberUseCase({ membershipRepository, teamRepository });
   const removeTeamMember = new RemoveTeamMemberUseCase({ membershipRepository, teamRepository });
 
@@ -236,6 +239,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     listMembers,
     inviteMember,
     removeMember,
+    updateMember,
     assignTeamMember,
     removeTeamMember,
     superAdminListTenants,

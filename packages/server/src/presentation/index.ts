@@ -120,6 +120,7 @@ async function build() {
       listMembers: fastify.useCases.listMembers,
       inviteMember: fastify.useCases.inviteMember,
       removeMember: fastify.useCases.removeMember,
+      updateMember: fastify.useCases.updateMember,
       assignTeamMember: fastify.useCases.assignTeamMember,
       removeTeamMember: fastify.useCases.removeTeamMember,
       teamRepository: fastify.repos.team,
