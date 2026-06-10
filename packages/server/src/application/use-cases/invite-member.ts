@@ -74,6 +74,8 @@ export class InviteMemberUseCase {
       id: crypto.randomUUID(),
       userId: user.id,
       tenantId,
+      // role is constrained to the tenant role enum by InviteUserSchema and the
+      // caller is club_admin (highest tenant role) — delegation, not escalation
       role: input.role,
     };
 
