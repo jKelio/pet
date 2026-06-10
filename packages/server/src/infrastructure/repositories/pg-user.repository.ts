@@ -17,12 +17,16 @@ export class PgUserRepository implements UserRepository {
     return row ? this.toUser(row) : null;
   }
 
-  async findByMagicLinkToken(tokenHash: string): Promise<(User & { tokenExpiresAt: Date }) | null> {
+  async consumeMagicLinkToken(tokenHash: string): Promise<(User & { tokenExpiresAt: Date }) | null> {
+    // Single UPDATE ... RETURNING so a concurrent request re-evaluates the
+    // WHERE clause after the row lock is released and matches zero rows.
+    // tokenExpiresAt is kept: RETURNING yields post-update values and the
+    // expiry check still needs it; without the hash it grants nothing.
     const [row] = await this.db
-      .select()
-      .from(users)
+      .update(users)
+      .set({ magicLinkTokenHash: null })
       .where(eq(users.magicLinkTokenHash, tokenHash))
-      .limit(1);
+      .returning();
 
     if (!row || !row.tokenExpiresAt) return null;
     return { ...this.toUser(row), tokenExpiresAt: row.tokenExpiresAt };
@@ -42,13 +46,6 @@ export class PgUserRepository implements UserRepository {
     await this.db
       .update(users)
       .set({ magicLinkTokenHash: tokenHash, tokenExpiresAt: expiresAt })
-      .where(eq(users.id, userId));
-  }
-
-  async clearMagicLinkToken(userId: string): Promise<void> {
-    await this.db
-      .update(users)
-      .set({ magicLinkTokenHash: null, tokenExpiresAt: null })
       .where(eq(users.id, userId));
   }
 

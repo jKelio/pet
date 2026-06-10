@@ -3,10 +3,14 @@ import type { User, Membership, Team, Tenant } from '@pet/shared';
 export interface UserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
-  findByMagicLinkToken(tokenHash: string): Promise<(User & { tokenExpiresAt: Date }) | null>;
+  /**
+   * Atomically clears the magic-link token and returns the matching user.
+   * Returns null if no user holds this token — guarantees single use even
+   * under concurrent verification attempts.
+   */
+  consumeMagicLinkToken(tokenHash: string): Promise<(User & { tokenExpiresAt: Date }) | null>;
   save(user: User): Promise<void>;
   saveMagicLinkToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
-  clearMagicLinkToken(userId: string): Promise<void>;
   updateLastLogin(userId: string): Promise<void>;
 }
 

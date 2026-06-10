@@ -10,12 +10,8 @@ function makeRepo(existingUser: { id: string; email: string; name: string; creat
     save: mock(async () => {}),
     findById: mock(async () => null),
     saveMagicLinkToken: mock(async () => {}),
-    clearMagicLinkToken: mock(async () => {}),
     updateLastLogin: mock(async () => {}),
-    findByMagicLinkToken: mock(async () => null),
-    findByRefreshToken: mock(async () => null),
-    saveRefreshToken: mock(async () => {}),
-    clearRefreshToken: mock(async () => {}),
+    consumeMagicLinkToken: mock(async () => null),
   } as unknown as UserRepository;
 }
 

@@ -1,8 +1,8 @@
 /** Magic link token expiry in milliseconds (15 minutes) */
 export const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 
-/** Access token expiry (7 days) */
-export const ACCESS_TOKEN_TTL = '7d';
+/** Access token expiry (short-lived; clients silently refresh via the refresh token) */
+export const ACCESS_TOKEN_TTL = '1h';
 
 /** Refresh token expiry (30 days) */
 export const REFRESH_TOKEN_TTL = '30d';

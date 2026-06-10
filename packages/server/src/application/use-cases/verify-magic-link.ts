@@ -25,7 +25,9 @@ export class VerifyMagicLinkUseCase {
 
   async execute(rawToken: string): Promise<VerifyMagicLinkResult> {
     const tokenHash = this.deps.authService.hashToken(rawToken);
-    const userWithExpiry = await this.deps.userRepository.findByMagicLinkToken(tokenHash);
+    // Atomic consume: the token is invalidated in the same query that looks
+    // it up, so a second concurrent request with the same token always fails.
+    const userWithExpiry = await this.deps.userRepository.consumeMagicLinkToken(tokenHash);
 
     if (!userWithExpiry) {
       throw new InvalidTokenError();
@@ -35,7 +37,6 @@ export class VerifyMagicLinkUseCase {
       throw new ExpiredTokenError();
     }
 
-    await this.deps.userRepository.clearMagicLinkToken(userWithExpiry.id);
     await this.deps.userRepository.updateLastLogin(userWithExpiry.id);
 
     const { tokenExpiresAt: _, ...user } = userWithExpiry;
