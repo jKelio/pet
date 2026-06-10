@@ -25,6 +25,7 @@ interface AdminState {
   createTeam: (name: string, accessToken: string) => Promise<void>;
   loadMembers: (accessToken: string) => Promise<void>;
   inviteMember: (email: string, role: UserRole, name: string | undefined, teamIds: string[] | undefined, accessToken: string) => Promise<void>;
+  updateMemberName: (membershipId: string, name: string, accessToken: string) => Promise<void>;
   removeMember: (membershipId: string, accessToken: string) => Promise<void>;
   assignTeamMember: (teamId: string, membershipId: string, accessToken: string) => Promise<void>;
   removeTeamMember: (teamId: string, membershipId: string, accessToken: string) => Promise<void>;
@@ -116,6 +117,21 @@ export const useAdminStore = create<AdminState>()(
           set({ members, loading: false });
         } catch (err) {
           set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorInvite') });
+          throw err;
+        }
+      },
+
+      updateMemberName: async (membershipId, name, accessToken) => {
+        set({ error: null });
+        try {
+          const user = await adminApi.updateMember(membershipId, name, accessToken);
+          set((s) => ({
+            members: s.members.map((m) =>
+              m.membership.id === membershipId ? { ...m, user } : m,
+            ),
+          }));
+        } catch (err) {
+          set({ error: err instanceof Error ? err.message : tr('admin.errorUpdate') });
           throw err;
         }
       },

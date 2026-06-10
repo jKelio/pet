@@ -82,6 +82,8 @@ const resources = {
         members: 'Members',
         noMembers: 'No members yet.',
         removeMember: 'Remove member',
+        editName: 'Edit name',
+        save: 'Save',
         teamsLabel: 'Teams (optional)',
         noRoster: 'No members assigned yet.',
         addToTeam: 'Add',
@@ -90,6 +92,7 @@ const resources = {
         errorCreate: 'Error while creating',
         errorInvite: 'Error while inviting',
         errorRemove: 'Error while removing',
+        errorUpdate: 'Error while updating',
         errorAssign: 'Error while assigning',
       },
       superadmin: {
@@ -424,6 +427,8 @@ const resources = {
         members: 'Mitglieder',
         noMembers: 'Noch keine Mitglieder.',
         removeMember: 'Mitglied entfernen',
+        editName: 'Name bearbeiten',
+        save: 'Speichern',
         teamsLabel: 'Teams (optional)',
         noRoster: 'Noch keine Mitglieder zugewiesen.',
         addToTeam: 'Hinzufügen',
@@ -432,6 +437,7 @@ const resources = {
         errorCreate: 'Fehler beim Erstellen',
         errorInvite: 'Fehler beim Einladen',
         errorRemove: 'Fehler beim Entfernen',
+        errorUpdate: 'Fehler beim Aktualisieren',
         errorAssign: 'Fehler beim Zuweisen',
       },
       superadmin: {
