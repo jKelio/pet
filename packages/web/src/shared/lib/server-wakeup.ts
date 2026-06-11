@@ -46,8 +46,20 @@ export interface WakeupController {
 
 async function defaultFetcher(url: string, signal: AbortSignal): Promise<boolean> {
   try {
-    const res = await fetch(url, { method: 'GET', cache: 'no-store', signal });
-    return res.ok;
+    const res = await fetch(url, {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+      signal,
+    });
+    if (!res.ok) return false;
+    // A 2xx alone is not enough. A spun-down Render service (and proxies/edges
+    // in general) can answer the first request fast with a holding page, which
+    // would trip the <2s fast-path into "ready" while the API is still booting.
+    // Require our backend's actual health payload so we only flip to "ready"
+    // once the real server responds.
+    const data = (await res.json().catch(() => null)) as { status?: string } | null;
+    return data?.status === 'ok';
   } catch {
     // Network error / aborted / connection refused → not reachable (yet).
     return false;
