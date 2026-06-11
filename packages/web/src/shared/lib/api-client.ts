@@ -1,4 +1,5 @@
 import type { ApiError } from '@pet/shared';
+import { whenServerReady } from './server-ready.js';
 
 const BASE_URL = '/api';
 
@@ -46,6 +47,9 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 async function request<T>(path: string, init?: RequestInit, accessToken?: string): Promise<T> {
+  // Queue until the backend has woken up (Render.com cold start).
+  await whenServerReady();
+
   const hasBody = init?.body != null;
   const headers: HeadersInit = {
     ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
@@ -118,6 +122,9 @@ export const apiClient = {
    * The caller receives an AsyncIterable of parsed SSE event objects: { event, data }.
    */
   async *sse(path: string, body: unknown, accessToken?: string): AsyncIterable<{ event: string; data: unknown }> {
+    // Queue until the backend has woken up (Render.com cold start).
+    await whenServerReady();
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       'Accept': 'text/event-stream',

@@ -15,6 +15,14 @@ const resources = {
         appFeedback: 'Feedback',
         logout: 'Log out',
       },
+      serverWakeup: {
+        waking1: 'The server is waking up… ☕',
+        waking2: 'Almost there, the server is stretching…',
+        waking3: 'Taking a little longer today – free tier, you know 😄',
+        failedTitle: 'Server unavailable',
+        failedBody: "We couldn't wake the server. Please try again.",
+        retry: 'Try again',
+      },
       appFeedback: {
         title: 'Feedback',
         subtitle: 'Report a bug, request a feature, or share general feedback',
@@ -359,6 +367,14 @@ const resources = {
         superAdmin: 'SuperAdmin',
         appFeedback: 'Feedback',
         logout: 'Abmelden',
+      },
+      serverWakeup: {
+        waking1: 'Der Server wacht gerade auf… ☕',
+        waking2: 'Gleich geschafft, der Server streckt sich noch…',
+        waking3: 'Dauert heute etwas länger – Free Tier eben 😄',
+        failedTitle: 'Server nicht erreichbar',
+        failedBody: 'Der Server konnte nicht geweckt werden. Bitte versuche es erneut.',
+        retry: 'Erneut versuchen',
       },
       appFeedback: {
         title: 'Feedback',
