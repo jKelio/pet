@@ -51,6 +51,9 @@ async function build() {
     logger: {
       level: config.isProduction ? 'info' : 'debug',
     },
+    // Behind nginx (and Render's edge) — derive request.ip from X-Forwarded-For
+    // so the rate limiter buckets per real client instead of the proxy IP.
+    trustProxy: true,
   });
 
   // CORS
@@ -136,8 +139,9 @@ async function build() {
     });
   });
 
-  // Health check
-  fastify.get('/health', async () => ({ status: 'ok' }));
+  // Health check — exempt from rate limiting so wakeup pings (free-tier cold
+  // start) never trip the global limiter.
+  fastify.get('/health', { config: { rateLimit: false } }, async () => ({ status: 'ok' }));
 
   return { fastify, config };
 }

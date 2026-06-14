@@ -5,6 +5,10 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
   en: {
     pet: {
+      wakeup: {
+        title: 'Starting server…',
+        subtitle: 'The server is waking up. This can take up to a minute on first load.',
+      },
       nav: {
         tracking: 'Tracking',
         results: 'Results',
@@ -347,6 +351,10 @@ const resources = {
   },
   de: {
     pet: {
+      wakeup: {
+        title: 'Server wird gestartet…',
+        subtitle: 'Der Server wacht auf. Beim ersten Laden kann das bis zu einer Minute dauern.',
+      },
       nav: {
         tracking: 'Tracking',
         results: 'Ergebnisse',
