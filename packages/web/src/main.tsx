@@ -17,3 +17,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Toaster richColors position="top-right" />
   </React.StrictMode>,
 );
+
+// Remove the static index.html splash once React has painted the app, otherwise
+// its full-screen overlay (z-index 9999) keeps covering the UI (e.g. the login
+// screen). Two RAFs ensure the first React frame is on screen before we fade it.
+const splash = document.getElementById('splash');
+if (splash) {
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      splash.classList.add('fade');
+      setTimeout(() => splash.remove(), 280);
+    }),
+  );
+}
