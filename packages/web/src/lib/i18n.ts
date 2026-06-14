@@ -5,6 +5,10 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
   en: {
     pet: {
+      pwa: {
+        updateAvailable: 'A new version is available.',
+        reload: 'Reload',
+      },
       nav: {
         tracking: 'Tracking',
         results: 'Results',
@@ -358,6 +362,10 @@ const resources = {
   },
   de: {
     pet: {
+      pwa: {
+        updateAvailable: 'Eine neue Version ist verfügbar.',
+        reload: 'Neu laden',
+      },
       nav: {
         tracking: 'Tracking',
         results: 'Ergebnisse',
