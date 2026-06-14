@@ -17,13 +17,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Toaster richColors position="top-right" />
   </React.StrictMode>,
 );
-
-const splash = document.getElementById('splash');
-if (splash) {
-  requestAnimationFrame(() =>
-    requestAnimationFrame(() => {
-      splash.classList.add('fade');
-      setTimeout(() => splash.remove(), 280);
-    }),
-  );
-}
