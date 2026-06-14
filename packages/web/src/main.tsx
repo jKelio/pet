@@ -4,8 +4,11 @@ import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { router } from './router.js';
 import { ServerWakeupProvider } from './shared/components/ServerWakeupProvider.js';
+import { setupPWA } from './lib/pwa.js';
 import './lib/i18n.js';
 import './index.css';
+
+setupPWA();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

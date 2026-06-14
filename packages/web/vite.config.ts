@@ -9,8 +9,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      // 'prompt' (not 'autoUpdate'): never silently reload the page — a coach may
+      // have a live tracking session with running timers. We register manually in
+      // src/lib/pwa.ts and surface a "new version" toast with a reload action.
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg'],
       manifest: {
         name: 'PracMetrics',
