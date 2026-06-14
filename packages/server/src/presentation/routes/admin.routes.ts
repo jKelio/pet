@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
-import { CreateTeamSchema, InviteUserSchema } from '@pet/shared';
+import { CreateTeamSchema, InviteUserSchema, UpdateMemberSchema } from '@pet/shared';
 import type { GetMyProfileUseCase } from '../../application/use-cases/get-my-profile.js';
 import type { OnboardTenantUseCase } from '../../application/use-cases/onboard-tenant.js';
 import type { CreateTeamUseCase } from '../../application/use-cases/create-team.js';
@@ -16,6 +16,11 @@ import {
   ForbiddenError as RemoveForbiddenError,
   NotFoundError,
 } from '../../application/use-cases/remove-member.js';
+import type { UpdateMemberUseCase } from '../../application/use-cases/update-member.js';
+import {
+  ForbiddenError as UpdateForbiddenError,
+  NotFoundError as UpdateNotFoundError,
+} from '../../application/use-cases/update-member.js';
 import type { AssignTeamMemberUseCase } from '../../application/use-cases/assign-team-member.js';
 import {
   ForbiddenError as AssignForbiddenError,
@@ -40,6 +45,7 @@ interface AdminRoutesDeps {
   listMembers: ListMembersUseCase;
   inviteMember: InviteMemberUseCase;
   removeMember: RemoveMemberUseCase;
+  updateMember: UpdateMemberUseCase;
   assignTeamMember: AssignTeamMemberUseCase;
   removeTeamMember: RemoveTeamMemberUseCase;
   teamRepository: TeamRepository;
@@ -202,6 +208,37 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
         return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
       }
       if (err instanceof RosterNotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: err.message, statusCode: 404 });
+      }
+      throw err;
+    }
+  });
+
+  // PATCH /admin/members/:id — update a member's user name
+  fastify.patch('/admin/members/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const result = UpdateMemberSchema.safeParse(request.body);
+    if (!result.success) {
+      return reply.code(400).send({
+        code: 'VALIDATION_ERROR',
+        message: result.error.issues[0].message,
+        statusCode: 400,
+      });
+    }
+
+    const tenantId = request.tenantId;
+    if (!tenantId) {
+      return reply.code(403).send({ code: 'NO_TENANT', message: 'No tenant in token', statusCode: 403 });
+    }
+
+    try {
+      const user = await deps.updateMember.execute(id, result.data.name, request.userId, tenantId);
+      return reply.send(user);
+    } catch (err) {
+      if (err instanceof UpdateForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
+      }
+      if (err instanceof UpdateNotFoundError) {
         return reply.code(404).send({ code: 'NOT_FOUND', message: err.message, statusCode: 404 });
       }
       throw err;

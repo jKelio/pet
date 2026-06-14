@@ -52,3 +52,13 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Indeterminate progress bar for the server wake-up overlay. */
+@keyframes wakeup-indeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(360%); }
+}
+
+.animate-wakeup-indeterminate {
+  animation: wakeup-indeterminate 1.4s ease-in-out infinite;
+}

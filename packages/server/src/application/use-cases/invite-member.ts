@@ -74,6 +74,8 @@ export class InviteMemberUseCase {
       id: crypto.randomUUID(),
       userId: user.id,
       tenantId,
+      // role is constrained to the tenant role enum by InviteUserSchema and the
+      // caller is club_admin (highest tenant role) — delegation, not escalation
       role: input.role,
     };
 
@@ -89,7 +91,8 @@ export class InviteMemberUseCase {
     const tenant = await this.deps.tenantRepository.findById(tenantId);
     const token = this.deps.authService.generateMagicLinkToken();
     await this.deps.userRepository.saveMagicLinkToken(user.id, token.hash, token.expiresAt);
-    const magicLinkUrl = `${this.deps.appBaseUrl}/auth/verify?token=${token.raw}`;
+    const base = this.deps.appBaseUrl.replace(/\/$/, '');
+    const magicLinkUrl = `${base}/auth/verify?token=${token.raw}`;
 
     await this.deps.emailSender.sendMagicLink({
       to: user.email,

@@ -42,8 +42,10 @@ export function registerAuthRoutes(fastify: FastifyInstance, deps: AuthRoutesDep
     return reply.code(200).send({ message: 'If this email exists, a login link has been sent.' });
   });
 
-  // POST /auth/verify — verify magic link token, issue JWT
-  fastify.post('/auth/verify', async (request, reply) => {
+  // POST /auth/verify — verify magic link token, issue JWT (rate limited against token brute force)
+  fastify.post('/auth/verify', {
+    config: { rateLimit: { max: 10, timeWindow: '15 minutes' } },
+  }, async (request, reply) => {
     const result = VerifyMagicLinkSchema.safeParse(request.body);
     if (!result.success) {
       return reply.code(400).send({

@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
@@ -17,6 +18,13 @@ function getConfig() {
   const required = ['DATABASE_URL', 'JWT_SECRET', 'APP_BASE_URL', 'SMTP_FROM'];
   for (const key of required) {
     if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
+  }
+
+  const jwtSecret = process.env.JWT_SECRET!;
+  if (jwtSecret.length < 32 || jwtSecret === 'change_me_to_a_long_random_string') {
+    throw new Error(
+      'JWT_SECRET must be at least 32 characters and must not be the .env.example placeholder. Generate one with: openssl rand -base64 64',
+    );
   }
 
   return {
@@ -48,12 +56,20 @@ async function build() {
   const config = getConfig();
 
   const fastify = Fastify({
+    // Explicit body size cap (matches the Fastify default); sync payloads stay well below this
+    bodyLimit: 1_048_576,
     logger: {
       level: config.isProduction ? 'info' : 'debug',
     },
     // Behind nginx (and Render's edge) — derive request.ip from X-Forwarded-For
     // so the rate limiter buckets per real client instead of the proxy IP.
     trustProxy: true,
+  });
+
+  // Security headers — CSP is handled by the web tier; this is a JSON API
+  await fastify.register(helmet, {
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   });
 
   // CORS
@@ -107,6 +123,7 @@ async function build() {
       listMembers: fastify.useCases.listMembers,
       inviteMember: fastify.useCases.inviteMember,
       removeMember: fastify.useCases.removeMember,
+      updateMember: fastify.useCases.updateMember,
       assignTeamMember: fastify.useCases.assignTeamMember,
       removeTeamMember: fastify.useCases.removeTeamMember,
       teamRepository: fastify.repos.team,

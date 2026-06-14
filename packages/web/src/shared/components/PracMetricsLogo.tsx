@@ -96,7 +96,6 @@ export function PracMetricsLogo({
         fontSize: variant === 'stacked' ? '0.7rem' : '0.6rem',
         letterSpacing: '0.3em',
         color: '#8fa0bb',
-        whiteSpace: 'nowrap' as const,
       }}
     >
       <span
@@ -108,9 +107,10 @@ export function PracMetricsLogo({
           flexShrink: 0,
         }}
       />
-      <span>
-        Train Smarter<b style={{ color: '#2a86f8', fontWeight: 700 }}>.</b>{' '}
-        Improve Performance<b style={{ color: '#2a86f8', fontWeight: 700 }}>.</b>
+      <span style={{ textAlign: 'center' as const }}>
+        Train Smarter<b style={{ color: '#2a86f8', fontWeight: 700 }}>.</b>
+        <br className="sm:hidden" />
+        {' '}Improve Performance<b style={{ color: '#2a86f8', fontWeight: 700 }}>.</b>
       </span>
       <span
         style={{

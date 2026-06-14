@@ -24,9 +24,8 @@ function makeRepo(userWithExpiry: ReturnType<typeof makeUserWithExpiry> | null):
     save: mock(async () => {}),
     findById: mock(async () => null),
     saveMagicLinkToken: mock(async () => {}),
-    clearMagicLinkToken: mock(async () => {}),
     updateLastLogin: mock(async () => {}),
-    findByMagicLinkToken: mock(async () => userWithExpiry),
+    consumeMagicLinkToken: mock(async () => userWithExpiry),
   } as unknown as UserRepository;
 }
 
@@ -71,15 +70,29 @@ describe('VerifyMagicLinkUseCase', () => {
     expect((result.user as unknown as Record<string, unknown>).tokenExpiresAt).toBeUndefined();
   });
 
-  test('clears the token and records last login on success', async () => {
+  test('consumes the token and records last login on success', async () => {
     const userWithExpiry = makeUserWithExpiry();
     const repo = makeRepo(userWithExpiry);
     const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, membershipRepository: makeMembershipRepo(), authService, tokenIssuer });
 
     await useCase.execute('any-raw-token');
 
-    expect(repo.clearMagicLinkToken).toHaveBeenCalledWith('user-1');
+    expect(repo.consumeMagicLinkToken).toHaveBeenCalledTimes(1);
     expect(repo.updateLastLogin).toHaveBeenCalledWith('user-1');
+  });
+
+  test('rejects a second use of the same token (single-use)', async () => {
+    const userWithExpiry = makeUserWithExpiry();
+    const repo = makeRepo(userWithExpiry);
+    // First call consumes the token, second call finds nothing to consume
+    (repo.consumeMagicLinkToken as ReturnType<typeof mock>)
+      .mockImplementationOnce(async () => userWithExpiry)
+      .mockImplementation(async () => null);
+    const useCase = new VerifyMagicLinkUseCase({ userRepository: repo, membershipRepository: makeMembershipRepo(), authService, tokenIssuer });
+
+    await useCase.execute('any-raw-token');
+
+    expect(useCase.execute('any-raw-token')).rejects.toBeInstanceOf(InvalidTokenError);
   });
 
   test('throws InvalidTokenError when token is not found', async () => {

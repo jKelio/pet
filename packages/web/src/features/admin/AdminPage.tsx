@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Users, Plus, Loader2, Trash2, UserPlus, ChevronDown, X } from 'lucide-react';
+import { Building2, Users, Plus, Loader2, Trash2, UserPlus, ChevronDown, X, Pencil, Check } from 'lucide-react';
 import { SourceLibrarySection } from '../recommendations/components/SourceLibrarySection.js';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
@@ -311,10 +311,115 @@ function TeamRosterAccordion({
   );
 }
 
+function MemberRow({
+  member,
+  isAdmin,
+  isSelf,
+  accessToken,
+}: {
+  member: MemberWithUser;
+  isAdmin: boolean;
+  isSelf: boolean;
+  accessToken: string;
+}) {
+  const { t } = useTranslation('pet');
+  const { updateMemberName, removeMember } = useAdminStore();
+  const { membership: m, user } = member;
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(user.name);
+  const [saving, setSaving] = useState(false);
+
+  const startEdit = () => {
+    setName(user.name);
+    setEditing(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateMemberName(m.id, name.trim(), accessToken);
+      setEditing(false);
+    } catch {
+      // error surfaced via store; keep the form open so the edit isn't lost
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <form
+        onSubmit={handleSave}
+        className="rounded-lg border border-border bg-card px-4 py-3 flex items-center gap-2"
+      >
+        <Input
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t('admin.namePlaceholder')}
+          className="h-9 flex-1"
+        />
+        <Button type="submit" size="icon" variant="ghost" className="shrink-0" disabled={saving} title={t('admin.save')}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="shrink-0"
+          onClick={() => setEditing(false)}
+          title={t('admin.cancel')}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </form>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-card px-4 py-3 flex items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm truncate">
+          {user.name || user.email}
+        </p>
+        {user.name && (
+          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+        )}
+      </div>
+      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
+        {t(`roles.${m.role}`)}
+      </span>
+      {isAdmin && (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="shrink-0"
+          onClick={startEdit}
+          title={t('admin.editName')}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      )}
+      {isAdmin && !isSelf && (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="text-destructive hover:text-destructive shrink-0"
+          onClick={() => removeMember(m.id, accessToken)}
+          title={t('admin.removeMember')}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function AdminPage() {
   const { t } = useTranslation('pet');
   const accessToken = useAuthStore((s) => s.accessToken);
-  const { tenant, membership, teams, members, loading, error, loadProfile, loadMembers, removeMember } =
+  const { tenant, membership, teams, members, loading, error, loadProfile, loadMembers } =
     useAdminStore();
 
   useEffect(() => {
@@ -407,34 +512,14 @@ export function AdminPage() {
           )}
 
           <div className="space-y-2">
-            {members.map(({ membership: m, user }) => (
-              <div
-                key={m.id}
-                className="rounded-lg border border-border bg-card px-4 py-3 flex items-center gap-3"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">
-                    {user.name || user.email}
-                  </p>
-                  {user.name && (
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                  )}
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
-                  {t(`roles.${m.role}`)}
-                </span>
-                {isAdmin && m.userId !== membership.userId && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive shrink-0"
-                    onClick={() => removeMember(m.id, accessToken)}
-                    title={t('admin.removeMember')}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+            {members.map((member) => (
+              <MemberRow
+                key={member.membership.id}
+                member={member}
+                isAdmin={isAdmin}
+                isSelf={member.membership.userId === membership.userId}
+                accessToken={accessToken}
+              />
             ))}
           </div>
         </section>

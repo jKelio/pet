@@ -5,10 +5,6 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
   en: {
     pet: {
-      wakeup: {
-        title: 'Starting server…',
-        subtitle: 'The server is waking up. This can take up to a minute on first load.',
-      },
       nav: {
         tracking: 'Tracking',
         results: 'Results',
@@ -18,6 +14,14 @@ const resources = {
         superAdmin: 'SuperAdmin',
         appFeedback: 'Feedback',
         logout: 'Log out',
+      },
+      serverWakeup: {
+        waking1: 'The server is waking up… ☕',
+        waking2: 'Almost there, the server is stretching…',
+        waking3: 'Taking a little longer today – free tier, you know 😄',
+        failedTitle: 'Server unavailable',
+        failedBody: "We couldn't wake the server. Please try again.",
+        retry: 'Try again',
       },
       appFeedback: {
         title: 'Feedback',
@@ -86,6 +90,8 @@ const resources = {
         members: 'Members',
         noMembers: 'No members yet.',
         removeMember: 'Remove member',
+        editName: 'Edit name',
+        save: 'Save',
         teamsLabel: 'Teams (optional)',
         noRoster: 'No members assigned yet.',
         addToTeam: 'Add',
@@ -94,6 +100,7 @@ const resources = {
         errorCreate: 'Error while creating',
         errorInvite: 'Error while inviting',
         errorRemove: 'Error while removing',
+        errorUpdate: 'Error while updating',
         errorAssign: 'Error while assigning',
       },
       superadmin: {
@@ -351,10 +358,6 @@ const resources = {
   },
   de: {
     pet: {
-      wakeup: {
-        title: 'Server wird gestartet…',
-        subtitle: 'Der Server wacht auf. Beim ersten Laden kann das bis zu einer Minute dauern.',
-      },
       nav: {
         tracking: 'Tracking',
         results: 'Ergebnisse',
@@ -364,6 +367,14 @@ const resources = {
         superAdmin: 'SuperAdmin',
         appFeedback: 'Feedback',
         logout: 'Abmelden',
+      },
+      serverWakeup: {
+        waking1: 'Der Server wacht gerade auf… ☕',
+        waking2: 'Gleich geschafft, der Server streckt sich noch…',
+        waking3: 'Dauert heute etwas länger – Free Tier eben 😄',
+        failedTitle: 'Server nicht erreichbar',
+        failedBody: 'Der Server konnte nicht geweckt werden. Bitte versuche es erneut.',
+        retry: 'Erneut versuchen',
       },
       appFeedback: {
         title: 'Feedback',
@@ -432,6 +443,8 @@ const resources = {
         members: 'Mitglieder',
         noMembers: 'Noch keine Mitglieder.',
         removeMember: 'Mitglied entfernen',
+        editName: 'Name bearbeiten',
+        save: 'Speichern',
         teamsLabel: 'Teams (optional)',
         noRoster: 'Noch keine Mitglieder zugewiesen.',
         addToTeam: 'Hinzufügen',
@@ -440,6 +453,7 @@ const resources = {
         errorCreate: 'Fehler beim Erstellen',
         errorInvite: 'Fehler beim Einladen',
         errorRemove: 'Fehler beim Entfernen',
+        errorUpdate: 'Fehler beim Aktualisieren',
         errorAssign: 'Fehler beim Zuweisen',
       },
       superadmin: {

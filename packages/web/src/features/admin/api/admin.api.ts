@@ -45,6 +45,9 @@ export const adminApi = {
   inviteMember: (email: string, role: UserRole, name: string | undefined, teamIds: string[] | undefined, accessToken: string) =>
     apiClient.post<Membership>('/admin/members', { email, role, name, teamIds }, accessToken),
 
+  updateMember: (membershipId: string, name: string, accessToken: string) =>
+    apiClient.patch<User>(`/admin/members/${membershipId}`, { name }, accessToken),
+
   removeMember: (membershipId: string, accessToken: string) =>
     apiClient.delete<void>(`/admin/members/${membershipId}`, accessToken),
 

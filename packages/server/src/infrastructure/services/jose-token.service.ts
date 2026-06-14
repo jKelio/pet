@@ -43,7 +43,9 @@ export class JoseTokenService implements TokenIssuer {
   }
 
   async verify(token: string): Promise<VerifiedToken> {
-    const { payload } = await jwtVerify<JwtPayload>(token, this.secretKey);
+    const { payload } = await jwtVerify<JwtPayload>(token, this.secretKey, {
+      algorithms: ['HS256'],
+    });
     return {
       userId: payload.sub!,
       email: payload.email,
