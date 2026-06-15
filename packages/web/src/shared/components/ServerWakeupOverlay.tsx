@@ -21,7 +21,7 @@ interface ServerWakeupOverlayProps {
  * Only renders for `waking`/`failed`; never for `checking`/`ready`.
  */
 export function ServerWakeupOverlay({ status, startedAt, onRetry }: ServerWakeupOverlayProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation('pet');
   const active = status === 'waking' || status === 'failed';
 
   const [mounted, setMounted] = useState(false); // present in the DOM
