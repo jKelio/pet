@@ -136,6 +136,41 @@ describe('createWakeupController', () => {
     expect(controller.getStatus()).toBe('ready');
   });
 
+  test('keeps only one probe in flight while a wake-through request hangs', async () => {
+    const clock = makeClock();
+    let inFlight = 0;
+    let maxInFlight = 0;
+    let calls = 0;
+
+    const controller = createWakeupController({
+      healthUrl: '/health',
+      // A probe that never settles, mimicking nginx holding the wake-through
+      // request open during a Render cold start.
+      fetcher: () =>
+        new Promise<boolean>(() => {
+          calls++;
+          inFlight++;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+        }),
+      intervalMs: 5_000,
+      timeoutMs: 90_000,
+      setTimer: clock.setTimer,
+      clearTimer: clock.clearTimer,
+    });
+
+    controller.start();
+    await flush();
+
+    // Advance well past many would-be poll intervals. Because the single probe
+    // never settles, no further requests may be fired (parallel pings are what
+    // trip Render's edge 429).
+    clock.advance(60_000);
+    await flush();
+
+    expect(calls).toBe(1);
+    expect(maxInFlight).toBe(1);
+  });
+
   test('stop() aborts the flow and ignores in-flight probe results', async () => {
     const clock = makeClock();
     let resolveProbe!: (ok: boolean) => void;

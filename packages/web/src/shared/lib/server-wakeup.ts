@@ -23,7 +23,7 @@ export interface WakeupConfig {
    * awake → go straight to `ready` and never reveal the overlay. Default 2000.
    */
   fastThresholdMs?: number;
-  /** Delay between poll attempts once the server is presumed cold. Default 5000. */
+  /** Backoff gap between sequential probes (applied after each one settles). Default 5000. */
   intervalMs?: number;
   /** Overall budget before giving up and reporting `failed`. Default 90000. */
   timeoutMs?: number;
@@ -102,10 +102,25 @@ export function createWakeupController(config: WakeupConfig): WakeupController {
     onStatusChange?.(next);
   }
 
-  function attempt(gen: number): void {
+  /**
+   * One probe in the wake-up loop. The next probe is scheduled only *after*
+   * this one settles, so there is never more than a single request in flight.
+   * Render's free-tier edge rejects parallel/rapid wakeup pings with HTTP 429
+   * before they even reach the cold-starting container, so single-flight
+   * probing (a long-lived "wake-through" request, then a backoff gap) is what
+   * keeps the wake-up gentle.
+   */
+  function probe(gen: number): void {
     if (gen !== generation || abort === null) return;
     void fetcher(healthUrl, abort.signal).then((ok) => {
-      if (gen === generation && ok) succeed();
+      if (gen !== generation) return;
+      if (ok) {
+        succeed();
+        return;
+      }
+      // Settled without success → wait the interval, then probe again. Only
+      // ever one request outstanding.
+      schedule(() => probe(gen), intervalMs);
     });
   }
 
@@ -125,12 +140,6 @@ export function createWakeupController(config: WakeupConfig): WakeupController {
     setStatus('failed');
   }
 
-  function poll(gen: number): void {
-    if (gen !== generation) return;
-    attempt(gen);
-    schedule(() => poll(gen), intervalMs);
-  }
-
   function start(): void {
     generation++;
     const gen = generation;
@@ -138,15 +147,16 @@ export function createWakeupController(config: WakeupConfig): WakeupController {
     abort = new AbortController();
     setStatus('checking');
 
-    // Fire the first probe immediately.
-    attempt(gen);
+    // Start the single-flight probe loop. The first probe doubles as the
+    // fast-path check: if the server is already awake it resolves before the
+    // fast window below and the overlay never appears.
+    probe(gen);
 
-    // If it hasn't answered within the fast window, treat the server as cold:
-    // reveal "waking" and begin polling.
+    // If we're still checking once the fast window elapses, the server was
+    // asleep — reveal the "waking" overlay. The probe loop is already running,
+    // so no extra request is fired here (that could trip an edge 429).
     schedule(() => {
-      if (gen !== generation) return;
-      if (status === 'checking') setStatus('waking');
-      poll(gen);
+      if (gen === generation && status === 'checking') setStatus('waking');
     }, fastThresholdMs);
 
     // Overall budget.
