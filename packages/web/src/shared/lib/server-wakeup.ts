@@ -46,10 +46,21 @@ export interface WakeupController {
 
 async function defaultFetcher(url: string, signal: AbortSignal): Promise<boolean> {
   try {
-    const res = await fetch(url, { method: 'GET', cache: 'no-store', signal });
-    return res.ok;
+    const res = await fetch(url, {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+      signal,
+    });
+    if (!res.ok) return false;
+    // Render's free-tier cold-start interstitial is served as HTML and can carry
+    // a 200 status — only the real backend answers with the `{ status: 'ok' }`
+    // health payload. Verifying the body prevents the overlay from closing while
+    // the app is still booting.
+    const data = (await res.json().catch(() => null)) as { status?: string } | null;
+    return data?.status === 'ok';
   } catch {
-    // Network error / aborted / connection refused → not reachable (yet).
+    // Network error / aborted / connection refused / non-JSON body → not reachable (yet).
     return false;
   }
 }

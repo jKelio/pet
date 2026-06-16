@@ -727,6 +727,9 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+    defaultNS: 'pet',                        // most keys live under 'pet'; a forgotten
+                                             // namespace falls back here instead of
+                                             // rendering raw keys like 'serverWakeup.waking1'
     // No `lng` — the detector picks from localStorage → browser, with the
     // guards below ensuring anything unknown safely lands on English.
     fallbackLng: 'en',                       // unknown language → English (no empty UI)
