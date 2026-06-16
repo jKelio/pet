@@ -65,17 +65,21 @@ async function defaultFetcher(url: string, signal: AbortSignal): Promise<ProbeRe
       headers: { Accept: 'application/json' },
       signal,
     });
-    // Render's edge returns 429 when it rate-limits cold-start wakeup pings.
-    // Signal this back so the controller can apply a longer backoff instead of
-    // immediately retrying (which would keep the sliding window open).
+    // Render's edge returns 429 when rate-limiting cold-start wakeup pings.
+    // Signal 'rate-limited' so the controller applies a long backoff and gives
+    // the sliding-window rate limit time to fully expire before retrying.
+    // In production nginx intercepts 429 and rewrites to 200 {"status":"rate-limited"},
+    // so check the body status field too.
     if (res.status === 429) return 'rate-limited';
     if (!res.ok) return 'not-ready';
-    // Render's free-tier cold-start interstitial is served as HTML and can carry
-    // a 200 status — only the real backend answers with the `{ status: 'ok' }`
-    // health payload. Verifying the body prevents the overlay from closing while
-    // the app is still booting.
+    // Render's free-tier cold-start interstitial can carry a 200 status (HTML) —
+    // only the real backend answers with {"status":"ok"}. nginx converts a backend
+    // 429 to {"status":"rate-limited"} so we can apply the longer backoff for that
+    // case too without the user ever seeing a raw "Too Many Requests" error.
     const data = (await res.json().catch(() => null)) as { status?: string } | null;
-    return data?.status === 'ok' ? 'ok' : 'not-ready';
+    if (data?.status === 'ok') return 'ok';
+    if (data?.status === 'rate-limited') return 'rate-limited';
+    return 'not-ready';
   } catch {
     // Network error / aborted / connection refused → not reachable (yet).
     return 'not-ready';

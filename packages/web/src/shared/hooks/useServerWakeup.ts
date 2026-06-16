@@ -10,12 +10,19 @@ import { markServerReady } from '../lib/server-ready.js';
 const HEALTH_URL = import.meta.env.VITE_HEALTH_URL ?? '/api/health';
 
 /**
- * Overall budget before the overlay gives up with `failed`. Render's free-tier
- * cold start usually takes 30–60 s but can run longer when the backend also
- * rebuilds; 150 s leaves comfortable headroom so a slow boot still resolves
- * before the user sees an error. Must stay ≤ the nginx proxy timeouts.
+ * Overall budget before the overlay gives up with `failed`. When Render's edge
+ * rate-limits simultaneous cold-start requests (HTTP 429), the controller backs
+ * off for 120 s per attempt. Allow enough total time for several 429 cycles to
+ * resolve — the sliding-window rate limit typically clears within one 120 s gap.
  */
-const WAKEUP_TIMEOUT_MS = 150_000;
+const WAKEUP_TIMEOUT_MS = 600_000; // 10 minutes
+
+/**
+ * Backoff after a 429 rate-limited response. Must exceed Render's sliding-window
+ * rate-limit window (empirically ~60 s) so the next probe lands outside the
+ * window and is not rejected again. 120 s gives a 2× safety margin.
+ */
+const RATE_LIMITED_INTERVAL_MS = 120_000;
 
 export interface ServerWakeup {
   status: WakeupStatus;
@@ -39,6 +46,7 @@ export function useServerWakeup(): ServerWakeup {
     const controller = createWakeupController({
       healthUrl: HEALTH_URL,
       timeoutMs: WAKEUP_TIMEOUT_MS,
+      rateLimitedIntervalMs: RATE_LIMITED_INTERVAL_MS,
       onStatusChange: (next) => {
         setStatus(next);
         if (next === 'ready') markServerReady();
