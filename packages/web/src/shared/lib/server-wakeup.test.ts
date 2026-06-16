@@ -198,29 +198,20 @@ describe('createWakeupController', () => {
 
   test('429 rate-limited response uses the longer backoff interval', async () => {
     const clock = makeClock();
-    const probeTimestamps: number[] = [];
-    let clockNow = 0;
     let result: ProbeResult = 'rate-limited';
-
-    // Intercept setTimer to track wall-clock time of each probe.
-    const clock2 = makeClock();
-    let innerNow = 0;
-
-    const calls: number[] = [];
     let callCount = 0;
 
     const controller = createWakeupController({
       healthUrl: '/health',
       fetcher: async () => {
         callCount++;
-        calls.push(callCount);
         return result;
       },
       intervalMs: 5_000,
       rateLimitedIntervalMs: 30_000,
       timeoutMs: 150_000,
-      setTimer: clock2.setTimer,
-      clearTimer: clock2.clearTimer,
+      setTimer: clock.setTimer,
+      clearTimer: clock.clearTimer,
     });
 
     controller.start();
@@ -229,18 +220,18 @@ describe('createWakeupController', () => {
     expect(callCount).toBe(1);
 
     // After a normal interval (5s) there should be no new probe yet.
-    clock2.advance(5_000);
+    clock.advance(5_000);
     await flush();
     expect(callCount).toBe(1);
 
     // Only after the rate-limited backoff (30s) does the next probe fire.
-    clock2.advance(25_000); // total 30s
+    clock.advance(25_000); // total 30s
     await flush();
     expect(callCount).toBe(2);
 
     // Now simulate server up — next probe after rate-limited backoff should succeed.
     result = 'ok';
-    clock2.advance(30_000);
+    clock.advance(30_000);
     await flush();
     expect(controller.getStatus()).toBe('ready');
   });
