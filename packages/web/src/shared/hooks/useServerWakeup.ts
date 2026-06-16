@@ -9,6 +9,21 @@ import { markServerReady } from '../lib/server-ready.js';
 /** Health endpoint, configurable per deployment. Defaults to the proxied API. */
 const HEALTH_URL = import.meta.env.VITE_HEALTH_URL ?? '/api/health';
 
+/**
+ * Overall budget before the overlay gives up with `failed`. When Render's edge
+ * rate-limits simultaneous cold-start requests (HTTP 429), the controller backs
+ * off for 120 s per attempt. Allow enough total time for several 429 cycles to
+ * resolve — the sliding-window rate limit typically clears within one 120 s gap.
+ */
+const WAKEUP_TIMEOUT_MS = 600_000; // 10 minutes
+
+/**
+ * Backoff after a 429 rate-limited response. Must exceed Render's sliding-window
+ * rate-limit window (empirically ~60 s) so the next probe lands outside the
+ * window and is not rejected again. 120 s gives a 2× safety margin.
+ */
+const RATE_LIMITED_INTERVAL_MS = 120_000;
+
 export interface ServerWakeup {
   status: WakeupStatus;
   /** Epoch ms when the current wake-up attempt began (for elapsed-time copy). */
@@ -30,6 +45,8 @@ export function useServerWakeup(): ServerWakeup {
   useEffect(() => {
     const controller = createWakeupController({
       healthUrl: HEALTH_URL,
+      timeoutMs: WAKEUP_TIMEOUT_MS,
+      rateLimitedIntervalMs: RATE_LIMITED_INTERVAL_MS,
       onStatusChange: (next) => {
         setStatus(next);
         if (next === 'ready') markServerReady();

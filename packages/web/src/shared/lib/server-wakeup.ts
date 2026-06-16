@@ -15,6 +15,9 @@ export type WakeupStatus = 'checking' | 'waking' | 'ready' | 'failed';
 
 export type TimerHandle = unknown;
 
+/** Result of a single health probe. */
+export type ProbeResult = 'ok' | 'not-ready' | 'rate-limited';
+
 export interface WakeupConfig {
   /** URL of the health endpoint to probe (e.g. `/api/health`). */
   healthUrl: string;
@@ -23,16 +26,26 @@ export interface WakeupConfig {
    * awake → go straight to `ready` and never reveal the overlay. Default 2000.
    */
   fastThresholdMs?: number;
-  /** Delay between poll attempts once the server is presumed cold. Default 5000. */
+  /** Backoff gap between sequential probes (applied after each one settles). Default 5000. */
   intervalMs?: number;
+  /**
+   * Backoff after a 429 rate-limited response. Must be long enough to let
+   * Render's sliding-window rate limit clear before the next attempt.
+   * Default 30000.
+   */
+  rateLimitedIntervalMs?: number;
   /** Overall budget before giving up and reporting `failed`. Default 90000. */
   timeoutMs?: number;
   /** Notified on every status transition. */
   onStatusChange?: (status: WakeupStatus) => void;
 
   // ── Injectable seams (default to the real environment) ──────────────────
-  /** Resolves `true` when the endpoint is reachable, `false` otherwise. */
-  fetcher?: (url: string, signal: AbortSignal) => Promise<boolean>;
+  /**
+   * Resolves 'ok' when the endpoint is reachable and healthy, 'rate-limited'
+   * when Render's edge rejects the request with HTTP 429, and 'not-ready'
+   * otherwise.
+   */
+  fetcher?: (url: string, signal: AbortSignal) => Promise<ProbeResult>;
   setTimer?: (fn: () => void, ms: number) => TimerHandle;
   clearTimer?: (handle: TimerHandle) => void;
 }
@@ -44,7 +57,7 @@ export interface WakeupController {
   getStatus(): WakeupStatus;
 }
 
-async function defaultFetcher(url: string, signal: AbortSignal): Promise<boolean> {
+async function defaultFetcher(url: string, signal: AbortSignal): Promise<ProbeResult> {
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -52,16 +65,24 @@ async function defaultFetcher(url: string, signal: AbortSignal): Promise<boolean
       headers: { Accept: 'application/json' },
       signal,
     });
-    if (!res.ok) return false;
-    // Render's free-tier cold-start interstitial is served as HTML and can carry
-    // a 200 status — only the real backend answers with the `{ status: 'ok' }`
-    // health payload. Verifying the body prevents the overlay from closing while
-    // the app is still booting.
+    // Render's edge returns 429 when rate-limiting cold-start wakeup pings.
+    // Signal 'rate-limited' so the controller applies a long backoff and gives
+    // the sliding-window rate limit time to fully expire before retrying.
+    // In production nginx intercepts 429 and rewrites to 200 {"status":"rate-limited"},
+    // so check the body status field too.
+    if (res.status === 429) return 'rate-limited';
+    if (!res.ok) return 'not-ready';
+    // Render's free-tier cold-start interstitial can carry a 200 status (HTML) —
+    // only the real backend answers with {"status":"ok"}. nginx converts a backend
+    // 429 to {"status":"rate-limited"} so we can apply the longer backoff for that
+    // case too without the user ever seeing a raw "Too Many Requests" error.
     const data = (await res.json().catch(() => null)) as { status?: string } | null;
-    return data?.status === 'ok';
+    if (data?.status === 'ok') return 'ok';
+    if (data?.status === 'rate-limited') return 'rate-limited';
+    return 'not-ready';
   } catch {
-    // Network error / aborted / connection refused / non-JSON body → not reachable (yet).
-    return false;
+    // Network error / aborted / connection refused → not reachable (yet).
+    return 'not-ready';
   }
 }
 
@@ -70,6 +91,7 @@ export function createWakeupController(config: WakeupConfig): WakeupController {
     healthUrl,
     fastThresholdMs = 2000,
     intervalMs = 5000,
+    rateLimitedIntervalMs = 30_000,
     timeoutMs = 90000,
     onStatusChange,
     fetcher = defaultFetcher,
@@ -102,16 +124,32 @@ export function createWakeupController(config: WakeupConfig): WakeupController {
     onStatusChange?.(next);
   }
 
-  function attempt(gen: number): void {
+  /**
+   * One probe in the wake-up loop. The next probe is scheduled only *after*
+   * this one settles, so there is never more than a single request in flight.
+   * Render's free-tier edge rejects parallel/rapid wakeup pings with HTTP 429
+   * before they even reach the cold-starting container.
+   *
+   * When a 429 is received the controller backs off for `rateLimitedIntervalMs`
+   * (default 30 s) instead of the normal `intervalMs` (5 s), giving Render's
+   * sliding-window rate limit time to clear before the next attempt.
+   */
+  function probe(gen: number): void {
     if (gen !== generation || abort === null) return;
-    void fetcher(healthUrl, abort.signal).then((ok) => {
-      if (gen === generation && ok) succeed();
+    void fetcher(healthUrl, abort.signal).then((result) => {
+      if (gen !== generation) return;
+      if (result === 'ok') {
+        succeed();
+        return;
+      }
+      const delay = result === 'rate-limited' ? rateLimitedIntervalMs : intervalMs;
+      schedule(() => probe(gen), delay);
     });
   }
 
   function succeed(): void {
     if (status === 'ready') return;
-    generation++; // freeze further attempts/timers
+    generation++;
     clearAllTimers();
     abort?.abort();
     setStatus('ready');
@@ -125,12 +163,6 @@ export function createWakeupController(config: WakeupConfig): WakeupController {
     setStatus('failed');
   }
 
-  function poll(gen: number): void {
-    if (gen !== generation) return;
-    attempt(gen);
-    schedule(() => poll(gen), intervalMs);
-  }
-
   function start(): void {
     generation++;
     const gen = generation;
@@ -138,15 +170,16 @@ export function createWakeupController(config: WakeupConfig): WakeupController {
     abort = new AbortController();
     setStatus('checking');
 
-    // Fire the first probe immediately.
-    attempt(gen);
+    // Start the single-flight probe loop. The first probe doubles as the
+    // fast-path check: if the server is already awake it resolves before the
+    // fast window below and the overlay never appears.
+    probe(gen);
 
-    // If it hasn't answered within the fast window, treat the server as cold:
-    // reveal "waking" and begin polling.
+    // If we're still checking once the fast window elapses, the server was
+    // asleep — reveal the "waking" overlay. The probe loop is already running,
+    // so no extra request is fired here (that could trip an edge 429).
     schedule(() => {
-      if (gen !== generation) return;
-      if (status === 'checking') setStatus('waking');
-      poll(gen);
+      if (gen === generation && status === 'checking') setStatus('waking');
     }, fastThresholdMs);
 
     // Overall budget.
