@@ -15,6 +15,9 @@ export type WakeupStatus = 'checking' | 'waking' | 'ready' | 'failed';
 
 export type TimerHandle = unknown;
 
+/** Result of a single health probe. */
+export type ProbeResult = 'ok' | 'not-ready' | 'rate-limited';
+
 export interface WakeupConfig {
   /** URL of the health endpoint to probe (e.g. `/api/health`). */
   healthUrl: string;
@@ -25,14 +28,24 @@ export interface WakeupConfig {
   fastThresholdMs?: number;
   /** Backoff gap between sequential probes (applied after each one settles). Default 5000. */
   intervalMs?: number;
+  /**
+   * Backoff after a 429 rate-limited response. Must be long enough to let
+   * Render's sliding-window rate limit clear before the next attempt.
+   * Default 30000.
+   */
+  rateLimitedIntervalMs?: number;
   /** Overall budget before giving up and reporting `failed`. Default 90000. */
   timeoutMs?: number;
   /** Notified on every status transition. */
   onStatusChange?: (status: WakeupStatus) => void;
 
   // ── Injectable seams (default to the real environment) ──────────────────
-  /** Resolves `true` when the endpoint is reachable, `false` otherwise. */
-  fetcher?: (url: string, signal: AbortSignal) => Promise<boolean>;
+  /**
+   * Resolves 'ok' when the endpoint is reachable and healthy, 'rate-limited'
+   * when Render's edge rejects the request with HTTP 429, and 'not-ready'
+   * otherwise.
+   */
+  fetcher?: (url: string, signal: AbortSignal) => Promise<ProbeResult>;
   setTimer?: (fn: () => void, ms: number) => TimerHandle;
   clearTimer?: (handle: TimerHandle) => void;
 }
@@ -44,7 +57,7 @@ export interface WakeupController {
   getStatus(): WakeupStatus;
 }
 
-async function defaultFetcher(url: string, signal: AbortSignal): Promise<boolean> {
+async function defaultFetcher(url: string, signal: AbortSignal): Promise<ProbeResult> {
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -52,16 +65,20 @@ async function defaultFetcher(url: string, signal: AbortSignal): Promise<boolean
       headers: { Accept: 'application/json' },
       signal,
     });
-    if (!res.ok) return false;
+    // Render's edge returns 429 when it rate-limits cold-start wakeup pings.
+    // Signal this back so the controller can apply a longer backoff instead of
+    // immediately retrying (which would keep the sliding window open).
+    if (res.status === 429) return 'rate-limited';
+    if (!res.ok) return 'not-ready';
     // Render's free-tier cold-start interstitial is served as HTML and can carry
     // a 200 status — only the real backend answers with the `{ status: 'ok' }`
     // health payload. Verifying the body prevents the overlay from closing while
     // the app is still booting.
     const data = (await res.json().catch(() => null)) as { status?: string } | null;
-    return data?.status === 'ok';
+    return data?.status === 'ok' ? 'ok' : 'not-ready';
   } catch {
-    // Network error / aborted / connection refused / non-JSON body → not reachable (yet).
-    return false;
+    // Network error / aborted / connection refused → not reachable (yet).
+    return 'not-ready';
   }
 }
 
@@ -70,6 +87,7 @@ export function createWakeupController(config: WakeupConfig): WakeupController {
     healthUrl,
     fastThresholdMs = 2000,
     intervalMs = 5000,
+    rateLimitedIntervalMs = 30_000,
     timeoutMs = 90000,
     onStatusChange,
     fetcher = defaultFetcher,
@@ -106,27 +124,28 @@ export function createWakeupController(config: WakeupConfig): WakeupController {
    * One probe in the wake-up loop. The next probe is scheduled only *after*
    * this one settles, so there is never more than a single request in flight.
    * Render's free-tier edge rejects parallel/rapid wakeup pings with HTTP 429
-   * before they even reach the cold-starting container, so single-flight
-   * probing (a long-lived "wake-through" request, then a backoff gap) is what
-   * keeps the wake-up gentle.
+   * before they even reach the cold-starting container.
+   *
+   * When a 429 is received the controller backs off for `rateLimitedIntervalMs`
+   * (default 30 s) instead of the normal `intervalMs` (5 s), giving Render's
+   * sliding-window rate limit time to clear before the next attempt.
    */
   function probe(gen: number): void {
     if (gen !== generation || abort === null) return;
-    void fetcher(healthUrl, abort.signal).then((ok) => {
+    void fetcher(healthUrl, abort.signal).then((result) => {
       if (gen !== generation) return;
-      if (ok) {
+      if (result === 'ok') {
         succeed();
         return;
       }
-      // Settled without success → wait the interval, then probe again. Only
-      // ever one request outstanding.
-      schedule(() => probe(gen), intervalMs);
+      const delay = result === 'rate-limited' ? rateLimitedIntervalMs : intervalMs;
+      schedule(() => probe(gen), delay);
     });
   }
 
   function succeed(): void {
     if (status === 'ready') return;
-    generation++; // freeze further attempts/timers
+    generation++;
     clearAllTimers();
     abort?.abort();
     setStatus('ready');

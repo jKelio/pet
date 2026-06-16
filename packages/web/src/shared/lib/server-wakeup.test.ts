@@ -1,5 +1,10 @@
 import { describe, test, expect } from 'bun:test';
-import { createWakeupController, type WakeupStatus, type TimerHandle } from './server-wakeup.js';
+import {
+  createWakeupController,
+  type WakeupStatus,
+  type TimerHandle,
+  type ProbeResult,
+} from './server-wakeup.js';
 
 /**
  * Deterministic clock + scheduler so the retry/timeout logic can be driven
@@ -49,7 +54,7 @@ describe('createWakeupController', () => {
 
     const controller = createWakeupController({
       healthUrl: '/health',
-      fetcher: async () => true, // server already awake
+      fetcher: async () => 'ok',
       setTimer: clock.setTimer,
       clearTimer: clock.clearTimer,
       onStatusChange: (s) => transitions.push(s),
@@ -64,11 +69,11 @@ describe('createWakeupController', () => {
 
   test('cold server reveals "waking" after the fast threshold, then becomes ready', async () => {
     const clock = makeClock();
-    let reachable = false;
+    let result: ProbeResult = 'not-ready';
 
     const controller = createWakeupController({
       healthUrl: '/health',
-      fetcher: async () => reachable,
+      fetcher: async () => result,
       setTimer: clock.setTimer,
       clearTimer: clock.clearTimer,
     });
@@ -83,7 +88,7 @@ describe('createWakeupController', () => {
     expect(controller.getStatus()).toBe('waking');
 
     // Backend boots; the next 5s poll succeeds.
-    reachable = true;
+    result = 'ok';
     clock.advance(5000);
     await flush();
     expect(controller.getStatus()).toBe('ready');
@@ -94,7 +99,7 @@ describe('createWakeupController', () => {
 
     const controller = createWakeupController({
       healthUrl: '/health',
-      fetcher: async () => false, // never reachable
+      fetcher: async () => 'not-ready',
       timeoutMs: 90_000,
       setTimer: clock.setTimer,
       clearTimer: clock.clearTimer,
@@ -114,11 +119,11 @@ describe('createWakeupController', () => {
 
   test('retry() restarts the flow and can recover after a failure', async () => {
     const clock = makeClock();
-    let reachable = false;
+    let result: ProbeResult = 'not-ready';
 
     const controller = createWakeupController({
       healthUrl: '/health',
-      fetcher: async () => reachable,
+      fetcher: async () => result,
       timeoutMs: 90_000,
       setTimer: clock.setTimer,
       clearTimer: clock.clearTimer,
@@ -130,10 +135,30 @@ describe('createWakeupController', () => {
     expect(controller.getStatus()).toBe('failed');
 
     // User taps "retry"; server is up now.
-    reachable = true;
+    result = 'ok';
     controller.retry();
     await flush();
     expect(controller.getStatus()).toBe('ready');
+  });
+
+  test('stop() aborts the flow and ignores in-flight probe results', async () => {
+    const clock = makeClock();
+    let resolveProbe!: (r: ProbeResult) => void;
+
+    const controller = createWakeupController({
+      healthUrl: '/health',
+      fetcher: () => new Promise<ProbeResult>((resolve) => { resolveProbe = resolve; }),
+      setTimer: clock.setTimer,
+      clearTimer: clock.clearTimer,
+    });
+
+    controller.start();
+    controller.stop();
+
+    // A late success from the aborted attempt must not flip status to ready.
+    resolveProbe('ok');
+    await flush();
+    expect(controller.getStatus()).not.toBe('ready');
   });
 
   test('keeps only one probe in flight while a wake-through request hangs', async () => {
@@ -147,7 +172,7 @@ describe('createWakeupController', () => {
       // A probe that never settles, mimicking nginx holding the wake-through
       // request open during a Render cold start.
       fetcher: () =>
-        new Promise<boolean>(() => {
+        new Promise<ProbeResult>(() => {
           calls++;
           inFlight++;
           maxInFlight = Math.max(maxInFlight, inFlight);
@@ -171,23 +196,52 @@ describe('createWakeupController', () => {
     expect(maxInFlight).toBe(1);
   });
 
-  test('stop() aborts the flow and ignores in-flight probe results', async () => {
+  test('429 rate-limited response uses the longer backoff interval', async () => {
     const clock = makeClock();
-    let resolveProbe!: (ok: boolean) => void;
+    const probeTimestamps: number[] = [];
+    let clockNow = 0;
+    let result: ProbeResult = 'rate-limited';
+
+    // Intercept setTimer to track wall-clock time of each probe.
+    const clock2 = makeClock();
+    let innerNow = 0;
+
+    const calls: number[] = [];
+    let callCount = 0;
 
     const controller = createWakeupController({
       healthUrl: '/health',
-      fetcher: () => new Promise<boolean>((resolve) => { resolveProbe = resolve; }),
-      setTimer: clock.setTimer,
-      clearTimer: clock.clearTimer,
+      fetcher: async () => {
+        callCount++;
+        calls.push(callCount);
+        return result;
+      },
+      intervalMs: 5_000,
+      rateLimitedIntervalMs: 30_000,
+      timeoutMs: 150_000,
+      setTimer: clock2.setTimer,
+      clearTimer: clock2.clearTimer,
     });
 
     controller.start();
-    controller.stop();
+    await flush(); // first probe fires immediately, gets rate-limited
 
-    // A late success from the aborted attempt must not flip status to ready.
-    resolveProbe(true);
+    expect(callCount).toBe(1);
+
+    // After a normal interval (5s) there should be no new probe yet.
+    clock2.advance(5_000);
     await flush();
-    expect(controller.getStatus()).not.toBe('ready');
+    expect(callCount).toBe(1);
+
+    // Only after the rate-limited backoff (30s) does the next probe fire.
+    clock2.advance(25_000); // total 30s
+    await flush();
+    expect(callCount).toBe(2);
+
+    // Now simulate server up — next probe after rate-limited backoff should succeed.
+    result = 'ok';
+    clock2.advance(30_000);
+    await flush();
+    expect(controller.getStatus()).toBe('ready');
   });
 });
