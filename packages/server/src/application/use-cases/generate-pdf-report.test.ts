@@ -24,6 +24,48 @@ const MODEL: PdfReportModel = {
   ],
 };
 
+// Same shape plus the optional chart-ready fields the Results page mirrors.
+const MODEL_WITH_CHARTS: PdfReportModel = {
+  ...MODEL,
+  drillTimeData: [
+    { name: 'Drill 1', totalTime: 60_000, color: '#0088FE' },
+    { name: 'Drill 2', totalTime: 90_000, color: '#FF8042' },
+    { name: 'Gap', totalTime: 30_000, color: '#808080' },
+  ],
+  drillOverview: {
+    totalDuration: 180_000,
+    drills: [
+      { drillNumber: 1, label: 'Drill 1', startOffset: 0, endOffset: 60_000, duration: 60_000, color: '#0088FE' },
+      { drillNumber: 2, label: 'Drill 2', startOffset: 70_000, endOffset: 160_000, duration: 90_000, color: '#FF8042' },
+    ],
+  },
+  drills: [
+    {
+      drillNumber: 1,
+      tags: ['drill'],
+      timers: [{ label: 'with Puck', segments: 2, totalTime: 60_000 }],
+      counters: [{ label: 'Passes', count: 5 }],
+      timeByAction: [
+        { label: 'Explanation', totalTime: 30_000, color: '#0088FE' },
+        { label: 'Time moving', totalTime: 60_000, color: '#A28BFE' },
+      ],
+      timeline: {
+        totalDuration: 90_000,
+        segments: [
+          { label: 'Explanation', startOffset: 0, endOffset: 30_000, color: '#0088FE' },
+          { label: 'Time moving with Puck', startOffset: 30_000, endOffset: 90_000, color: '#A28BFE' },
+        ],
+        counterEvents: [{ label: 'Passes', timestamp: 45_000, color: '#4CAF50' }],
+        actionLabels: [
+          { label: 'Explanation', color: '#0088FE' },
+          { label: 'Time moving with Puck', color: '#A28BFE' },
+          { label: 'Passes', color: '#4CAF50' },
+        ],
+      },
+    },
+  ],
+};
+
 const CTX = { userId: 'user-1', tenantId: 'tenant-1' };
 
 function makeMembershipRepo(isMember = true): MembershipRepository {
@@ -65,6 +107,15 @@ describe('GeneratePdfReportUseCase', () => {
     expect(buffer.subarray(0, 5).toString('latin1')).toBe('%PDF-');
     expect(buffer.length).toBeGreaterThan(500);
     expect(ledger.recordExport).toHaveBeenCalledTimes(1);
+  });
+
+  test('renders a PDF with the chart sections (overview, pie/bar, per-drill timeline)', async () => {
+    const buffer = await renderer.render(MODEL_WITH_CHARTS);
+    expect(buffer.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    // The extra SVG charts produce a meaningfully larger document than the
+    // table-only model.
+    const tableOnly = await renderer.render(MODEL);
+    expect(buffer.length).toBeGreaterThan(tableOnly.length);
   });
 
   test('non-members are refused before any render', async () => {

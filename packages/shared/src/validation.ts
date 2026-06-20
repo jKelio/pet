@@ -134,11 +134,76 @@ const PdfCounterRowSchema = z.object({
   count: z.number().int().nonnegative(),
 });
 
+// Chart-ready data mirroring the on-screen Results charts. All fields are
+// optional so older/empty sessions still validate; the server skips any chart
+// whose data is missing. Colors are resolved client-side (hex strings).
+const HexColorSchema = z.string().max(9);
+
+// "Zeit pro Drill" pie + bar: one slice per drill plus an optional gap slice.
+const PdfDrillTimeSliceSchema = z.object({
+  name: z.string().max(120),
+  totalTime: z.number().int().nonnegative(),
+  color: HexColorSchema,
+});
+
+// Drill-overview Gantt: when each drill ran across the session.
+const PdfDrillOverviewSchema = z.object({
+  totalDuration: z.number().int().nonnegative().optional(),
+  drills: z
+    .array(
+      z.object({
+        drillNumber: z.number().int().positive(),
+        label: z.string().max(120),
+        startOffset: z.number().int().nonnegative(),
+        endOffset: z.number().int().nonnegative(),
+        duration: z.number().int().nonnegative(),
+        color: HexColorSchema,
+      }),
+    )
+    .max(60),
+});
+
+// Per-drill "Zeit pro Aktion" pie + bar slice.
+const PdfActionTimeSliceSchema = z.object({
+  label: z.string().max(120),
+  totalTime: z.number().int().nonnegative(),
+  color: HexColorSchema,
+});
+
+// Per-drill action Gantt timeline.
+const PdfDrillTimelineSchema = z.object({
+  totalDuration: z.number().int().nonnegative(),
+  segments: z
+    .array(
+      z.object({
+        label: z.string().max(120),
+        startOffset: z.number().int().nonnegative(),
+        endOffset: z.number().int().nonnegative(),
+        color: HexColorSchema,
+      }),
+    )
+    .max(500),
+  counterEvents: z
+    .array(
+      z.object({
+        label: z.string().max(120),
+        timestamp: z.number().int().nonnegative(),
+        color: HexColorSchema,
+      }),
+    )
+    .max(500),
+  actionLabels: z
+    .array(z.object({ label: z.string().max(120), color: HexColorSchema }))
+    .max(40),
+});
+
 const PdfDrillSectionSchema = z.object({
   drillNumber: z.number().int().positive(),
   tags: z.array(z.string().max(60)).max(20),
   timers: z.array(PdfTimerRowSchema).max(40),
   counters: z.array(PdfCounterRowSchema).max(40),
+  timeByAction: z.array(PdfActionTimeSliceSchema).max(40).optional(),
+  timeline: PdfDrillTimelineSchema.optional(),
 });
 
 export const PdfReportSchema = z.object({
@@ -161,6 +226,8 @@ export const PdfReportSchema = z.object({
   overallTimers: z.array(PdfTimerRowSchema).max(40),
   overallCounters: z.array(PdfCounterRowSchema).max(40),
   drills: z.array(PdfDrillSectionSchema).max(60),
+  drillTimeData: z.array(PdfDrillTimeSliceSchema).max(60).optional(),
+  drillOverview: PdfDrillOverviewSchema.optional(),
 });
 
 // ─── Recommendation Schemas ───────────────────────────────────────────────────
