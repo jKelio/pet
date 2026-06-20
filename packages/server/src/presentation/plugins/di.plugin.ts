@@ -27,6 +27,7 @@ import { RemoveTeamMemberUseCase } from '../../application/use-cases/remove-team
 import { SuperAdminListTenantsUseCase } from '../../application/use-cases/superadmin-list-tenants.js';
 import { SuperAdminDeleteTenantUseCase } from '../../application/use-cases/superadmin-delete-tenant.js';
 import { SuperAdminAddClubAdminUseCase } from '../../application/use-cases/superadmin-add-club-admin.js';
+import { SuperAdminSetPlanUseCase } from '../../application/use-cases/superadmin-set-plan.js';
 import { GetMyTenantsUseCase } from '../../application/use-cases/get-my-tenants.js';
 import { SwitchTenantUseCase } from '../../application/use-cases/switch-tenant.js';
 import { ListSourcesUseCase } from '../../application/use-cases/list-sources.js';
@@ -37,6 +38,11 @@ import { GenerateRecommendationUseCase } from '../../application/use-cases/gener
 import { GetRecommendationUseCase } from '../../application/use-cases/get-recommendation.js';
 import { PgSourceRepository } from '../../infrastructure/repositories/pg-source.repository.js';
 import { PgRecommendationRepository } from '../../infrastructure/repositories/pg-recommendation.repository.js';
+import { PgUsageRepository } from '../../infrastructure/repositories/pg-usage.repository.js';
+import { PgPdfExportRepository } from '../../infrastructure/repositories/pg-pdf-export.repository.js';
+import { ReactPdfRenderer } from '../../infrastructure/services/react-pdf.renderer.js';
+import { EntitlementService } from '../../application/services/entitlement.service.js';
+import { GeneratePdfReportUseCase } from '../../application/use-cases/generate-pdf-report.js';
 import { GeminiRecommendationGenerator } from '../../infrastructure/services/gemini-recommendation.generator.js';
 import { NoOpRecommendationGenerator } from '../../infrastructure/services/noop-recommendation.generator.js';
 
@@ -82,6 +88,7 @@ declare module 'fastify' {
       superAdminListTenants: SuperAdminListTenantsUseCase;
       superAdminDeleteTenant: SuperAdminDeleteTenantUseCase;
       superAdminAddClubAdmin: SuperAdminAddClubAdminUseCase;
+      superAdminSetPlan: SuperAdminSetPlanUseCase;
       getMyTenants: GetMyTenantsUseCase;
       switchTenant: SwitchTenantUseCase;
       listSources: ListSourcesUseCase;
@@ -90,6 +97,7 @@ declare module 'fastify' {
       deleteSource: DeleteSourceUseCase;
       generateRecommendation: GenerateRecommendationUseCase;
       getRecommendation: GetRecommendationUseCase;
+      generatePdfReport: GeneratePdfReportUseCase;
     };
     repos: {
       session: PgSessionRepository;
@@ -100,6 +108,9 @@ declare module 'fastify' {
     };
     tokenService: JoseTokenService;
     geminiEnabled: boolean;
+    services: {
+      entitlement: EntitlementService;
+    };
   }
 }
 
@@ -122,6 +133,12 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const tenantRepository = new PgTenantRepository(db);
   const sourceRepository = new PgSourceRepository(db);
   const recommendationRepository = new PgRecommendationRepository(db);
+  const usageRepository = new PgUsageRepository(db);
+  const pdfExportRepository = new PgPdfExportRepository(db);
+
+  // Services
+  const entitlementService = new EntitlementService({ tenantRepository, usageRepository });
+  const pdfRenderer = new ReactPdfRenderer();
 
   // Use Cases
   const sendMagicLink = new SendMagicLinkUseCase({
@@ -142,6 +159,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const syncSession = new SyncSessionUseCase({
     sessionRepository,
     membershipRepository,
+    entitlementService,
   });
 
   const deleteSession = new DeleteSessionUseCase({
@@ -164,6 +182,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     tenantRepository,
     teamRepository,
     membershipRepository,
+    entitlementService,
     superAdminEmails: config.superAdminEmails,
   });
 
@@ -176,6 +195,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const createTeam = new CreateTeamUseCase({
     teamRepository,
     membershipRepository,
+    entitlementService,
   });
 
   const refreshSession = new RefreshSessionUseCase({
@@ -187,6 +207,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const superAdminListTenants = new SuperAdminListTenantsUseCase({ tenantRepository });
   const superAdminDeleteTenant = new SuperAdminDeleteTenantUseCase({ tenantRepository });
   const superAdminAddClubAdmin = new SuperAdminAddClubAdminUseCase({ userRepository, membershipRepository, tenantRepository });
+  const superAdminSetPlan = new SuperAdminSetPlanUseCase({ tenantRepository });
   const getMyTenants = new GetMyTenantsUseCase({ membershipRepository, tenantRepository });
   const switchTenant = new SwitchTenantUseCase({ userRepository, membershipRepository, tokenIssuer: tokenService });
 
@@ -197,6 +218,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     tenantRepository,
     emailSender,
     authService,
+    entitlementService,
     appBaseUrl: config.appBaseUrl,
   });
   const removeMember = new RemoveMemberUseCase({ membershipRepository });
@@ -221,10 +243,17 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     sessionRepository,
     membershipRepository,
   });
+  const generatePdfReport = new GeneratePdfReportUseCase({
+    membershipRepository,
+    pdfExportRepository,
+    pdfRenderer,
+    entitlementService,
+  });
 
   fastify.decorate('config', config);
   fastify.decorate('geminiEnabled', !!config.geminiApiKey);
   fastify.decorate('tokenService', tokenService);
+  fastify.decorate('services', { entitlement: entitlementService });
   fastify.decorate('useCases', {
     sendMagicLink,
     verifyMagicLink,
@@ -245,6 +274,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     superAdminListTenants,
     superAdminDeleteTenant,
     superAdminAddClubAdmin,
+    superAdminSetPlan,
     getMyTenants,
     switchTenant,
     listSources,
@@ -253,6 +283,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     deleteSource,
     generateRecommendation,
     getRecommendation,
+    generatePdfReport,
   });
   fastify.decorate('repos', {
     session: sessionRepository,

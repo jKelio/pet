@@ -45,13 +45,19 @@ _Avoid_: Saved Session (use in code only), finished session.
 **Pending Sync (Outbox)**:
 The set of Completed Sessions not yet transferred to the backend. The local `db.sessions` table *is* this outbox — it holds only sessions awaiting sync. Surfaced to the coach in the "Pending — not synced" section of the History view.
 _Avoid_: queue, unsynced backlog.
+_Note_: applies only where [[Cloud Sync]] is possible. On the [[free]] [[Plan]] sync is disabled, so sessions are not framed as a draining "pending" backlog — the UI presents them as local-only with an upgrade prompt, not as awaiting sync.
+
+**Cloud Sync**:
+The act of transferring a [[Completed Session]] to the backend. A metered [[Entitlement]] ([[Plan Limit]]: **0 on `free`** — disabled entirely — 10/month on `pro`, unlimited on `premium`), counted per distinct session per month. On `free` the sync action is disabled in the UI (with an upgrade prompt) and refused server-side; nothing a free club tracks ever leaves the device.
+_Avoid_: upload, backup (use "Cloud Sync" / "sync" as the verb).
 
 **Synced Session**:
-A Completed Session that has been transferred to the backend. On a successful sync the local copy is **deleted** (delete-on-sync), so a Synced Session lives only in the cloud and is re-viewed via the History list.
+A Completed Session that has been transferred to the backend via [[Cloud Sync]]. On a successful sync the local copy is **deleted** (delete-on-sync), so a Synced Session lives only in the cloud and is re-viewed via the History list. After a downgrade to `free`, a club's Synced Sessions are not deleted but become [[Locked]] until re-upgrade.
 _Avoid_: uploaded session.
 
 **Local-Only Session**:
-A Completed Session the coach has explicitly marked as **not for the cloud** — typically a foreign/scouting team from another club, which has no registered Team to sync to. Marked via a checkbox at tracking time so it is never auto-synced; it stays in the local outbox under a "Local only" section (re-viewable, PDF-exportable) until deleted. Distinct from [[Pending Sync (Outbox)]], which *is* awaiting sync.
+A Completed Session the coach has explicitly marked as **not for the cloud** — typically a foreign/scouting team from another club, which has no registered Team to sync to. Marked via a checkbox at tracking time so it is never auto-synced; it stays in the local outbox under a "Local only" section (re-viewable, and still exportable as a [[PDF Report]]) until deleted. Distinct from [[Pending Sync (Outbox)]], which *is* awaiting sync.
+_Note_: a [[PDF Report]] for a Local-Only Session is produced by posting its data to the server render endpoint (it never needs to sync), and is metered like any other Report (it counts against the monthly [[PDF Report]] allowance — 2/month on [[free]]). AI [[Recommendation]]s remain unavailable for Local-Only Sessions (they are synced-only).
 _Avoid_: draft, offline session.
 
 ### Multi-tenant admin
@@ -133,7 +139,43 @@ _Avoid_: source repository, link library.
 
 **Recommendation**:
 A structured AI-generated document analysing a [[Synced Session]] against one or more [[Source]]s. Belongs to the `sessions:read` domain — generating a Recommendation is an act of evaluation, not on-ice tracking. Exactly one active Recommendation per Session; re-generating overwrites the previous one.
-_Avoid_: analysis, report, AI summary (use `recommendation` in code).
+_Note_: *generating* a Recommendation is a boolean gated action requiring a [[pro]] or [[premium]] [[Plan]] (in addition to the synced-session and Role checks); it has no monthly quota beyond the existing rate limit. Reading an already-generated Recommendation is not gated.
+_Avoid_: analysis, report, AI summary (use `recommendation` in code) — note "report" specifically denotes the [[PDF Report]], a different artifact.
+
+### Plans & entitlements
+
+**Plan**:
+The subscription tier of a [[Tenant]]. One of `free`, `pro`, `premium`. Tenant-wide — every [[Membership]] in the club inherits it; it is not per-Member or per-[[Team]]. A Plan is a bundle of [[Plan Limit]]s (the quota matrix) plus boolean feature access. Source of truth is a field on the Tenant; a payment provider may set it later, but enforcement does not depend on one.
+_Avoid_: subscription (reserved for the eventual billing object), package, level.
+
+**free**:
+The trial [[Plan]]. A **single, fully-local** club: 1 [[Membership]] (who is the [[club_admin]]), 1 [[Team]], **no [[Cloud Sync]] at all**, 2 [[PDF Report]]s per month, no AI [[Recommendation]]. Tracking and on-screen results are unlimited. Because nothing syncs, a free club's sessions live only in the device's IndexedDB — the only server-side footprint is the account (Tenant + the one Membership), kept for login, the plan flag, and the upgrade path.
+_Avoid_: trial, starter, lite.
+
+**pro**:
+The standard paid [[Plan]] — aimed at ordinary small clubs. Up to 5 [[Membership]]s, up to 10 [[Team]]s, **10 synced sessions per month** ([[Cloud Sync]]), unlimited [[PDF Report]]s, AI [[Recommendation]] generation.
+_Avoid_: standard, basic, paid tier.
+
+**premium**:
+The top [[Plan]] — aimed at large clubs and national/regional federations (National-/Landesverbände). **Unlimited** [[Membership]]s, [[Team]]s, [[Cloud Sync]], and [[PDF Report]]s, plus AI [[Recommendation]] generation. ∞ on every metered dimension, so no bespoke per-tenant deals are needed.
+_Avoid_: enterprise, unlimited (use `premium` in code and UI copy).
+
+**Plan Limit**:
+A numeric cap a [[Plan]] places on one dimension. Two kinds: a **capacity limit** (an absolute ceiling on a current count — [[Membership]]s/seats, [[Team]]s) and a **consumption limit** (a per-calendar-month allowance that resets — [[Cloud Sync]]s, [[PDF Report]]s). All limits live in one fixed `PLAN_LIMITS` matrix in `@pet/shared` (no per-tenant overrides); `∞` means uncapped. Consumption is pooled **tenant-wide** and metered **per distinct session** (re-syncing or re-exporting the same session in the same month is free).
+_Avoid_: quota (informal use only), cap, allowance.
+
+**Entitlement**:
+The right, derived from a club's [[Plan]], to perform a gated action — either boolean (`ai:generate`) or quota-bounded ([[Cloud Sync]], [[PDF Report]]). Enforced **server-side** (the UI is never the wall); a denied action yields `403 UPGRADE_REQUIRED` (plan too low) or `429`/`403 QUOTA_EXCEEDED` (monthly allowance spent). The resolved Plan, limits, and current usage are surfaced to the client via the profile so the app can show counters and prompt an upgrade rather than fail blindly.
+_Avoid_: permission (reserved for [[Role]]-based access), licence, feature flag.
+_Note_: distinct from [[Role]]. Role answers "what may this person do in the club"; Entitlement answers "what has the club paid for, and how much is left this month". Both must pass — e.g. an [[analyst]] in a `free` club may *read* a [[Recommendation]] but neither role nor plan lets them generate one.
+
+**Locked**:
+The state of data that a club retains but cannot currently access because a [[Plan]] downgrade put it over a [[Plan Limit]] — over-cap [[Team]]s/[[Membership]]s, and **all** cloud sessions once on `free`. Downgrades are **non-destructive**: Locked data is hidden behind an "upgrade to restore" prompt and fully restored on re-upgrade; nothing is ever deleted. New creation over a cap is blocked, but existing rows are never removed.
+_Avoid_: suspended, archived, disabled.
+
+**PDF Report**:
+The PDF document of a session's results, generated **server-side** from session data and returned to the coach. A metered [[Entitlement]] ([[Plan Limit]]: 2/month on `free`, unlimited on `pro`/`premium`), counted per distinct session per month. Rendered statelessly from posted session data (nothing is stored), so it works for any session — including a [[Local-Only Session]] or any free-tier local session — without needing a sync. Distinct from the always-free **on-screen results** (the charts/tables view), which is not a Report.
+_Avoid_: export, printout, PDF export (use "PDF Report" / "Report" for the artifact; "export" is the verb only).
 
 ### Support / meta
 

@@ -1,16 +1,20 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
+import { SetPlanSchema } from '@pet/shared';
 import type { SuperAdminListTenantsUseCase } from '../../application/use-cases/superadmin-list-tenants.js';
 import type { SuperAdminDeleteTenantUseCase } from '../../application/use-cases/superadmin-delete-tenant.js';
 import { NotFoundError as DeleteNotFoundError } from '../../application/use-cases/superadmin-delete-tenant.js';
 import type { SuperAdminAddClubAdminUseCase } from '../../application/use-cases/superadmin-add-club-admin.js';
 import { NotFoundError as AddNotFoundError, ConflictError } from '../../application/use-cases/superadmin-add-club-admin.js';
+import type { SuperAdminSetPlanUseCase } from '../../application/use-cases/superadmin-set-plan.js';
+import { NotFoundError as PlanNotFoundError } from '../../application/use-cases/superadmin-set-plan.js';
 import type { OnboardTenantUseCase } from '../../application/use-cases/onboard-tenant.js';
 
 interface SuperAdminRoutesDeps {
   listTenants: SuperAdminListTenantsUseCase;
   deleteTenant: SuperAdminDeleteTenantUseCase;
   addClubAdmin: SuperAdminAddClubAdminUseCase;
+  setPlan: SuperAdminSetPlanUseCase;
   onboardTenant: OnboardTenantUseCase;
 }
 
@@ -56,6 +60,24 @@ export function registerSuperAdminRoutes(fastify: FastifyInstance, deps: SuperAd
       return reply.code(204).send();
     } catch (err) {
       if (err instanceof DeleteNotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: err.message, statusCode: 404 });
+      }
+      throw err;
+    }
+  });
+
+  // PATCH /superadmin/tenants/:id/plan — set a tenant's subscription plan
+  fastify.patch('/superadmin/tenants/:id/plan', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const result = SetPlanSchema.safeParse(request.body);
+    if (!result.success) {
+      return reply.code(400).send({ code: 'VALIDATION_ERROR', message: result.error.issues[0].message, statusCode: 400 });
+    }
+    try {
+      const tenant = await deps.setPlan.execute(id, result.data.plan);
+      return reply.send(tenant);
+    } catch (err) {
+      if (err instanceof PlanNotFoundError) {
         return reply.code(404).send({ code: 'NOT_FOUND', message: err.message, statusCode: 404 });
       }
       throw err;

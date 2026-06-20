@@ -6,6 +6,7 @@ import type { GetSessionUseCase } from '../../application/use-cases/get-session.
 import { SyncSessionSchema } from '@pet/shared';
 import { UnauthorizedError } from '../../application/use-cases/sync-session.js';
 import { ForbiddenError, NotFoundError } from '../../application/use-cases/delete-session.js';
+import { isEntitlementError } from '../../application/services/entitlement.service.js';
 
 interface SessionRoutesDeps {
   syncSession: SyncSessionUseCase;
@@ -49,6 +50,9 @@ export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRou
     } catch (error) {
       if (error instanceof UnauthorizedError) {
         return reply.code(403).send({ code: 'FORBIDDEN', message: error.message, statusCode: 403 });
+      }
+      if (isEntitlementError(error)) {
+        return reply.code(error.statusCode).send({ code: error.code, message: error.message, statusCode: error.statusCode });
       }
       throw error;
     }

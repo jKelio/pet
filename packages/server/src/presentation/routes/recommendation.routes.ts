@@ -4,10 +4,13 @@ import type { GenerateRecommendationUseCase } from '../../application/use-cases/
 import type { GetRecommendationUseCase } from '../../application/use-cases/get-recommendation.js';
 import { RecommendationForbiddenError, RecommendationNotFoundError } from '../../application/use-cases/get-recommendation.js';
 import { RecommendationGenerationError } from '../../infrastructure/services/gemini-recommendation.generator.js';
+import type { EntitlementService } from '../../application/services/entitlement.service.js';
+import { isEntitlementError } from '../../application/services/entitlement.service.js';
 
 interface RecommendationRoutesDeps {
   generateRecommendation: GenerateRecommendationUseCase;
   getRecommendation: GetRecommendationUseCase;
+  entitlement: EntitlementService;
   geminiEnabled: boolean;
 }
 
@@ -53,6 +56,18 @@ export function registerRecommendationRoutes(fastify: FastifyInstance, deps: Rec
     if (!result.success) {
       const issue = result.error.issues[0];
       return reply.code(400).send({ code: 'VALIDATION_ERROR', message: issue.message, statusCode: 400 });
+    }
+
+    // Paywall: AI analysis requires a Pro/Premium plan. Checked before the SSE
+    // stream opens so a blocked tenant gets a real HTTP status (and upsell),
+    // not an in-stream error event.
+    try {
+      await deps.entitlement.assertCanUseAi(tenantId);
+    } catch (error) {
+      if (isEntitlementError(error)) {
+        return reply.code(error.statusCode).send({ code: error.code, message: error.message, statusCode: error.statusCode });
+      }
+      throw error;
     }
 
     const language = result.data.language;

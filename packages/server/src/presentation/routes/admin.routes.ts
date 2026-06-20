@@ -32,6 +32,7 @@ import {
   NotFoundError as RosterNotFoundError,
 } from '../../application/use-cases/remove-team-member.js';
 import type { TeamRepository } from '../../domain/ports/user.repository.js';
+import { isEntitlementError } from '../../application/services/entitlement.service.js';
 
 const OnboardSchema = z.object({
   tenantName: z.string().trim().min(1).max(100),
@@ -101,6 +102,9 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
       if (err instanceof ForbiddenError) {
         return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
       }
+      if (isEntitlementError(err)) {
+        return reply.code(err.statusCode).send({ code: err.code, message: err.message, statusCode: err.statusCode });
+      }
       throw err;
     }
   });
@@ -158,6 +162,9 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
       }
       if (err instanceof ConflictError) {
         return reply.code(409).send({ code: 'CONFLICT', message: err.message, statusCode: 409 });
+      }
+      if (isEntitlementError(err)) {
+        return reply.code(err.statusCode).send({ code: err.code, message: err.message, statusCode: err.statusCode });
       }
       throw err;
     }

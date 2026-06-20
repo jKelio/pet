@@ -1,6 +1,7 @@
 import type { UserRepository, MembershipRepository, TenantRepository } from '../../domain/ports/user.repository.js';
 import type { EmailSender } from '../../domain/ports/email.sender.js';
 import { AuthService } from '../../domain/services/auth.service.js';
+import type { EntitlementService } from '../services/entitlement.service.js';
 import type { Membership, UserRole } from '@pet/shared';
 
 export interface InviteMemberDeps {
@@ -9,6 +10,7 @@ export interface InviteMemberDeps {
   tenantRepository: TenantRepository;
   emailSender: EmailSender;
   authService: AuthService;
+  entitlementService: EntitlementService;
   appBaseUrl: string;
 }
 
@@ -69,6 +71,9 @@ export class InviteMemberUseCase {
     if (existing) {
       throw new ConflictError('User is already a member of this tenant');
     }
+
+    // A genuinely new member consumes a seat — enforce the plan's seat limit.
+    await this.deps.entitlementService.assertCanInviteMember(tenantId);
 
     const membership: Membership = {
       id: crypto.randomUUID(),

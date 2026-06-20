@@ -1,5 +1,6 @@
 import { describe, test, expect, mock } from 'bun:test';
 import { SyncSessionUseCase, UnauthorizedError } from './sync-session.js';
+import { UpgradeRequiredError, type EntitlementService } from '../services/entitlement.service.js';
 import type { SessionRepository } from '../../domain/ports/session.repository.js';
 import type { MembershipRepository } from '../../domain/ports/user.repository.js';
 import type { SyncSessionInput, UserRole } from '@pet/shared';
@@ -47,6 +48,14 @@ function makeSessionRepo(existing: null = null): SessionRepository {
   } as unknown as SessionRepository;
 }
 
+function makeEntitlement(allow = true): EntitlementService {
+  return {
+    assertCanSync: mock(async () => {
+      if (!allow) throw new UpgradeRequiredError('Cloud sync requires a Pro or Premium plan.', 'sync');
+    }),
+  } as unknown as EntitlementService;
+}
+
 describe('SyncSessionUseCase', () => {
   test('saves and returns the session when user is a member of the team', async () => {
     const membershipRepo = makeMembershipRepo({
@@ -54,7 +63,7 @@ describe('SyncSessionUseCase', () => {
       teamIds: ['team-1'],
     });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
 
     const result = await useCase.execute(SESSION_INPUT, CTX);
 
@@ -69,7 +78,7 @@ describe('SyncSessionUseCase', () => {
   test('throws UnauthorizedError when user is not a tenant member', async () => {
     const membershipRepo = makeMembershipRepo({ membership: null, teamIds: [] });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
 
     expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
   });
@@ -80,7 +89,7 @@ describe('SyncSessionUseCase', () => {
       teamIds: ['team-99'], // different team
     });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
 
     expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
   });
@@ -91,7 +100,7 @@ describe('SyncSessionUseCase', () => {
       teamIds: ['team-1'],
     });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
 
     expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
     expect(sessionRepo.save).not.toHaveBeenCalled();
@@ -103,7 +112,7 @@ describe('SyncSessionUseCase', () => {
       teamIds: [], // not on any roster
     });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
 
     const result = await useCase.execute(SESSION_INPUT, CTX);
 
@@ -135,9 +144,60 @@ describe('SyncSessionUseCase', () => {
       findByTeam: mock(async () => []),
     } as unknown as SessionRepository;
 
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
     const result = await useCase.execute(SESSION_INPUT, CTX);
 
     expect(result.createdAt).toBe(existingCreatedAt);
+  });
+
+  test('blocks a NEW session sync when entitlement denies it', async () => {
+    const membershipRepo = makeMembershipRepo({
+      membership: { id: 'mem-1', userId: 'user-1', role: 'coach' },
+      teamIds: ['team-1'],
+    });
+    const sessionRepo = makeSessionRepo();
+    const useCase = new SyncSessionUseCase({
+      sessionRepository: sessionRepo,
+      membershipRepository: membershipRepo,
+      entitlementService: makeEntitlement(false),
+    });
+
+    expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UpgradeRequiredError);
+    expect(sessionRepo.save).not.toHaveBeenCalled();
+  });
+
+  test('re-syncing an existing session bypasses the entitlement check (idempotent)', async () => {
+    const membershipRepo = makeMembershipRepo({
+      membership: { id: 'mem-1', userId: 'user-1', role: 'coach' },
+      teamIds: ['team-1'],
+    });
+    const sessionRepo = {
+      findById: mock(async () => ({
+        id: 'session-1',
+        tenantId: 'tenant-1',
+        teamId: 'team-1',
+        createdBy: 'user-1',
+        practiceInfo: SESSION_INPUT.practiceInfo,
+        drills: [],
+        status: 'completed' as const,
+        createdAt: '2026-01-01T10:00:00.000Z',
+        updatedAt: '2026-01-01T10:00:00.000Z',
+      })),
+      save: mock(async () => {}),
+      findByTeam: mock(async () => []),
+    } as unknown as SessionRepository;
+    // Entitlement denies, but the session already exists → must still succeed.
+    const entitlement = makeEntitlement(false);
+    const useCase = new SyncSessionUseCase({
+      sessionRepository: sessionRepo,
+      membershipRepository: membershipRepo,
+      entitlementService: entitlement,
+    });
+
+    const result = await useCase.execute(SESSION_INPUT, CTX);
+
+    expect(result.id).toBe('session-1');
+    expect(sessionRepo.save).toHaveBeenCalledTimes(1);
+    expect(entitlement.assertCanSync).not.toHaveBeenCalled();
   });
 });

@@ -13,6 +13,7 @@ import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerSuperAdminRoutes } from './routes/superadmin.routes.js';
 import { registerSourceRoutes } from './routes/source.routes.js';
 import { registerRecommendationRoutes } from './routes/recommendation.routes.js';
+import { registerPdfRoutes } from './routes/pdf.routes.js';
 
 function getConfig() {
   const required = ['DATABASE_URL', 'JWT_SECRET', 'APP_BASE_URL', 'SMTP_FROM'];
@@ -135,6 +136,7 @@ async function build() {
       listTenants: fastify.useCases.superAdminListTenants,
       deleteTenant: fastify.useCases.superAdminDeleteTenant,
       addClubAdmin: fastify.useCases.superAdminAddClubAdmin,
+      setPlan: fastify.useCases.superAdminSetPlan,
       onboardTenant: fastify.useCases.onboardTenant,
     });
   });
@@ -152,7 +154,14 @@ async function build() {
     registerRecommendationRoutes(scope, {
       generateRecommendation: fastify.useCases.generateRecommendation,
       getRecommendation: fastify.useCases.getRecommendation,
+      entitlement: fastify.services.entitlement,
       geminiEnabled: fastify.geminiEnabled,
+    });
+  });
+
+  await fastify.register(async (scope) => {
+    registerPdfRoutes(scope, {
+      generatePdfReport: fastify.useCases.generatePdfReport,
     });
   });
 

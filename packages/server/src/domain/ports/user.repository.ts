@@ -1,4 +1,4 @@
-import type { User, Membership, Team, Tenant } from '@pet/shared';
+import type { User, Membership, Team, Tenant, TenantPlan } from '@pet/shared';
 
 export interface UserRepository {
   findById(id: string): Promise<User | null>;
@@ -19,6 +19,8 @@ export interface TenantRepository {
   findBySlug(slug: string): Promise<Tenant | null>;
   findAll(): Promise<Tenant[]>;
   save(tenant: Tenant): Promise<void>;
+  /** Set a tenant's subscription plan. Returns the updated tenant, or null if it does not exist. */
+  updatePlan(id: string, plan: TenantPlan): Promise<Tenant | null>;
   delete(id: string): Promise<void>;
 }
 
