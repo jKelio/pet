@@ -44,6 +44,7 @@ import { DrillOverviewTimeline } from './components/DrillOverviewTimeline.js';
 import { RecommendationPanel } from '../recommendations/components/RecommendationPanel.js';
 import { pdfApi } from './api/pdf.api.js';
 import { buildPdfReportModel } from './lib/buildPdfReportModel.js';
+import { toServerSessionId } from './lib/serverSessionId.js';
 import { ApiClientError } from '../../shared/lib/api-client.js';
 
 const DRILL_COLORS = [
@@ -213,7 +214,7 @@ export function ResultsPage() {
 
     try {
       const model = buildPdfReportModel({
-        sessionId: savedIdRef.current,
+        sessionId: toServerSessionId(savedIdRef.current),
         drills: localDrills,
         practiceInfo: localPracticeInfo,
         t,
@@ -298,7 +299,7 @@ export function ResultsPage() {
             )}
             {accessToken && (synced || viewOnly) && !localOnly && (
               <RecommendationPanel
-                sessionId={savedIdRef.current}
+                sessionId={toServerSessionId(savedIdRef.current)}
                 accessToken={accessToken}
                 disabled={entitlements ? !entitlements.ai.allowed : false}
                 disabledReason={entitlements && !entitlements.ai.allowed ? t('results.aiUpgradeHint') : undefined}
@@ -306,7 +307,7 @@ export function ResultsPage() {
             )}
             {accessToken && !synced && !viewOnly && !localOnly && (
               <RecommendationPanel
-                sessionId={savedIdRef.current}
+                sessionId={toServerSessionId(savedIdRef.current)}
                 accessToken={accessToken}
                 disabled
                 disabledReason={t('results.analyseNotSynced')}
