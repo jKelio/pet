@@ -46,11 +46,7 @@ import { pdfApi } from './api/pdf.api.js';
 import { buildPdfReportModel } from './lib/buildPdfReportModel.js';
 import { toServerSessionId } from './lib/serverSessionId.js';
 import { ApiClientError } from '../../shared/lib/api-client.js';
-
-const DRILL_COLORS = [
-  '#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE',
-  '#FF6699', '#33CC99', '#FF6666', '#66B3FF', '#FFCC99',
-];
+import { DRILL_COLORS } from '@pet/shared';
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);

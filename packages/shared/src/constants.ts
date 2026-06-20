@@ -57,6 +57,15 @@ export const ACTION_COLORS: Record<string, string> = {
   passes: '#4CAF50',
 };
 
+/**
+ * Per-drill color palette for charts (pie/bar/timeline). Cycled by drill index;
+ * also used as the fallback for action colors not present in ACTION_COLORS.
+ */
+export const DRILL_COLORS = [
+  '#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE',
+  '#FF6699', '#33CC99', '#FF6666', '#66B3FF', '#FFCC99',
+] as const;
+
 /** Subscription plans, low to high tier. Single source for the TenantPlan type and validation. */
 export const TENANT_PLANS = ['free', 'pro', 'premium'] as const;
 

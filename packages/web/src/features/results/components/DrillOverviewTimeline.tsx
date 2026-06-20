@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { DRILL_COLORS } from '@pet/shared';
 import { type DrillDuration, formatRelativeTime } from '../lib/ganttUtils.js';
 
 interface Props {
@@ -6,10 +7,6 @@ interface Props {
   totalDuration?: number;
 }
 
-const DRILL_COLORS = [
-  '#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE',
-  '#FF6699', '#33CC99', '#FF6666', '#66B3FF', '#FFCC99',
-];
 const ROW_HEIGHT = 40;
 const LABEL_WIDTH = 120;
 const PADDING = { top: 10, right: 20, bottom: 35, left: 10 };
