@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Team, Tenant, Membership, User, UserRole } from '@pet/shared';
+import type { Team, Tenant, Membership, User, UserRole, EntitlementSnapshot } from '@pet/shared';
 import { adminApi, type MemberWithUser } from '../api/admin.api.js';
 import { useAuthStore } from '../../auth/stores/auth.store.js';
 import i18n from '../../../lib/i18n.js';
@@ -14,6 +14,7 @@ interface AdminState {
   tenant: Tenant | null;
   teams: Team[];
   members: MemberWithUser[];
+  entitlements: EntitlementSnapshot | null;
   isSuperAdmin: boolean;
   loading: boolean;
   /** True once loadProfile has resolved at least once (success or failure). */
@@ -40,6 +41,7 @@ export const useAdminStore = create<AdminState>()(
       tenant: null,
       teams: [],
       members: [],
+      entitlements: null,
       isSuperAdmin: false,
       loading: false,
       loaded: false,
@@ -54,6 +56,7 @@ export const useAdminStore = create<AdminState>()(
             membership: profile.membership,
             tenant: profile.tenant,
             teams: profile.teams,
+            entitlements: profile.entitlements,
             isSuperAdmin: profile.isSuperAdmin,
             loading: false,
             loaded: true,
@@ -185,7 +188,7 @@ export const useAdminStore = create<AdminState>()(
       },
 
       reset: () =>
-        set({ user: null, membership: null, tenant: null, teams: [], members: [], isSuperAdmin: false, loading: false, loaded: false, error: null }),
+        set({ user: null, membership: null, tenant: null, teams: [], members: [], entitlements: null, isSuperAdmin: false, loading: false, loaded: false, error: null }),
     }),
     {
       name: 'pet-admin',

@@ -1,5 +1,5 @@
 import { apiClient } from '../../../shared/lib/api-client.js';
-import type { Tenant, Membership } from '@pet/shared';
+import type { Tenant, Membership, TenantPlan } from '@pet/shared';
 
 export interface CreateTenantInput {
   tenantName: string;
@@ -19,4 +19,7 @@ export const superAdminApi = {
 
   addClubAdmin: (tenantId: string, email: string, accessToken: string) =>
     apiClient.post<Membership>(`/superadmin/tenants/${tenantId}/admins`, { email }, accessToken),
+
+  setPlan: (tenantId: string, plan: TenantPlan, accessToken: string) =>
+    apiClient.patch<Tenant>(`/superadmin/tenants/${tenantId}/plan`, { plan }, accessToken),
 };

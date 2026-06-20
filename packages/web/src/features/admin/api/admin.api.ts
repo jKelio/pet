@@ -1,11 +1,12 @@
 import { apiClient } from '../../../shared/lib/api-client.js';
-import type { Team, Tenant, Membership, User, UserRole } from '@pet/shared';
+import type { Team, Tenant, Membership, User, UserRole, EntitlementSnapshot } from '@pet/shared';
 
 export interface MyProfile {
   user: User;
   membership: Membership | null;
   tenant: Tenant | null;
   teams: Team[];
+  entitlements: EntitlementSnapshot | null;
   isSuperAdmin: boolean;
 }
 

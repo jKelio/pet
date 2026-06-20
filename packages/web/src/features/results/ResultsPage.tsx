@@ -13,8 +13,6 @@ import {
   YAxis,
   ResponsiveContainer,
 } from 'recharts';
-import { domToPng } from 'modern-screenshot';
-import jsPDF from 'jspdf';
 import {
   ArrowLeft,
   RotateCcw,
@@ -44,6 +42,9 @@ import {
 import { ActionTimeline } from './components/ActionTimeline.js';
 import { DrillOverviewTimeline } from './components/DrillOverviewTimeline.js';
 import { RecommendationPanel } from '../recommendations/components/RecommendationPanel.js';
+import { pdfApi } from './api/pdf.api.js';
+import { buildPdfReportModel } from './lib/buildPdfReportModel.js';
+import { ApiClientError } from '../../shared/lib/api-client.js';
 
 const DRILL_COLORS = [
   '#0088FE', '#FF8042', '#00C49F', '#FFBB28', '#A28BFE',
@@ -60,13 +61,13 @@ function formatDuration(ms: number): string {
 }
 
 export function ResultsPage() {
-  const { t } = useTranslation('pet');
+  const { t, i18n } = useTranslation('pet');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const viewOnly = searchParams.get('view') === '1';
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [exportStatus, setExportStatus] = useState('');
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   // Freeze display data on first render so resetting the store doesn't clear the UI
   const [localSessionId] = useState(() => useTrackingStore.getState().sessionId);
@@ -82,6 +83,7 @@ export function ResultsPage() {
 
   const teams = useAdminStore((s) => s.teams);
   const membership = useAdminStore((s) => s.membership);
+  const entitlements = useAdminStore((s) => s.entitlements);
   const loadProfile = useAdminStore((s) => s.loadProfile);
 
   const [synced, setSynced] = useState(false);
@@ -198,67 +200,43 @@ export function ResultsPage() {
 
   // ── PDF export ────────────────────────────────────────────────────────────
 
+  // PDF is rendered server-side (gated + metered per plan). Re-downloading a
+  // session already exported this month is free. See ADR 0008/0009.
   const exportToPdf = async () => {
-    if (!exportRef.current || isExporting) return;
+    if (isExporting) return;
+    if (!accessToken) {
+      setPdfError(t('results.pdfNeedsAccount'));
+      return;
+    }
     setIsExporting(true);
+    setPdfError(null);
 
     try {
-      const container = exportRef.current;
-      const savedStyle = container.getAttribute('style') ?? '';
-      container.style.cssText =
-        'position:fixed;left:0;top:0;z-index:-9999;opacity:1;width:800px;overflow:visible';
-
-      await new Promise((r) => setTimeout(r, 300));
-
-      const sections = container.querySelectorAll<HTMLElement>('.pdf-section');
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm' });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const margin = 10;
-      const usableW = pdfW - 2 * margin;
-      const usableH = pdf.internal.pageSize.getHeight() - 2 * margin;
-      let currentY = 0;
-      let first = true;
-
-      for (let i = 0; i < sections.length; i++) {
-        setExportStatus(t('results.exportSection', { current: i + 1, total: sections.length }));
-        try {
-          const dataUrl = await domToPng(sections[i], {
-            scale: 2,
-            quality: 0.92,
-            backgroundColor: '#ffffff',
-          });
-          const img = new Image();
-          await new Promise<void>((res, rej) => {
-            img.onload = () => res();
-            img.onerror = rej;
-            img.src = dataUrl;
-          });
-          const scaledH = (img.height * usableW) / img.width;
-          if (!first && currentY + scaledH > usableH) {
-            pdf.addPage();
-            currentY = 0;
-          }
-          pdf.addImage(dataUrl, 'PNG', margin, margin + currentY, usableW, scaledH);
-          currentY += scaledH + 5;
-          first = false;
-        } catch {
-          // Skip failed section
-        }
-      }
-
-      container.setAttribute('style', savedStyle);
-
+      const model = buildPdfReportModel({
+        sessionId: savedIdRef.current,
+        drills: localDrills,
+        practiceInfo: localPracticeInfo,
+        t,
+        language: i18n.language,
+      });
+      const blob = await pdfApi.generate(model, accessToken);
       const date = new Date().toISOString().split('T')[0];
-      const blob = pdf.output('blob');
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `training-${date}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
+      // Refresh entitlements so the remaining-export hint updates.
+      loadProfile(accessToken);
+    } catch (err) {
+      if (err instanceof ApiClientError && (err.code === 'QUOTA_EXCEEDED' || err.code === 'UPGRADE_REQUIRED')) {
+        setPdfError(t('results.pdfQuotaReached'));
+      } else {
+        setPdfError(err instanceof Error ? err.message : t('results.exportError'));
+      }
     } finally {
       setIsExporting(false);
-      setExportStatus('');
     }
   };
 
@@ -295,23 +273,35 @@ export function ResultsPage() {
                 <Download className="h-4 w-4" />
               )}
               <span className="ml-1.5 hidden sm:inline">
-                {isExporting ? exportStatus || t('results.exporting') : t('results.pdfExport')}
+                {isExporting ? t('results.exporting') : t('results.pdfExport')}
+                {!isExporting && typeof entitlements?.pdf.remaining === 'number'
+                  ? ` (${entitlements.pdf.remaining})`
+                  : ''}
               </span>
             </Button>
             {accessToken && !viewOnly && !synced && !localOnly && (
-              <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
-                {syncing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
+              entitlements?.sync.limit === 0 ? (
+                <Button variant="outline" size="sm" disabled title={t('results.syncUpgradeHint')}>
                   <Cloud className="h-4 w-4" />
-                )}
-                <span className="ml-1.5 hidden sm:inline">{t('sessions.syncToCloud')}</span>
-              </Button>
+                  <span className="ml-1.5 hidden sm:inline">{t('results.syncUpgrade')}</span>
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
+                  {syncing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Cloud className="h-4 w-4" />
+                  )}
+                  <span className="ml-1.5 hidden sm:inline">{t('sessions.syncToCloud')}</span>
+                </Button>
+              )
             )}
             {accessToken && (synced || viewOnly) && !localOnly && (
               <RecommendationPanel
                 sessionId={savedIdRef.current}
                 accessToken={accessToken}
+                disabled={entitlements ? !entitlements.ai.allowed : false}
+                disabledReason={entitlements && !entitlements.ai.allowed ? t('results.aiUpgradeHint') : undefined}
               />
             )}
             {accessToken && !synced && !viewOnly && !localOnly && (
@@ -343,6 +333,11 @@ export function ResultsPage() {
         {syncError && (
           <p className="px-6 pb-3 text-xs text-destructive">
             {t('sessions.errorPrefix')}: {syncError}
+          </p>
+        )}
+        {pdfError && (
+          <p className="px-6 pb-3 text-xs text-destructive">
+            {t('sessions.errorPrefix')}: {pdfError}
           </p>
         )}
       </div>

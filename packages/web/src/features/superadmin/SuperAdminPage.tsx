@@ -8,7 +8,7 @@ import { Label } from '../../shared/components/ui/label.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { superAdminApi, type CreateTenantInput } from './api/superadmin.api.js';
 import { ApiClientError } from '../../shared/lib/api-client.js';
-import type { Tenant } from '@pet/shared';
+import { TENANT_PLANS, type Tenant, type TenantPlan } from '@pet/shared';
 
 export function SuperAdminPage() {
   const { t } = useTranslation('pet');
@@ -61,6 +61,17 @@ export function SuperAdminPage() {
       setTenants((prev) => prev.filter((tnt) => tnt.id !== tenantId));
     } catch (err) {
       setError(err instanceof Error ? err.message : t('superadmin.errorDelete'));
+    }
+  };
+
+  const handleSetPlan = async (tenantId: string, plan: TenantPlan) => {
+    if (!accessToken) return;
+    setError(null);
+    try {
+      const updated = await superAdminApi.setPlan(tenantId, plan, accessToken);
+      setTenants((prev) => prev.map((tnt) => (tnt.id === tenantId ? updated : tnt)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('superadmin.errorSetPlan'));
     }
   };
 
@@ -175,6 +186,23 @@ export function SuperAdminPage() {
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
+              </div>
+
+              {/* Plan switcher */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground mr-1">{t('superadmin.planLabel')}</span>
+                {TENANT_PLANS.map((plan) => (
+                  <Button
+                    key={plan}
+                    size="sm"
+                    variant={tenant.plan === plan ? 'default' : 'outline'}
+                    className="h-7 px-2.5 text-xs capitalize"
+                    onClick={() => handleSetPlan(tenant.id, plan)}
+                    disabled={tenant.plan === plan}
+                  >
+                    {plan}
+                  </Button>
+                ))}
               </div>
 
               {/* Add club admin */}
