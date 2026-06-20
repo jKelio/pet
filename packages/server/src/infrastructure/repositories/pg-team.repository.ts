@@ -2,7 +2,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import type { DbClient } from '../db/client.js';
 import { tenants, teams } from '../db/schema.js';
 import type { TenantRepository, TeamRepository } from '../../domain/ports/user.repository.js';
-import type { Tenant, Team } from '@pet/shared';
+import type { Tenant, Team, TenantPlan } from '@pet/shared';
 
 export class PgTeamRepository implements TeamRepository {
   constructor(private readonly db: DbClient) {}
@@ -61,6 +61,15 @@ export class PgTenantRepository implements TenantRepository {
       .insert(tenants)
       .values({ id: tenant.id, name: tenant.name, slug: tenant.slug, plan: tenant.plan })
       .onConflictDoUpdate({ target: tenants.id, set: { name: tenant.name, slug: tenant.slug } });
+  }
+
+  async updatePlan(id: string, plan: TenantPlan): Promise<Tenant | null> {
+    const [row] = await this.db
+      .update(tenants)
+      .set({ plan })
+      .where(eq(tenants.id, id))
+      .returning();
+    return row ? this.toTenant(row) : null;
   }
 
   async delete(id: string): Promise<void> {

@@ -6,7 +6,7 @@ import { sql } from 'drizzle-orm';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export const tenantPlanEnum = pgEnum('tenant_plan', ['free', 'pro', 'enterprise']);
+export const tenantPlanEnum = pgEnum('tenant_plan', ['free', 'pro', 'premium']);
 export const userRoleEnum = pgEnum('user_role', ['club_admin', 'coach', 'analyst']);
 export const sessionStatusEnum = pgEnum('session_status', ['draft', 'in_progress', 'completed']);
 
@@ -117,6 +117,27 @@ export const sources = pgTable('sources', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('sources_tenant_id_idx').on(t.tenantId),
+]);
+
+// ─── PDF Export Ledger ────────────────────────────────────────────────────────
+// Records which distinct sessions a tenant exported as a PDF Report in a given
+// calendar month. Used to dedupe (re-downloads are free) and to enforce the
+// monthly PDF Report allowance. The rendered PDF itself is never stored.
+// See docs/adr/0008 and docs/adr/0009.
+
+export const pdfExports = pgTable('pdf_exports', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  /** Session the Report was rendered for. Not an FK: free/local sessions never exist server-side. */
+  sessionId: uuid('session_id').notNull(),
+  /** Calendar month bucket, `YYYY-MM` (UTC), the unit the monthly allowance resets on. */
+  period: text('period').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  // One row per distinct session per month → idempotent metering.
+  uniqueIndex('pdf_exports_tenant_session_period_unique').on(t.tenantId, t.sessionId, t.period),
+  // Count usage for a tenant within a period.
+  index('pdf_exports_tenant_period_idx').on(t.tenantId, t.period),
 ]);
 
 // ─── Session Recommendations ──────────────────────────────────────────────────

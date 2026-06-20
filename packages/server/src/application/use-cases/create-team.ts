@@ -1,9 +1,11 @@
 import type { TeamRepository, MembershipRepository } from '../../domain/ports/user.repository.js';
 import type { Team } from '@pet/shared';
+import type { EntitlementService } from '../services/entitlement.service.js';
 
 export interface CreateTeamDeps {
   teamRepository: TeamRepository;
   membershipRepository: MembershipRepository;
+  entitlementService: EntitlementService;
 }
 
 export class ForbiddenError extends Error {
@@ -22,6 +24,9 @@ export class CreateTeamUseCase {
     if (!membership || membership.role !== 'club_admin') {
       throw new ForbiddenError('Only club admins can create teams');
     }
+
+    // Enforce the plan's team limit before creating another team.
+    await this.deps.entitlementService.assertCanCreateTeam(tenantId);
 
     const team: Team = {
       id: crypto.randomUUID(),

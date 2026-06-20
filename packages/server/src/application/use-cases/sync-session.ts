@@ -4,9 +4,12 @@ import type { PracticeSession } from '@pet/shared';
 import type { SyncSessionInput } from '@pet/shared';
 import { hasPermission } from '@pet/shared';
 
+import type { EntitlementService } from '../services/entitlement.service.js';
+
 export interface SyncSessionDeps {
   sessionRepository: SessionRepository;
   membershipRepository: MembershipRepository;
+  entitlementService: EntitlementService;
 }
 
 export interface SyncSessionContext {
@@ -40,8 +43,15 @@ export class SyncSessionUseCase {
       }
     }
 
-    const now = new Date().toISOString();
     const existing = await this.deps.sessionRepository.findById(input.id, ctx.tenantId);
+
+    // Re-syncing an already-stored session is free (idempotent metering); only a
+    // brand-new session consumes the tenant's monthly Cloud Sync allowance.
+    if (!existing) {
+      await this.deps.entitlementService.assertCanSync(ctx.tenantId);
+    }
+
+    const now = new Date().toISOString();
 
     const session: PracticeSession = {
       id: input.id,

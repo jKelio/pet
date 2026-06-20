@@ -4,13 +4,15 @@ import type {
   TeamRepository,
   MembershipRepository,
 } from '../../domain/ports/user.repository.js';
-import type { User, Membership, Tenant, Team } from '@pet/shared';
+import type { User, Membership, Tenant, Team, EntitlementSnapshot } from '@pet/shared';
+import type { EntitlementService } from '../services/entitlement.service.js';
 
 export interface GetMyProfileDeps {
   userRepository: UserRepository;
   tenantRepository: TenantRepository;
   teamRepository: TeamRepository;
   membershipRepository: MembershipRepository;
+  entitlementService: EntitlementService;
   superAdminEmails: string[];
 }
 
@@ -19,6 +21,8 @@ export interface MyProfile {
   membership: Membership | null;
   tenant: Tenant | null;
   teams: Team[];
+  /** Resolved plan limits + current usage for the active tenant; null when no tenant. */
+  entitlements: EntitlementSnapshot | null;
   isSuperAdmin: boolean;
 }
 
@@ -36,7 +40,7 @@ export class GetMyProfileUseCase {
     const isSuperAdmin = this.superAdminAllowlist.has(user.email.toLowerCase());
 
     if (!tenantId) {
-      return { user, membership: null, tenant: null, teams: [], isSuperAdmin };
+      return { user, membership: null, tenant: null, teams: [], entitlements: null, isSuperAdmin };
     }
 
     const [membership, tenant] = await Promise.all([
@@ -45,7 +49,7 @@ export class GetMyProfileUseCase {
     ]);
 
     if (!membership || !tenant) {
-      return { user, membership: null, tenant: null, teams: [], isSuperAdmin };
+      return { user, membership: null, tenant: null, teams: [], entitlements: null, isSuperAdmin };
     }
 
     const allTeams = await this.deps.teamRepository.findByTenant(tenantId);
@@ -58,6 +62,8 @@ export class GetMyProfileUseCase {
       teams = allTeams.filter((t) => assignedIds.includes(t.id));
     }
 
-    return { user, membership, tenant, teams, isSuperAdmin };
+    const entitlements = await this.deps.entitlementService.getSnapshot(tenantId);
+
+    return { user, membership, tenant, teams, entitlements, isSuperAdmin };
   }
 }
