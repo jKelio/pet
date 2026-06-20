@@ -155,4 +155,94 @@ describe('createWakeupController', () => {
     await flush();
     expect(controller.getStatus()).not.toBe('ready');
   });
+
+  test('a falsey probe (rate-limited/interstitial) does not mark ready; a later ok payload does', async () => {
+    const clock = makeClock();
+    let answer = false; // emulate edge rate-limited (probe → false) then real ok
+
+    const controller = createWakeupController({
+      healthUrl: '/health',
+      fetcher: async () => answer,
+      setTimer: clock.setTimer,
+      clearTimer: clock.clearTimer,
+    });
+
+    controller.start();
+    await flush();
+    clock.advance(2000); // cross fast threshold
+    await flush();
+    // Server is up at the edge but rate-limiting us → must NOT be ready.
+    expect(controller.getStatus()).toBe('waking');
+
+    answer = true; // backend now returns the genuine {status:'ok'}
+    clock.advance(5000);
+    await flush();
+    expect(controller.getStatus()).toBe('ready');
+  });
+
+  test('never runs two probes concurrently (serialized with backoff)', async () => {
+    const clock = makeClock();
+    let inFlight = 0;
+    let maxInFlight = 0;
+    let calls = 0;
+
+    const controller = createWakeupController({
+      healthUrl: '/health',
+      fetcher: async () => {
+        inFlight++;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await Promise.resolve();
+        inFlight--;
+        calls++;
+        return false; // stay cold so the loop keeps polling
+      },
+      setTimer: clock.setTimer,
+      clearTimer: clock.clearTimer,
+    });
+
+    controller.start();
+    // Drive several backoff rounds: resolve the probe, then fire its backoff.
+    for (let i = 0; i < 5; i++) {
+      await flush();
+      clock.advance(5000);
+    }
+    await flush();
+
+    expect(maxInFlight).toBe(1);
+    expect(calls).toBeGreaterThan(1);
+  });
+
+  test('default fetcher rejects 200 {status:"rate-limited"} and accepts {status:"ok"}', async () => {
+    const clock = makeClock();
+    const realFetch = globalThis.fetch;
+    const responses = [
+      { ok: true, json: async () => ({ status: 'rate-limited' }) },
+      { ok: true, json: async () => ({ status: 'ok' }) },
+    ];
+    let i = 0;
+    globalThis.fetch = (async () =>
+      responses[Math.min(i++, responses.length - 1)]) as unknown as typeof fetch;
+
+    try {
+      const controller = createWakeupController({
+        healthUrl: '/api/health',
+        setTimer: clock.setTimer,
+        clearTimer: clock.clearTimer,
+      });
+
+      controller.start();
+      await flush();
+      clock.advance(2000);
+      await flush();
+      // First response was rate-limited → not ready, overlay revealed.
+      expect(controller.getStatus()).toBe('waking');
+
+      clock.advance(5000);
+      await flush();
+      // Second response is the genuine ok payload → ready.
+      expect(controller.getStatus()).toBe('ready');
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
 });
