@@ -106,7 +106,7 @@ export interface Tenant {
   createdAt: string;
 }
 
-export type TenantPlan = 'free' | 'pro' | 'enterprise';
+export type TenantPlan = (typeof import('./constants.js').TENANT_PLANS)[number];
 
 export interface Team {
   id: string;

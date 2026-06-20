@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TENANT_PLANS } from './constants.js';
 
 // ─── Primitive Schemas ────────────────────────────────────────────────────────
 
@@ -100,6 +101,10 @@ export const UpdateMemberSchema = z.object({
   name: z.string().trim().max(100),
 });
 
+export const SetPlanSchema = z.object({
+  plan: z.enum(TENANT_PLANS),
+});
+
 // ─── Source Schemas ───────────────────────────────────────────────────────────
 
 export const CreateSourceSchema = z.object({
@@ -110,6 +115,52 @@ export const CreateSourceSchema = z.object({
 export const UpdateSourceSchema = z.object({
   url: z.string().url().max(2048).optional(),
   title: z.string().trim().min(1).max(200).optional(),
+});
+
+// ─── PDF Report Schema ────────────────────────────────────────────────────────
+// The "report model" the client posts to the stateless server render endpoint.
+// Numeric durations are milliseconds. Dynamic labels (actions, tags, practice
+// info) are already localized by the client; the server supplies only the static
+// section chrome per `locale`. See docs/adr/0009-server-side-pdf-report.md.
+
+const PdfTimerRowSchema = z.object({
+  label: z.string().max(120),
+  segments: z.number().int().nonnegative(),
+  totalTime: z.number().int().nonnegative(),
+});
+
+const PdfCounterRowSchema = z.object({
+  label: z.string().max(120),
+  count: z.number().int().nonnegative(),
+});
+
+const PdfDrillSectionSchema = z.object({
+  drillNumber: z.number().int().positive(),
+  tags: z.array(z.string().max(60)).max(20),
+  timers: z.array(PdfTimerRowSchema).max(40),
+  counters: z.array(PdfCounterRowSchema).max(40),
+});
+
+export const PdfReportSchema = z.object({
+  sessionId: UUIDSchema,
+  locale: z.enum(['en', 'de', 'ru']),
+  generatedAt: z.string().datetime(),
+  info: z.object({
+    clubName: z.string().max(120).optional(),
+    teamName: z.string().max(120).optional(),
+    coachName: z.string().max(120).optional(),
+    trackedPlayerName: z.string().max(120).optional(),
+    date: z.string().max(40).optional(),
+  }),
+  summary: z.object({
+    drills: z.number().int().nonnegative(),
+    totalTime: z.number().int().nonnegative(),
+    wasteTime: z.number().int().nonnegative(),
+    wastePercent: z.number().int().min(0).max(100),
+  }),
+  overallTimers: z.array(PdfTimerRowSchema).max(40),
+  overallCounters: z.array(PdfCounterRowSchema).max(40),
+  drills: z.array(PdfDrillSectionSchema).max(60),
 });
 
 // ─── Recommendation Schemas ───────────────────────────────────────────────────
@@ -127,6 +178,8 @@ export type SyncSessionInput = z.infer<typeof SyncSessionSchema>;
 export type InviteUserInput = z.infer<typeof InviteUserSchema>;
 export type CreateTeamInput = z.infer<typeof CreateTeamSchema>;
 export type UpdateMemberInput = z.infer<typeof UpdateMemberSchema>;
+export type SetPlanInput = z.infer<typeof SetPlanSchema>;
+export type PdfReportModel = z.infer<typeof PdfReportSchema>;
 export type CreateSourceInput = z.infer<typeof CreateSourceSchema>;
 export type UpdateSourceInput = z.infer<typeof UpdateSourceSchema>;
 export type GenerateRecommendationInput = z.infer<typeof GenerateRecommendationSchema>;

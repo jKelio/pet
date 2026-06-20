@@ -57,6 +57,9 @@ export const ACTION_COLORS: Record<string, string> = {
   passes: '#4CAF50',
 };
 
+/** Subscription plans, low to high tier. Single source for the TenantPlan type and validation. */
+export const TENANT_PLANS = ['free', 'pro', 'premium'] as const;
+
 /** Available drill category tags */
 export const DRILL_TAGS = [
   'station',
