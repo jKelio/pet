@@ -21,6 +21,9 @@ export const TIME_MOVING_WITH_PUCK = 'timemovingwithpuck';
 export const TIME_MOVING_WITHOUT_PUCK = 'timemovingwithoutpuck';
 export const PUCK_TIMER_IDS = [TIME_MOVING_WITH_PUCK, TIME_MOVING_WITHOUT_PUCK] as const;
 
+/** Timer action IDs that count toward Passive Time for the tracked player. */
+export const PASSIVE_TIMER_IDS = ['explanation', 'demonstration', 'feedbackteam'] as const;
+
 /**
  * Counters that release the puck. Tapping one while the player is moving WITH
  * the puck switches Time Moving to "without puck".

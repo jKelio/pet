@@ -114,6 +114,10 @@ Idle time *between* Drills — before the first Drill, between Drills, and after
 _Note_: shares the `wasteTime` storage key with [[Waste Time]] despite being a distinct, separately-scoped concept (between-drill vs within-drill).
 _Avoid_: Pause (use in UI copy only), break.
 
+**Passive Time** (DE: Passivzeit):
+Total time during which the tracked player is physically inactive within a practice session: the sum of [[Waste Time]] + [[Gap Time]] + Explanation + Demonstration + Feedback (Team) Timer Actions across all Drills. The broadening beyond [[Waste Time]] reflects that a player is also stationary during intentional coach-led phases.
+_Avoid_: inactive time, idle time (too narrow — does not capture coach-led phases).
+
 ### Actions & counters
 
 **Action**:

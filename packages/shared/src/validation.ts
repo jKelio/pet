@@ -225,8 +225,8 @@ export const PdfReportSchema = z.object({
   summary: z.object({
     drills: z.number().int().nonnegative(),
     totalTime: z.number().int().nonnegative(),
-    wasteTime: z.number().int().nonnegative(),
-    wastePercent: z.number().int().min(0).max(100),
+    passiveTime: z.number().int().nonnegative(),
+    passivePercent: z.number().int().min(0).max(100),
   }),
   overallTimers: z.array(PdfTimerRowSchema).max(40),
   overallCounters: z.array(PdfCounterRowSchema).max(40),

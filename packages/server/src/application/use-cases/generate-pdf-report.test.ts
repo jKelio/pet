@@ -11,7 +11,7 @@ const MODEL: PdfReportModel = {
   locale: 'en',
   generatedAt: '2026-06-20T09:00:00.000Z',
   info: { clubName: 'EHC Test', teamName: 'U16', coachName: 'Coach', trackedPlayerName: 'P1', date: '2026-06-20' },
-  summary: { drills: 2, totalTime: 3_600_000, wasteTime: 600_000, wastePercent: 17 },
+  summary: { drills: 2, totalTime: 3_600_000, passiveTime: 600_000, passivePercent: 17 },
   overallTimers: [{ label: 'Explanation', segments: 3, totalTime: 120_000 }],
   overallCounters: [{ label: 'Shots', count: 12 }],
   drills: [

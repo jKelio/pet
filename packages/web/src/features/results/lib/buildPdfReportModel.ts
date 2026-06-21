@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Drill, PracticeInfo, PdfReportModel } from '@pet/shared';
-import { ACTION_COLORS, DRILL_COLORS } from '@pet/shared';
+import { ACTION_COLORS, DRILL_COLORS, PASSIVE_TIMER_IDS } from '@pet/shared';
 import {
   aggregateTimersAcrossDrills,
   aggregateCountersAcrossDrills,
@@ -42,7 +42,14 @@ export function buildPdfReportModel(params: {
     0,
   );
   const totalTime = totalTimerTime + totalWasteTime;
-  const wastePercent = totalTime > 0 ? Math.round((totalWasteTime / totalTime) * 100) : 0;
+
+  const totalPassiveTime =
+    totalWasteTime +
+    drills.reduce(
+      (sum, d) => sum + PASSIVE_TIMER_IDS.reduce((s, id) => s + (d.timerData?.[id]?.totalTime ?? 0), 0),
+      0,
+    );
+  const passivePercent = totalTime > 0 ? Math.round((totalPassiveTime / totalTime) * 100) : 0;
 
   const overallTimers = aggregateTimersAcrossDrills(drills, t).map((r) => ({
     label: r.actionLabel,
@@ -166,8 +173,8 @@ export function buildPdfReportModel(params: {
     summary: {
       drills: drills.length,
       totalTime,
-      wasteTime: totalWasteTime,
-      wastePercent,
+      passiveTime: totalPassiveTime,
+      passivePercent,
     },
     overallTimers,
     overallCounters,

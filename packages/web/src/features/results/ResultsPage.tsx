@@ -46,7 +46,7 @@ import { pdfApi } from './api/pdf.api.js';
 import { buildPdfReportModel } from './lib/buildPdfReportModel.js';
 import { toServerSessionId } from './lib/serverSessionId.js';
 import { ApiClientError } from '../../shared/lib/api-client.js';
-import { DRILL_COLORS } from '@pet/shared';
+import { DRILL_COLORS, PASSIVE_TIMER_IDS } from '@pet/shared';
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -163,7 +163,14 @@ export function ResultsPage() {
     0,
   );
   const totalTime = totalTimerTime + totalWasteTime;
-  const wastePercent = totalTime > 0 ? Math.round((totalWasteTime / totalTime) * 100) : 0;
+
+  const totalPassiveTime =
+    totalWasteTime +
+    localDrills.reduce(
+      (sum, d) => sum + PASSIVE_TIMER_IDS.reduce((s, id) => s + (d.timerData?.[id]?.totalTime ?? 0), 0),
+      0,
+    );
+  const passivePercent = totalTime > 0 ? Math.round((totalPassiveTime / totalTime) * 100) : 0;
 
   const gapSegments = localPracticeInfo.wasteTime?.timeSegments ?? [];
   const trainingStartTime = gapSegments[0]?.startTime;
@@ -360,14 +367,14 @@ export function ResultsPage() {
             />
             <SummaryCard
               icon={<TrendingDown className="h-5 w-5" />}
-              label={t('results.wasteTime')}
-              value={formatDuration(totalWasteTime)}
+              label={t('results.passiveTime')}
+              value={formatDuration(totalPassiveTime)}
             />
             <SummaryCard
               icon={<TrendingDown className="h-5 w-5 text-destructive" />}
-              label={t('results.wastePercent')}
-              value={`${wastePercent}%`}
-              highlight={wastePercent > 30}
+              label={t('results.passivePercent')}
+              value={`${passivePercent}%`}
+              highlight={passivePercent > 40}
             />
           </div>
 
