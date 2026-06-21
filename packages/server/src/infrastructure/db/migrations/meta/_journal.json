@@ -36,6 +36,20 @@
       "when": 1782000000000,
       "tag": "0004_plan_premium_and_pdf_exports",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784000000000,
+      "tag": "0005_knowledge_library",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1750500000000,
+      "tag": "0006_library_enrich",
+      "breakpoints": true
     }
   ]
 }

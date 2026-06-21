@@ -66,33 +66,30 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
     yield { status: 'fetching' };
 
     const sessionSummary = formatSessionSummary(input.session);
-    const urlList = input.sourceUrls.map((url, i) => `${i + 1}. ${url}`).join('\n');
 
     const languageName = LANGUAGE_NAMES[input.language] ?? 'English';
     const prompt = [
       `You are an expert ice hockey development coach. Analyze the following practice session tracking data`,
-      `and the provided reference sources to produce a structured coaching recommendation report.`,
+      `in the context of the curated reference knowledge to produce a structured coaching recommendation report.`,
       ``,
       `IMPORTANT: Write ALL text exclusively in ${languageName}. This includes every field in the JSON output`,
-      `(summary, strengths, concerns, recommendations, sourceReferences). Do not use any other language.`,
+      `(summary, strengths, concerns, recommendations). Do not use any other language.`,
       ``,
       `## Tracked Session Data`,
       sessionSummary,
       ``,
-      `## Reference Sources (URLs)`,
-      urlList,
+      `## Reference Knowledge`,
+      input.knowledgeText || '(no reference knowledge available)',
       ``,
-      `Analyze the session data in the context of the reference material.`,
+      `Analyze the session data in the context of the reference knowledge.`,
       `Be specific, data-driven, and practical. Reference concrete numbers from the session.`,
-      `When a recommendation is informed by a source, name it in sourceReferences.`,
       ``,
       `Respond with a single JSON object matching this schema exactly (no markdown, no code fences):`,
       `{`,
       `  "summary": "<string>",`,
       `  "strengths": ["<string>", ...],`,
       `  "concerns": ["<string>", ...],`,
-      `  "recommendations": ["<string>", ...],`,
-      `  "sourceReferences": ["<string>", ...]`,
+      `  "recommendations": ["<string>", ...]`,
       `}`,
     ].join('\n');
 
@@ -100,7 +97,6 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
 
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
-      tools: [{ urlContext: {} }],
       generationConfig: {},
     };
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TENANT_PLANS } from './constants.js';
+import { TENANT_PLANS, SPORTS } from './constants.js';
 
 // ─── Primitive Schemas ────────────────────────────────────────────────────────
 
@@ -105,16 +105,21 @@ export const SetPlanSchema = z.object({
   plan: z.enum(TENANT_PLANS),
 });
 
-// ─── Source Schemas ───────────────────────────────────────────────────────────
+// ─── Knowledge Library Schemas ──────────────────────────────────────────────────
+// Global, Pracmetrics-curated entries. Managed only by super-admins.
 
-export const CreateSourceSchema = z.object({
-  url: z.string().url().max(2048),
+export const SportSchema = z.enum(SPORTS);
+
+export const CreateLibraryEntrySchema = z.object({
   title: z.string().trim().min(1).max(200),
+  content: z.string().trim().min(1).max(50_000),
+  sport: SportSchema.default('ice_hockey'),
 });
 
-export const UpdateSourceSchema = z.object({
-  url: z.string().url().max(2048).optional(),
+export const UpdateLibraryEntrySchema = z.object({
   title: z.string().trim().min(1).max(200).optional(),
+  content: z.string().trim().min(1).max(50_000).optional(),
+  sport: SportSchema.optional(),
 });
 
 // ─── PDF Report Schema ────────────────────────────────────────────────────────
@@ -233,7 +238,6 @@ export const PdfReportSchema = z.object({
 // ─── Recommendation Schemas ───────────────────────────────────────────────────
 
 export const GenerateRecommendationSchema = z.object({
-  sourceIds: z.array(UUIDSchema).min(1).max(5),
   language: z.enum(['en', 'de', 'ru']).default('en'),
 });
 
@@ -247,6 +251,6 @@ export type CreateTeamInput = z.infer<typeof CreateTeamSchema>;
 export type UpdateMemberInput = z.infer<typeof UpdateMemberSchema>;
 export type SetPlanInput = z.infer<typeof SetPlanSchema>;
 export type PdfReportModel = z.infer<typeof PdfReportSchema>;
-export type CreateSourceInput = z.infer<typeof CreateSourceSchema>;
-export type UpdateSourceInput = z.infer<typeof UpdateSourceSchema>;
+export type CreateLibraryEntryInput = z.infer<typeof CreateLibraryEntrySchema>;
+export type UpdateLibraryEntryInput = z.infer<typeof UpdateLibraryEntrySchema>;
 export type GenerateRecommendationInput = z.infer<typeof GenerateRecommendationSchema>;

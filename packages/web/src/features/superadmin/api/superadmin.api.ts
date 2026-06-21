@@ -1,10 +1,16 @@
 import { apiClient } from '../../../shared/lib/api-client.js';
-import type { Tenant, Membership, TenantPlan } from '@pet/shared';
+import type { Tenant, Membership, TenantPlan, LibraryEntry, Sport } from '@pet/shared';
 
 export interface CreateTenantInput {
   tenantName: string;
   teamName: string;
   adminEmail: string;
+}
+
+export interface LibraryEntryInput {
+  title: string;
+  content: string;
+  sport: Sport;
 }
 
 export const superAdminApi = {
@@ -22,4 +28,17 @@ export const superAdminApi = {
 
   setPlan: (tenantId: string, plan: TenantPlan, accessToken: string) =>
     apiClient.patch<Tenant>(`/superadmin/tenants/${tenantId}/plan`, { plan }, accessToken),
+
+  // ── Global knowledge library ──
+  listLibrary: (accessToken: string) =>
+    apiClient.get<LibraryEntry[]>('/superadmin/library', accessToken),
+
+  createLibraryEntry: (input: LibraryEntryInput, accessToken: string) =>
+    apiClient.post<LibraryEntry>('/superadmin/library', input, accessToken),
+
+  updateLibraryEntry: (id: string, input: Partial<LibraryEntryInput>, accessToken: string) =>
+    apiClient.patch<LibraryEntry>(`/superadmin/library/${id}`, input, accessToken),
+
+  deleteLibraryEntry: (id: string, accessToken: string) =>
+    apiClient.delete<void>(`/superadmin/library/${id}`, accessToken),
 };

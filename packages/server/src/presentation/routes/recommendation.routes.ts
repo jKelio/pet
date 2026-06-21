@@ -3,6 +3,7 @@ import { GenerateRecommendationSchema } from '@pet/shared';
 import type { GenerateRecommendationUseCase } from '../../application/use-cases/generate-recommendation.js';
 import type { GetRecommendationUseCase } from '../../application/use-cases/get-recommendation.js';
 import { RecommendationForbiddenError, RecommendationNotFoundError } from '../../application/use-cases/get-recommendation.js';
+import { RecommendationConflictError } from '../../application/use-cases/generate-recommendation.js';
 import { RecommendationGenerationError } from '../../infrastructure/services/gemini-recommendation.generator.js';
 import type { EntitlementService } from '../../application/services/entitlement.service.js';
 import { isEntitlementError } from '../../application/services/entitlement.service.js';
@@ -72,6 +73,23 @@ export function registerRecommendationRoutes(fastify: FastifyInstance, deps: Rec
 
     const language = result.data.language;
 
+    // Analysis is one-shot: refuse (before opening the stream) if the caller may not
+    // generate or a recommendation already exists for this session.
+    try {
+      await deps.generateRecommendation.ensureGeneratable(sessionId, { userId: request.userId, tenantId, language });
+    } catch (error) {
+      if (error instanceof RecommendationConflictError) {
+        return reply.code(409).send({ code: 'CONFLICT', message: error.message, statusCode: 409 });
+      }
+      if (error instanceof RecommendationForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: error.message, statusCode: 403 });
+      }
+      if (error instanceof RecommendationNotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: error.message, statusCode: 404 });
+      }
+      throw error;
+    }
+
     reply.raw.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -86,7 +104,6 @@ export function registerRecommendationRoutes(fastify: FastifyInstance, deps: Rec
     try {
       for await (const event of deps.generateRecommendation.execute(
         sessionId,
-        result.data.sourceIds,
         { userId: request.userId, tenantId, language },
       )) {
         if (event.status === 'ready') {

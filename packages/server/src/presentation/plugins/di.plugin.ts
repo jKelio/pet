@@ -30,13 +30,13 @@ import { SuperAdminAddClubAdminUseCase } from '../../application/use-cases/super
 import { SuperAdminSetPlanUseCase } from '../../application/use-cases/superadmin-set-plan.js';
 import { GetMyTenantsUseCase } from '../../application/use-cases/get-my-tenants.js';
 import { SwitchTenantUseCase } from '../../application/use-cases/switch-tenant.js';
-import { ListSourcesUseCase } from '../../application/use-cases/list-sources.js';
-import { CreateSourceUseCase } from '../../application/use-cases/create-source.js';
-import { UpdateSourceUseCase } from '../../application/use-cases/update-source.js';
-import { DeleteSourceUseCase } from '../../application/use-cases/delete-source.js';
+import { ListLibraryEntriesUseCase } from '../../application/use-cases/list-library-entries.js';
+import { CreateLibraryEntryUseCase } from '../../application/use-cases/create-library-entry.js';
+import { UpdateLibraryEntryUseCase } from '../../application/use-cases/update-library-entry.js';
+import { DeleteLibraryEntryUseCase } from '../../application/use-cases/delete-library-entry.js';
 import { GenerateRecommendationUseCase } from '../../application/use-cases/generate-recommendation.js';
 import { GetRecommendationUseCase } from '../../application/use-cases/get-recommendation.js';
-import { PgSourceRepository } from '../../infrastructure/repositories/pg-source.repository.js';
+import { PgLibraryRepository } from '../../infrastructure/repositories/pg-library.repository.js';
 import { PgRecommendationRepository } from '../../infrastructure/repositories/pg-recommendation.repository.js';
 import { PgUsageRepository } from '../../infrastructure/repositories/pg-usage.repository.js';
 import { PgPdfExportRepository } from '../../infrastructure/repositories/pg-pdf-export.repository.js';
@@ -91,10 +91,10 @@ declare module 'fastify' {
       superAdminSetPlan: SuperAdminSetPlanUseCase;
       getMyTenants: GetMyTenantsUseCase;
       switchTenant: SwitchTenantUseCase;
-      listSources: ListSourcesUseCase;
-      createSource: CreateSourceUseCase;
-      updateSource: UpdateSourceUseCase;
-      deleteSource: DeleteSourceUseCase;
+      listLibraryEntries: ListLibraryEntriesUseCase;
+      createLibraryEntry: CreateLibraryEntryUseCase;
+      updateLibraryEntry: UpdateLibraryEntryUseCase;
+      deleteLibraryEntry: DeleteLibraryEntryUseCase;
       generateRecommendation: GenerateRecommendationUseCase;
       getRecommendation: GetRecommendationUseCase;
       generatePdfReport: GeneratePdfReportUseCase;
@@ -131,7 +131,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const sessionRepository = new PgSessionRepository(db);
   const teamRepository = new PgTeamRepository(db);
   const tenantRepository = new PgTenantRepository(db);
-  const sourceRepository = new PgSourceRepository(db);
+  const libraryRepository = new PgLibraryRepository(db);
   const recommendationRepository = new PgRecommendationRepository(db);
   const usageRepository = new PgUsageRepository(db);
   const pdfExportRepository = new PgPdfExportRepository(db);
@@ -226,14 +226,14 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const assignTeamMember = new AssignTeamMemberUseCase({ membershipRepository, teamRepository });
   const removeTeamMember = new RemoveTeamMemberUseCase({ membershipRepository, teamRepository });
 
-  const listSources = new ListSourcesUseCase({ sourceRepository, membershipRepository });
-  const createSource = new CreateSourceUseCase({ sourceRepository, membershipRepository });
-  const updateSource = new UpdateSourceUseCase({ sourceRepository, membershipRepository });
-  const deleteSource = new DeleteSourceUseCase({ sourceRepository, membershipRepository });
+  const listLibraryEntries = new ListLibraryEntriesUseCase({ libraryRepository });
+  const createLibraryEntry = new CreateLibraryEntryUseCase({ libraryRepository });
+  const updateLibraryEntry = new UpdateLibraryEntryUseCase({ libraryRepository });
+  const deleteLibraryEntry = new DeleteLibraryEntryUseCase({ libraryRepository });
   const generateRecommendation = new GenerateRecommendationUseCase({
     recommendationRepository,
     sessionRepository,
-    sourceRepository,
+    libraryRepository,
     membershipRepository,
     aiGenerator,
     geminiModel: config.geminiModel,
@@ -277,10 +277,10 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     superAdminSetPlan,
     getMyTenants,
     switchTenant,
-    listSources,
-    createSource,
-    updateSource,
-    deleteSource,
+    listLibraryEntries,
+    createLibraryEntry,
+    updateLibraryEntry,
+    deleteLibraryEntry,
     generateRecommendation,
     getRecommendation,
     generatePdfReport,

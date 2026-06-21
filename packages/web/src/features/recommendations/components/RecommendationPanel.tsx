@@ -4,7 +4,6 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Sparkles, Loader2, X } from 'lucide-react';
 import type { Recommendation } from '@pet/shared';
 import { Button } from '../../../shared/components/ui/button.js';
-import { SourcePicker } from './SourcePicker.js';
 import { RecommendationView } from './RecommendationView.js';
 import { useRecommendationStream } from '../hooks/useRecommendationStream.js';
 import { getRecommendation } from '../api/recommendation.api.js';
@@ -16,15 +15,13 @@ interface RecommendationPanelProps {
   disabledReason?: string;
 }
 
-type PanelView = 'pick' | 'streaming' | 'result';
+type PanelView = 'intro' | 'streaming' | 'result';
 
 export function RecommendationPanel({ sessionId, accessToken, disabled, disabledReason }: RecommendationPanelProps) {
   const { t } = useTranslation('pet');
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<PanelView>('pick');
-  const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
+  const [view, setView] = useState<PanelView>('intro');
   const [existingRecommendation, setExistingRecommendation] = useState<Recommendation | null>(null);
-  const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const { status, recommendation, error, generate } = useRecommendationStream();
 
   useEffect(() => {
@@ -35,8 +32,8 @@ export function RecommendationPanel({ sessionId, accessToken, disabled, disabled
         setView('result');
       })
       .catch(() => {
-        // No existing recommendation — stay on 'pick'
-        setView('pick');
+        // No existing recommendation — stay on 'intro'
+        setView('intro');
       });
   }, [open, sessionId, accessToken]);
 
@@ -49,20 +46,13 @@ export function RecommendationPanel({ sessionId, accessToken, disabled, disabled
   }, [status, recommendation]);
 
   function handleStart() {
-    if (existingRecommendation && !confirmRegenerate) {
-      setConfirmRegenerate(true);
-      return;
-    }
-    setConfirmRegenerate(false);
-    generate(sessionId, selectedSourceIds, accessToken);
+    generate(sessionId, accessToken);
   }
 
   function handleOpenChange(value: boolean) {
     setOpen(value);
     if (!value) {
-      setView('pick');
-      setConfirmRegenerate(false);
-      setSelectedSourceIds([]);
+      setView('intro');
     }
   }
 
@@ -106,19 +96,9 @@ export function RecommendationPanel({ sessionId, accessToken, disabled, disabled
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-6">
-            {view === 'pick' && (
+            {view === 'intro' && (
               <div className="space-y-4">
-                <p className="font-medium text-sm">{t('recommendation.selectSources')}</p>
-                <SourcePicker
-                  accessToken={accessToken}
-                  selected={selectedSourceIds}
-                  onChange={setSelectedSourceIds}
-                />
-                {confirmRegenerate && (
-                  <p className="text-sm text-amber-600 dark:text-amber-400 rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 p-3">
-                    {t('recommendation.regenerateConfirm')}
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground">{t('recommendation.intro')}</p>
                 {error && (
                   <p className="text-sm text-destructive">{error}</p>
                 )}
@@ -137,36 +117,15 @@ export function RecommendationPanel({ sessionId, accessToken, disabled, disabled
             )}
           </div>
 
-          {/* Footer */}
-          {(view === 'pick' || (view === 'result' && displayedRecommendation)) && (
+          {/* Footer — only the initial generate step; once a recommendation exists it is read-only */}
+          {view === 'intro' && (
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-border shrink-0">
-              {view === 'result' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setView('pick');
-                    setConfirmRegenerate(false);
-                    setSelectedSourceIds([]);
-                  }}
-                >
-                  {t('recommendation.regenerate')}
-                </Button>
-              )}
-              {view === 'pick' && (
-                <>
-                  <Dialog.Close asChild>
-                    <Button variant="outline" size="sm">{t('recommendation.cancel')}</Button>
-                  </Dialog.Close>
-                  <Button
-                    size="sm"
-                    disabled={selectedSourceIds.length === 0}
-                    onClick={handleStart}
-                  >
-                    {confirmRegenerate ? t('recommendation.regenerate') : t('recommendation.start')}
-                  </Button>
-                </>
-              )}
+              <Dialog.Close asChild>
+                <Button variant="outline" size="sm">{t('recommendation.cancel')}</Button>
+              </Dialog.Close>
+              <Button size="sm" onClick={handleStart}>
+                {t('recommendation.start')}
+              </Button>
             </div>
           )}
         </Dialog.Content>

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../shared/component
 import { Label } from '../../shared/components/ui/label.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { superAdminApi, type CreateTenantInput } from './api/superadmin.api.js';
+import { KnowledgeLibrarySection } from './components/KnowledgeLibrarySection.js';
 import { ApiClientError } from '../../shared/lib/api-client.js';
 import { TENANT_PLANS, type Tenant, type TenantPlan } from '@pet/shared';
 
@@ -113,6 +114,9 @@ export function SuperAdminPage() {
       {error && (
         <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">{error}</p>
       )}
+
+      {/* Global knowledge library — grounds every AI analysis, shared across all tenants */}
+      {accessToken && <KnowledgeLibrarySection accessToken={accessToken} />}
 
       {/* Create tenant */}
       <Card>

@@ -12,7 +12,7 @@ Recommendations are **stored server-side** (table `session_recommendations`, FK 
 
 - A session must be synchronised to the cloud before it can be analysed. Local-Only sessions and Pending (not-yet-synced) sessions cannot be analysed.
 - The Source URLs used during generation are **snapshotted** alongside the document. If a Source is later deleted or updated, the historical basis of the recommendation remains auditable.
-- Only one active Recommendation per Session exists. Re-generating overwrites the previous record (upsert on `sessionId` unique index) after user confirmation.
+- Exactly one Recommendation per Session exists. Generation is **one-shot**: once a recommendation exists it is read-only and cannot be regenerated — the generate endpoint refuses with `409 CONFLICT` and the UI offers no re-analyse action. (The storage still uses an upsert on the `sessionId` unique index, but the conflict guard prevents a second generation.)
 
 ## Alternatives considered
 

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Building2, Users, Plus, Loader2, Trash2, UserPlus, ChevronDown, X, Pencil, Check } from 'lucide-react';
-import { SourceLibrarySection } from '../recommendations/components/SourceLibrarySection.js';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
 import { Label } from '../../shared/components/ui/label.js';
@@ -523,11 +522,6 @@ export function AdminPage() {
             ))}
           </div>
         </section>
-
-        <SourceLibrarySection
-          accessToken={accessToken}
-          canEdit={membership.role !== 'analyst'}
-        />
       </div>
     </div>
   );

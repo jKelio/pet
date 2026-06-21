@@ -69,6 +69,16 @@ export const DRILL_COLORS = [
 /** Subscription plans, low to high tier. Single source for the TenantPlan type and validation. */
 export const TENANT_PLANS = ['free', 'pro', 'premium'] as const;
 
+/**
+ * Sports the platform can curate a knowledge library for. Currently ice hockey only;
+ * the list is the seam that lets other sports (e.g. football, volleyball) be added later
+ * without reshaping the library model. Single source for the Sport type and validation.
+ */
+export const SPORTS = ['ice_hockey'] as const;
+
+/** Default sport for new library entries and the current (single-sport) analysis scope. */
+export const DEFAULT_SPORT = 'ice_hockey';
+
 /** Available drill category tags */
 export const DRILL_TAGS = [
   'station',
