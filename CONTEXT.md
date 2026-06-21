@@ -105,14 +105,13 @@ _Avoid_: Exercise, segment.
 An optional classification label applied to a Drill from a fixed vocabulary (`station`, `drill`, `technique`, `tactic`, `smallareagame`, `skating`, `passing`, `shot`, `puckhandling`, `battlechecking`). A Drill carries zero or more. Tags *classify* a Drill — they are not logged [[Action]]s and produce no timing or counts.
 _Avoid_: Category, type, drill kind.
 
-**Waste Time**:
-Idle time *within* an active Drill — elapsed while no [[Timer Action]] is running. Measured per Drill.
-_Note_: stored per-Drill under the `wasteTime` key.
+**Waste Time** (DE: Verschwendete Zeit):
+Time elapsed while no [[Timer Action]] is running — whether within an active Drill or in the gap between Drills (before the first, between Drills, after the last). Stored per-Drill under the `wasteTime` key and at session level under `gapTimeData` (a legacy column name; both represent the same concept at different scopes).
+_Avoid_: Gap Time, Pausenzeit (use "Verschwendete Zeit" / "Waste Time" everywhere — the within-drill vs. between-drill distinction is an implementation detail, not a domain concept).
 
-**Gap Time**:
-Idle time *between* Drills — before the first Drill, between Drills, and after the last. Measured at the session level.
-_Note_: shares the `wasteTime` storage key with [[Waste Time]] despite being a distinct, separately-scoped concept (between-drill vs within-drill).
-_Avoid_: Pause (use in UI copy only), break.
+**Passive Time** (DE: Passivzeit):
+Total time during which the tracked player is physically inactive within a practice session: the sum of [[Waste Time]] across all Drills and between-Drill gaps, plus intentional coach-led [[Timer Action]]s (Explanation, Demonstration, Feedback (Team)). [[Waste Time]] is unintentional; coach-led phases are intentional — both contribute to physical inactivity.
+_Avoid_: inactive time, idle time (too narrow — does not capture coach-led phases).
 
 ### Actions & counters
 
