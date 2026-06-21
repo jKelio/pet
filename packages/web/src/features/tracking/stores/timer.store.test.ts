@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach } from 'bun:test';
 import {
   TIME_MOVING_WITH_PUCK,
   TIME_MOVING_WITHOUT_PUCK,
+  TIME_STATIONARY,
   type Drill,
 } from '@pet/shared';
 import { useTimerStore } from './timer.store.js';
@@ -14,6 +15,7 @@ function makeDrill(): Drill {
     actionButtons: [
       { id: TIME_MOVING_WITH_PUCK, type: 'timer', enabled: true },
       { id: TIME_MOVING_WITHOUT_PUCK, type: 'timer', enabled: true },
+      { id: TIME_STATIONARY, type: 'timer', enabled: true },
       { id: 'explanation', type: 'timer', enabled: true },
       { id: 'shots', type: 'counter', enabled: true },
       { id: 'passes', type: 'counter', enabled: true },
@@ -75,5 +77,38 @@ describe('timer.store puck-release coupling', () => {
 
     expect(useTimerStore.getState().currentTimer).toBe('explanation');
     expect(useTimerStore.getState().counters['shots'].count).toBe(1);
+  });
+});
+
+describe('timer.store timestationary — no puck-release coupling', () => {
+  beforeEach(setup);
+
+  test('Pass while timestationary keeps the timer running', () => {
+    const store = useTimerStore.getState();
+    store.startTimer(TIME_STATIONARY);
+
+    store.incrementCounter('passes');
+
+    expect(useTimerStore.getState().currentTimer).toBe(TIME_STATIONARY);
+    expect(useTimerStore.getState().counters['passes'].count).toBe(1);
+  });
+
+  test('Shot while timestationary keeps the timer running', () => {
+    const store = useTimerStore.getState();
+    store.startTimer(TIME_STATIONARY);
+
+    store.incrementCounter('shots');
+
+    expect(useTimerStore.getState().currentTimer).toBe(TIME_STATIONARY);
+    expect(useTimerStore.getState().counters['shots'].count).toBe(1);
+  });
+
+  test('Starting a puck timer while timestationary stops the stationary timer', () => {
+    const store = useTimerStore.getState();
+    store.startTimer(TIME_STATIONARY);
+    store.startTimer(TIME_MOVING_WITH_PUCK);
+
+    expect(useTimerStore.getState().currentTimer).toBe(TIME_MOVING_WITH_PUCK);
+    expect(useTimerStore.getState().timers[TIME_STATIONARY]?.isRunning).toBe(false);
   });
 });
