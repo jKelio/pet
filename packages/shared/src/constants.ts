@@ -21,6 +21,9 @@ export const TIME_MOVING_WITH_PUCK = 'timemovingwithpuck';
 export const TIME_MOVING_WITHOUT_PUCK = 'timemovingwithoutpuck';
 export const PUCK_TIMER_IDS = [TIME_MOVING_WITH_PUCK, TIME_MOVING_WITHOUT_PUCK] as const;
 
+/** Timer id for a player who is stationary but performing counting actions (passes, shots, etc.) */
+export const TIME_STATIONARY = 'timestationary';
+
 /** Timer action IDs that count toward Passive Time for the tracked player. */
 export const PASSIVE_TIMER_IDS = ['explanation', 'demonstration', 'feedbackteam'] as const;
 
@@ -37,6 +40,7 @@ export const DEFAULT_ACTION_BUTTONS = [
   { id: 'feedbackteam', type: 'timer' as const, enabled: true },
   { id: TIME_MOVING_WITH_PUCK, type: 'timer' as const, enabled: true },
   { id: TIME_MOVING_WITHOUT_PUCK, type: 'timer' as const, enabled: true },
+  { id: TIME_STATIONARY, type: 'timer' as const, enabled: true },
   { id: 'repetition', type: 'counter' as const, enabled: true },
   { id: 'feedbackplayers', type: 'counter' as const, enabled: true },
   { id: 'shots', type: 'counter' as const, enabled: true },
@@ -53,6 +57,7 @@ export const ACTION_COLORS: Record<string, string> = {
   timemoving: '#A28BFE',
   timemovingwithpuck: '#A28BFE',
   timemovingwithoutpuck: '#C9BCFE',
+  timestationary: '#FF9800',
   wasteTime: '#808080',
   repetition: '#E91E63',
   feedbackplayers: '#9C27B0',

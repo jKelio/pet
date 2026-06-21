@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import type { Drill } from '@pet/shared';
-import { TIME_MOVING_WITH_PUCK, TIME_MOVING_WITHOUT_PUCK } from '@pet/shared';
+import { TIME_MOVING_WITH_PUCK, TIME_MOVING_WITHOUT_PUCK, TIME_STATIONARY } from '@pet/shared';
 import {
   formatRelativeTime,
   extractDrillDurations,
@@ -143,6 +143,24 @@ describe('aggregateTimeByActionForDrill', () => {
 
     const result = aggregateTimeByActionForDrill(drill, t);
     expect(result.find((r) => r.actionId === 'timemoving')).toBeUndefined();
+  });
+
+  test('timestationary appears as its own entry, not merged into timemoving', () => {
+    const drill = makeDrill({
+      timerData: {
+        [TIME_STATIONARY]: { totalTime: 15_000, timeSegments: [] },
+        [TIME_MOVING_WITH_PUCK]: { totalTime: 10_000, timeSegments: [] },
+      },
+    });
+
+    const result = aggregateTimeByActionForDrill(drill, t);
+
+    const stationary = result.find((r) => r.actionId === TIME_STATIONARY);
+    expect(stationary?.totalTime).toBe(15_000);
+
+    // Puck timer is unaffected by the stationary timer
+    const timeMoving = result.find((r) => r.actionId === 'timemoving');
+    expect(timeMoving?.totalTime).toBe(10_000);
   });
 });
 
