@@ -134,14 +134,20 @@ export interface ApiError {
   statusCode: number;
 }
 
-// ─── Sources ──────────────────────────────────────────────────────────────────
+// ─── Knowledge Library ──────────────────────────────────────────────────────────
+// Pracmetrics-curated, sport-scoped knowledge base. Every AI analysis is grounded
+// on the full set of entries for the tenant's sport (currently fixed to ice hockey).
+// Unlike the former per-tenant "sources", entries hold curated editorial TEXT — not
+// external URLs — so they are stable, uniform across tenants, and centrally managed.
 
-export interface Source {
+export type Sport = (typeof import('./constants.js').SPORTS)[number];
+
+export interface LibraryEntry {
   id: string;
-  tenantId: string;
-  url: string;
   title: string;
-  createdBy: string;
+  /** Curated editorial knowledge text fed into the AI analysis as grounding context. */
+  content: string;
+  sport: Sport;
   createdAt: string;
   updatedAt: string;
 }
@@ -153,7 +159,8 @@ export interface RecommendationDocument {
   strengths: string[];
   concerns: string[];
   recommendations: string[];
-  sourceReferences: string[];
+  /** Legacy field: no longer produced. Retained as optional for historical records. */
+  sourceReferences?: string[];
 }
 
 export interface Recommendation {

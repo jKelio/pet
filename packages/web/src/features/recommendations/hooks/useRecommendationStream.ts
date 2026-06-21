@@ -9,7 +9,7 @@ interface UseRecommendationStreamResult {
   status: StreamStatus;
   recommendation: Recommendation | null;
   error: string | null;
-  generate: (sessionId: string, sourceIds: string[], accessToken: string) => Promise<void>;
+  generate: (sessionId: string, accessToken: string) => Promise<void>;
 }
 
 export function useRecommendationStream(): UseRecommendationStreamResult {
@@ -18,14 +18,14 @@ export function useRecommendationStream(): UseRecommendationStreamResult {
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const generate = useCallback(async (sessionId: string, sourceIds: string[], accessToken: string) => {
+  const generate = useCallback(async (sessionId: string, accessToken: string) => {
     setStatus('fetching');
     setError(null);
 
     const language = i18n.language.split('-')[0];
 
     try {
-      for await (const { event, data } of streamRecommendation(sessionId, sourceIds, language, accessToken)) {
+      for await (const { event, data } of streamRecommendation(sessionId, language, accessToken)) {
         if (event === 'progress') {
           const progress = data as { status: string };
           if (progress.status === 'fetching') setStatus('fetching');

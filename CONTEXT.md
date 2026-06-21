@@ -129,16 +129,16 @@ _Avoid_: Tally, hit count.
 
 ### AI recommendations
 
-**Source**:
-A URL-based reference provided by a coach — a link to a training philosophy document, drill catalogue, or sports article — used as context for AI analysis. Sources are stored in the [[Source Library]] and selected per analysis.
-_Avoid_: context, document, link, reference (these are overloaded; use Source in code and UI).
+**Library Entry**:
+A single curated knowledge item — `{ title, content, sport }` — written and maintained by Pracmetrics. `content` is editorial **text** (e.g. a digest of a training framework like the DEB RTK), not an external URL. It is grounding context for AI analysis. Lives in the [[Knowledge Library]].
+_Avoid_: source, link, document (these are overloaded; the old URL-based "Source" no longer exists — see [[Knowledge Library]]).
 
-**Source Library**:
-The club-wide (Tenant-scoped) collection of stored Sources. Managed by `club_admin` and `coach`; the `analyst` role may select Sources but cannot add, edit, or delete them.
-_Avoid_: source repository, link library.
+**Knowledge Library**:
+The single, global, Pracmetrics-curated set of [[Library Entry]]s, organised by **sport** (currently ice hockey only). One shared library per sport grounds **every** [[Recommendation]] uniformly across all Tenants. Managed only by super-admins (Pracmetrics staff); Tenants neither edit nor see it, and there is no per-analysis selection — the whole sport-relevant library is always used. Replaces the former per-tenant, URL-based "Source Library" (see [ADR 0011](docs/adr/0011-curated-knowledge-library.md)).
+_Avoid_: source library, source repository, link library.
 
 **Recommendation**:
-A structured AI-generated document analysing a [[Synced Session]] against one or more [[Source]]s. Belongs to the `sessions:read` domain — generating a Recommendation is an act of evaluation, not on-ice tracking. Exactly one active Recommendation per Session; re-generating overwrites the previous one.
+A structured AI-generated document analysing a [[Synced Session]] against the [[Knowledge Library]]. Belongs to the `sessions:read` domain — generating a Recommendation is an act of evaluation, not on-ice tracking. **One-shot**: exactly one Recommendation per Session, generated once and thereafter read-only — it cannot be regenerated (the generate endpoint refuses with `409` once one exists).
 _Note_: *generating* a Recommendation is a boolean gated action requiring a [[pro]] or [[premium]] [[Plan]] (in addition to the synced-session and Role checks); it has no monthly quota beyond the existing rate limit. Reading an already-generated Recommendation is not gated.
 _Avoid_: analysis, report, AI summary (use `recommendation` in code) — note "report" specifically denotes the [[PDF Report]], a different artifact.
 

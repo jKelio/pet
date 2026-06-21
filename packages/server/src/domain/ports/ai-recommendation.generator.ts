@@ -2,7 +2,8 @@ import type { RecommendationDocument, PracticeSession } from '@pet/shared';
 
 export interface GenerateRecommendationInput {
   session: PracticeSession;
-  sourceUrls: string[];
+  /** Concatenated curated knowledge-library text used to ground the analysis. */
+  knowledgeText: string;
   language: string;
 }
 

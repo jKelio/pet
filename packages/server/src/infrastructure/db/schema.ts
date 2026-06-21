@@ -105,18 +105,20 @@ export const drills = pgTable('drills', {
   index('drills_session_id_idx').on(t.sessionId),
 ]);
 
-// ─── Sources ──────────────────────────────────────────────────────────────────
+// ─── Knowledge Library ────────────────────────────────────────────────────────
+// Global, Pracmetrics-curated knowledge entries, scoped by sport (not by tenant).
+// Holds editorial text (`content`), not external URLs. Every AI analysis is grounded
+// on the full set of entries for the relevant sport. Managed only by super-admins.
 
-export const sources = pgTable('sources', {
+export const libraryEntries = pgTable('library_entries', {
   id: uuid('id').primaryKey().defaultRandom(),
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  url: text('url').notNull(),
   title: text('title').notNull(),
-  createdBy: uuid('created_by').notNull().references(() => users.id),
+  content: text('content').notNull(),
+  sport: text('sport').notNull().default('ice_hockey'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
-  index('sources_tenant_id_idx').on(t.tenantId),
+  index('library_entries_sport_idx').on(t.sport),
 ]);
 
 // ─── PDF Export Ledger ────────────────────────────────────────────────────────

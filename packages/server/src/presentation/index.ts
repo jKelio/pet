@@ -11,7 +11,7 @@ import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerSessionRoutes } from './routes/session.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerSuperAdminRoutes } from './routes/superadmin.routes.js';
-import { registerSourceRoutes } from './routes/source.routes.js';
+import { registerLibraryRoutes } from './routes/library.routes.js';
 import { registerRecommendationRoutes } from './routes/recommendation.routes.js';
 import { registerPdfRoutes } from './routes/pdf.routes.js';
 
@@ -142,11 +142,11 @@ async function build() {
   });
 
   await fastify.register(async (scope) => {
-    registerSourceRoutes(scope, {
-      listSources: fastify.useCases.listSources,
-      createSource: fastify.useCases.createSource,
-      updateSource: fastify.useCases.updateSource,
-      deleteSource: fastify.useCases.deleteSource,
+    registerLibraryRoutes(scope, {
+      listLibraryEntries: fastify.useCases.listLibraryEntries,
+      createLibraryEntry: fastify.useCases.createLibraryEntry,
+      updateLibraryEntry: fastify.useCases.updateLibraryEntry,
+      deleteLibraryEntry: fastify.useCases.deleteLibraryEntry,
     });
   });
 
