@@ -13,7 +13,7 @@ type Locale = PdfReportModel['locale'];
 const STRINGS: Record<Locale, Record<string, string>> = {
   en: {
     title: 'Training Report', summary: 'Summary', drills: 'Drills', totalTime: 'Total time',
-    wasteTime: 'Waste time', wastePercent: 'Waste %', overall: 'Overall', stoppedTimes: 'Stopped times',
+    passiveTime: 'Passive time', passivePercent: 'Passive %', overall: 'Overall', stoppedTimes: 'Stopped times',
     counters: 'Counters', action: 'Action', segments: 'Segments', total: 'Total', count: 'Count',
     drill: 'Drill', club: 'Club', team: 'Team', coach: 'Coach', player: 'Player', date: 'Date',
     generated: 'Generated', page: 'Page',
@@ -21,7 +21,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
   },
   de: {
     title: 'Trainingsbericht', summary: 'Übersicht', drills: 'Drills', totalTime: 'Gesamtzeit',
-    wasteTime: 'Leerlaufzeit', wastePercent: 'Leerlauf %', overall: 'Gesamt', stoppedTimes: 'Gestoppte Zeiten',
+    passiveTime: 'Passivzeit', passivePercent: 'Passiv %', overall: 'Gesamt', stoppedTimes: 'Gestoppte Zeiten',
     counters: 'Zähler', action: 'Aktion', segments: 'Segmente', total: 'Gesamt', count: 'Anzahl',
     drill: 'Drill', club: 'Verein', team: 'Team', coach: 'Trainer', player: 'Spieler', date: 'Datum',
     generated: 'Erstellt', page: 'Seite',
@@ -29,7 +29,7 @@ const STRINGS: Record<Locale, Record<string, string>> = {
   },
   ru: {
     title: 'Отчёт о тренировке', summary: 'Сводка', drills: 'Упражнения', totalTime: 'Общее время',
-    wasteTime: 'Простой', wastePercent: 'Простой %', overall: 'Итого', stoppedTimes: 'Засечённое время',
+    passiveTime: 'Простой', passivePercent: 'Простой %', overall: 'Итого', stoppedTimes: 'Засечённое время',
     counters: 'Счётчики', action: 'Действие', segments: 'Сегменты', total: 'Всего', count: 'Кол-во',
     drill: 'Упражнение', club: 'Клуб', team: 'Команда', coach: 'Тренер', player: 'Игрок', date: 'Дата',
     generated: 'Создано', page: 'Стр.',
@@ -501,13 +501,13 @@ function ReportDocument({ model }: { model: PdfReportModel }) {
             <Text style={styles.cardValue}>{formatDuration(summary.totalTime)}</Text>
           </View>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>{t.wasteTime}</Text>
-            <Text style={styles.cardValue}>{formatDuration(summary.wasteTime)}</Text>
+            <Text style={styles.cardLabel}>{t.passiveTime}</Text>
+            <Text style={styles.cardValue}>{formatDuration(summary.passiveTime)}</Text>
           </View>
           <View style={[styles.card, styles.cardLast]}>
-            <Text style={styles.cardLabel}>{t.wastePercent}</Text>
-            <Text style={[styles.cardValue, summary.wastePercent > 30 ? { color: C.destructive } : {}]}>
-              {summary.wastePercent}%
+            <Text style={styles.cardLabel}>{t.passivePercent}</Text>
+            <Text style={[styles.cardValue, summary.passivePercent > 40 ? { color: C.destructive } : {}]}>
+              {summary.passivePercent}%
             </Text>
           </View>
         </View>
