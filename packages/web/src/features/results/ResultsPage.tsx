@@ -442,7 +442,13 @@ export function ResultsPage() {
                     tickFormatter={(v) => formatRelativeTime(v as number)}
                     fontSize={11}
                   />
-                  <YAxis type="category" dataKey="name" fontSize={11} width={70} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    fontSize={11}
+                    width={70}
+                    domain={drillTimeData.map((d) => d.name)}
+                  />
                   <Tooltip formatter={(v) => formatDuration(v as number)} />
                   <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
                     {drillTimeData.map((entry, i) => (

@@ -110,6 +110,27 @@ describe('extractDrillDurations', () => {
     const [d] = extractDrillDurations([drill], t);
     expect(d.duration).toBe(15_000);
   });
+
+  test('sorts by drillId numerically, not alphabetically (Drill 2 before Drill 10)', () => {
+    // Build 11 drills so that alphabetical order ("Drill 1","Drill 10","Drill 11","Drill 2"...)
+    // differs from natural numeric order ("Drill 1","Drill 2",...,"Drill 11").
+    const drills = Array.from({ length: 11 }, (_, i) =>
+      makeDrill({
+        id: i + 1,
+        timerData: {
+          passing: {
+            totalTime: 10_000,
+            timeSegments: [
+              { startTime: T0 + i * 60_000, endTime: T0 + i * 60_000 + 10_000, duration: 10_000 },
+            ],
+          },
+        },
+      }),
+    );
+
+    const result = extractDrillDurations(drills, t);
+    expect(result.map((d) => d.drillId)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  });
 });
 
 describe('aggregateTimeByActionForDrill', () => {

@@ -104,7 +104,7 @@ export function extractDrillDurations(
       duration: d.endTime - d.startTime,
       tags: d.tags,
     }))
-    .sort((a, b) => a.startOffset - b.startOffset);
+    .sort((a, b) => a.drillId - b.drillId);
 }
 
 export function extractTimelineSegments(
