@@ -152,6 +152,7 @@ export function PracticeInfoForm() {
             <NumberInput
               id="athletesNumber"
               min={0}
+              max={999}
               value={practiceInfo.athletesNumber}
               onChange={(v) => update('athletesNumber', v)}
             />
@@ -161,6 +162,7 @@ export function PracticeInfoForm() {
             <NumberInput
               id="coachesNumber"
               min={0}
+              max={999}
               value={practiceInfo.coachesNumber}
               onChange={(v) => update('coachesNumber', v)}
             />
