@@ -111,16 +111,16 @@ _Avoid_: Exercise, segment.
 An optional classification label applied to a Drill from a fixed vocabulary (`station`, `drill`, `technique`, `tactic`, `smallareagame`, `skating`, `passing`, `shot`, `puckhandling`, `battlechecking`). A Drill carries zero or more. Tags *classify* a Drill — they are not logged [[Action]]s and produce no timing or counts.
 _Avoid_: Category, type, drill kind.
 
+**Technique Time (stationary)** (DE: Technikzeit (stationär)):
+A [[Timer Action]] and session-level metric for station drills where the tracked player stays at a fixed position and practises a technical skill without moving — e.g. partner passing (players stand and exchange the puck). The stationary counterpart to [[Time Moving]]: both count as active training time and are the opposite of [[Waste Time]]. Belongs to a different drill type than `with Puck` / `without Puck`; the two are not used together by convention. In a [[Planned Session]] the separation is enforced by the coach's action selection at setup time; in an [[Open Session]] all actions are always available. Pass and Shot counters can still be logged while this timer runs. Stops when any coach-led [[Timer Action]] (Explanation, Demonstration, Feedback (Team)) starts.
+_Avoid_: Stationary Active, Stationszeit.
+
 **Waste Time** (DE: Verschwendete Zeit):
 Time elapsed while no [[Timer Action]] is running — whether within an active Drill or in the gap between Drills (before the first, between Drills, after the last). Stored per-Drill under the `wasteTime` key and at session level under `gapTimeData` (a legacy column name; both represent the same concept at different scopes).
 _Avoid_: Gap Time, Pausenzeit (use "Verschwendete Zeit" / "Waste Time" everywhere — the within-drill vs. between-drill distinction is an implementation detail, not a domain concept).
 
 **Passive Time** (DE: Passivzeit):
 Total time during which the tracked player is physically inactive within a practice session: the sum of [[Waste Time]] across all Drills and between-Drill gaps, plus intentional coach-led [[Timer Action]]s (Explanation, Demonstration, Feedback (Team)). [[Waste Time]] is unintentional; coach-led phases are intentional — both contribute to physical inactivity.
-_Avoid_: inactive time, idle time (too narrow — does not capture coach-led phases).
-
-**Passive Time** (DE: Passivzeit):
-Total time during which the tracked player is physically inactive within a practice session: the sum of [[Waste Time]] + [[Gap Time]] + Explanation + Demonstration + Feedback (Team) Timer Actions across all Drills. The broadening beyond [[Waste Time]] reflects that a player is also stationary during intentional coach-led phases.
 _Avoid_: inactive time, idle time (too narrow — does not capture coach-led phases).
 
 ### Actions & counters
