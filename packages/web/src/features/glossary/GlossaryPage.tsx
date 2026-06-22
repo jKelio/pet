@@ -5,11 +5,18 @@ import { BookOpen, Search, X } from 'lucide-react';
 interface GlossaryTerm {
   term: string;
   definition: string;
+  children?: GlossaryTerm[];
+}
+
+interface GlossarySubsection {
+  subheading: string;
+  terms: GlossaryTerm[];
 }
 
 interface GlossarySection {
   heading: string;
-  terms: GlossaryTerm[];
+  terms?: GlossaryTerm[];
+  subsections?: GlossarySubsection[];
 }
 
 function escapeRegex(str: string) {
@@ -30,16 +37,37 @@ function highlightText(text: string, query: string): React.ReactNode {
   );
 }
 
-function TermCard({ term, definition, query }: GlossaryTerm & { query: string }) {
+function TermCard({ term, definition, children, query }: GlossaryTerm & { query: string }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <dt className="font-semibold text-sm">{highlightText(term, query)}</dt>
       <dd className="text-sm text-muted-foreground mt-1">{highlightText(definition, query)}</dd>
+      {children && children.length > 0 && (
+        <div className="mt-3 space-y-2 pl-3 border-l-2 border-border">
+          {children.map((child) => (
+            <div key={child.term}>
+              <p className="font-medium text-xs">{highlightText(child.term, query)}</p>
+              <p className="text-xs text-muted-foreground">{highlightText(child.definition, query)}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 const GRID = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+
+function flattenTerms(terms: GlossaryTerm[]): GlossaryTerm[] {
+  return terms.flatMap((t) => [{ term: t.term, definition: t.definition }, ...(t.children ?? [])]);
+}
+
+function flattenSection(section: GlossarySection): GlossaryTerm[] {
+  return [
+    ...flattenTerms(section.terms ?? []),
+    ...(section.subsections ?? []).flatMap((sub) => flattenTerms(sub.terms)),
+  ];
+}
 
 export function GlossaryPage() {
   const { t } = useTranslation('glossary');
@@ -52,7 +80,7 @@ export function GlossaryPage() {
     if (!trimmedQuery) return null;
     const lower = trimmedQuery.toLowerCase();
     return sections
-      .flatMap((s) => s.terms)
+      .flatMap(flattenSection)
       .filter(
         (item) =>
           item.term.toLowerCase().includes(lower) ||
@@ -106,11 +134,28 @@ export function GlossaryPage() {
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
                   {section.heading}
                 </h2>
-                <dl className={GRID}>
-                  {section.terms.map((item) => (
-                    <TermCard key={item.term} term={item.term} definition={item.definition} query="" />
-                  ))}
-                </dl>
+                {section.subsections ? (
+                  <div className="space-y-6">
+                    {section.subsections.map((sub) => (
+                      <div key={sub.subheading}>
+                        <h3 className="text-xs font-medium italic text-muted-foreground mb-2 pl-0.5">
+                          {sub.subheading}
+                        </h3>
+                        <dl className={GRID}>
+                          {sub.terms.map((item) => (
+                            <TermCard key={item.term} term={item.term} definition={item.definition} children={item.children} query="" />
+                          ))}
+                        </dl>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <dl className={GRID}>
+                    {(section.terms ?? []).map((item) => (
+                      <TermCard key={item.term} term={item.term} definition={item.definition} children={item.children} query="" />
+                    ))}
+                  </dl>
+                )}
               </section>
             ))}
           </div>
