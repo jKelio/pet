@@ -68,9 +68,6 @@ const resources = {
         invalidLink: 'Invalid link. Please request a new login link.',
         linkExpired: 'The login link is invalid or has expired.',
         requestNewLink: 'Request a new link',
-        openInApp: 'Open in App',
-        openInAppHint: 'You are now signed in. Open the app directly?',
-        continueInBrowser: 'Continue in browser',
       },
       admin: {
         setupClubTitle: 'Set up club',
@@ -431,9 +428,6 @@ const resources = {
         invalidLink: 'Ungültiger Link. Bitte fordere einen neuen Login-Link an.',
         linkExpired: 'Der Login-Link ist ungültig oder abgelaufen.',
         requestNewLink: 'Neuen Link anfordern',
-        openInApp: 'In App öffnen',
-        openInAppHint: 'Du bist jetzt eingeloggt. App direkt öffnen?',
-        continueInBrowser: 'Im Browser fortfahren',
       },
       admin: {
         setupClubTitle: 'Club einrichten',
