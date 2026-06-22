@@ -43,7 +43,7 @@ export function AppFeedbackPage() {
         <form onSubmit={handleSubmit} className="max-w-xl space-y-5">
           <div className="space-y-2">
             <Label>{t('appFeedback.typeLabel')}</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {TYPES.map(({ value, labelKey }) => (
                 <Button
                   key={value}
