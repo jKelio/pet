@@ -15,9 +15,9 @@ const noUsage: TenantUsage = { seats: 0, teams: 0, syncThisPeriod: 0, pdfThisPer
 
 describe('PLAN_LIMITS', () => {
   it('encodes the three-plan matrix from the ADRs', () => {
-    expect(PLAN_LIMITS.free).toEqual({ seats: 1, teams: 1, syncPerMonth: 0, pdfPerMonth: 2, ai: false });
-    expect(PLAN_LIMITS.pro).toEqual({ seats: 5, teams: 10, syncPerMonth: 10, pdfPerMonth: null, ai: true });
-    expect(PLAN_LIMITS.premium).toEqual({ seats: null, teams: null, syncPerMonth: null, pdfPerMonth: null, ai: true });
+    expect(PLAN_LIMITS.free).toEqual({ seats: 1, teams: 1, syncPerMonth: 0, pdfPerMonth: 2, ai: false, externalTeams: false });
+    expect(PLAN_LIMITS.pro).toEqual({ seats: 5, teams: 10, syncPerMonth: 10, pdfPerMonth: null, ai: true, externalTeams: false });
+    expect(PLAN_LIMITS.premium).toEqual({ seats: null, teams: null, syncPerMonth: null, pdfPerMonth: null, ai: true, externalTeams: true });
   });
 
   it('uses null (not Infinity) for uncapped limits so it survives JSON', () => {
@@ -29,6 +29,12 @@ describe('PLAN_LIMITS', () => {
     expect(PLAN_LIMITS.free.ai).toBe(false);
     expect(PLAN_LIMITS.pro.ai).toBe(true);
     expect(PLAN_LIMITS.premium.ai).toBe(true);
+  });
+
+  it('only premium may use External Teams', () => {
+    expect(PLAN_LIMITS.free.externalTeams).toBe(false);
+    expect(PLAN_LIMITS.pro.externalTeams).toBe(false);
+    expect(PLAN_LIMITS.premium.externalTeams).toBe(true);
   });
 
   it('free cannot cloud sync at all', () => {
@@ -122,6 +128,12 @@ describe('resolveEntitlements', () => {
     expect(e.sync.allowed).toBe(true);
     expect(e.pdf.allowed).toBe(true);
     expect(e.ai.allowed).toBe(true);
+    expect(e.externalTeams.allowed).toBe(true);
+  });
+
+  it('free and pro may not use External Teams', () => {
+    expect(resolveEntitlements('free', noUsage).externalTeams.allowed).toBe(false);
+    expect(resolveEntitlements('pro', noUsage).externalTeams.allowed).toBe(false);
   });
 });
 

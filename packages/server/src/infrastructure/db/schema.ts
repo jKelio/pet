@@ -9,6 +9,7 @@ import { sql } from 'drizzle-orm';
 export const tenantPlanEnum = pgEnum('tenant_plan', ['free', 'pro', 'premium']);
 export const userRoleEnum = pgEnum('user_role', ['club_admin', 'coach', 'analyst']);
 export const sessionStatusEnum = pgEnum('session_status', ['draft', 'in_progress', 'completed']);
+export const teamKindEnum = pgEnum('team_kind', ['own', 'external']);
 
 // ─── Tenants ──────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,9 @@ export const teams = pgTable('teams', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
+  kind: teamKindEnum('kind').notNull().default('own'),
+  /** Name of the club this team belongs to. Only set for kind='external'. */
+  externalClubName: text('external_club_name'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('teams_tenant_id_idx').on(t.tenantId),

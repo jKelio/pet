@@ -108,7 +108,12 @@ export function PracticeInfoForm() {
               suggestions={teams.map((t) => t.name)}
               onChange={(teamName) => {
                 const match = teams.find((tm) => tm.name === teamName);
-                setPracticeInfo({ ...practiceInfo, teamName, teamId: match?.id });
+                const updates: Partial<typeof practiceInfo> = { teamName, teamId: match?.id };
+                // For external teams, auto-fill the club name from the registered entity.
+                if (match?.kind === 'external' && match.externalClubName) {
+                  updates.clubName = match.externalClubName;
+                }
+                setPracticeInfo({ ...practiceInfo, ...updates });
               }}
             />
             <div className="flex items-center gap-2 pt-1">

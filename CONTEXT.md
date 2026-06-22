@@ -73,9 +73,13 @@ A club — the top-level organisational unit. One club owns one or more Teams an
 _Avoid_: Organisation, account, club (use Tenant in code; "club" is fine in UI copy).
 
 **Team**:
-A group within a Tenant (e.g. "U16", "Herren 1"). A Tenant has one or more Teams. A Member can be assigned to multiple Teams.
+A group **the Tenant fields** (e.g. "U16", "Herren 1") — its own players, with a [[Roster]]. A Tenant has one or more Teams. A Member can be assigned to multiple Teams. Contrast with an [[External Team]], which the Tenant tracks but does not field.
 _Avoid_: Group, squad.
 _Note_: A practice session carries a free-text **team name** (a display label, possibly typed ad hoc). It is bound to an actual registered Team only when that name matches one; that binding is what decides which Team the session syncs into. An unmatched name leaves the session's Team ambiguous.
+
+**External Team**:
+A team a Tenant **tracks but does not field** — e.g. a federation tracking a training of one of its member clubs. Its players take the ice for another club; the tracking Tenant only observes. Registered under the *tracking* Tenant (the federation), so the results are stored in **its own** Tenant, never in the tracked club's Tenant. Stored as a [[Team]] with `kind='external'`, carrying the **name of the club it belongs to** (the tracked member club) — distinct from the tracking Tenant's own club name, and set once at registration rather than retyped per session. Like any Team it can have a [[Roster]] — the Members (scouts/coaches) assigned to track it, which drives who may track and view its sessions — but those Members are staff, never the external team's players. Syncing sessions bound to an External Team is a [[premium]]-only [[Entitlement]]; below premium a foreign team can still be tracked locally as a [[Local-Only Session]] (free-text team name) but never synced.
+_Avoid_: foreign team, opponent, non-tenant team, scouted team (use "External Team" in code; "foreign team" is fine in UI copy).
 
 **Membership**:
 The relationship between a User and a Tenant, carrying a single Role. A User has at most one Membership per Tenant.

@@ -1,5 +1,5 @@
 import type { SessionRepository } from '../../domain/ports/session.repository.js';
-import type { MembershipRepository } from '../../domain/ports/user.repository.js';
+import type { MembershipRepository, TeamRepository } from '../../domain/ports/user.repository.js';
 import type { PracticeSession } from '@pet/shared';
 import type { SyncSessionInput } from '@pet/shared';
 import { hasPermission } from '@pet/shared';
@@ -9,6 +9,7 @@ import type { EntitlementService } from '../services/entitlement.service.js';
 export interface SyncSessionDeps {
   sessionRepository: SessionRepository;
   membershipRepository: MembershipRepository;
+  teamRepository: TeamRepository;
   entitlementService: EntitlementService;
 }
 
@@ -41,6 +42,12 @@ export class SyncSessionUseCase {
       if (!teamIds.includes(input.teamId)) {
         throw new UnauthorizedError('User is not assigned to this team');
       }
+    }
+
+    // Syncing to an External Team requires Premium, checked before metering.
+    const team = await this.deps.teamRepository.findById(input.teamId, ctx.tenantId);
+    if (team?.kind === 'external') {
+      await this.deps.entitlementService.assertCanUseExternalTeams(ctx.tenantId);
     }
 
     const existing = await this.deps.sessionRepository.findById(input.id, ctx.tenantId);

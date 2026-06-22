@@ -2,7 +2,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import type { DbClient } from '../db/client.js';
 import { tenants, teams } from '../db/schema.js';
 import type { TenantRepository, TeamRepository } from '../../domain/ports/user.repository.js';
-import type { Tenant, Team, TenantPlan } from '@pet/shared';
+import type { Tenant, Team, TenantPlan, TeamKind } from '@pet/shared';
 
 export class PgTeamRepository implements TeamRepository {
   constructor(private readonly db: DbClient) {}
@@ -24,8 +24,17 @@ export class PgTeamRepository implements TeamRepository {
   async save(team: Team): Promise<void> {
     await this.db
       .insert(teams)
-      .values({ id: team.id, tenantId: team.tenantId, name: team.name })
-      .onConflictDoUpdate({ target: teams.id, set: { name: team.name } });
+      .values({
+        id: team.id,
+        tenantId: team.tenantId,
+        name: team.name,
+        kind: team.kind,
+        externalClubName: team.externalClubName ?? null,
+      })
+      .onConflictDoUpdate({
+        target: teams.id,
+        set: { name: team.name, kind: team.kind, externalClubName: team.externalClubName ?? null },
+      });
   }
 
   private toTeam(row: typeof teams.$inferSelect): Team {
@@ -33,6 +42,8 @@ export class PgTeamRepository implements TeamRepository {
       id: row.id,
       tenantId: row.tenantId,
       name: row.name,
+      kind: row.kind as TeamKind,
+      externalClubName: row.externalClubName ?? null,
       createdAt: row.createdAt.toISOString(),
     };
   }

@@ -1,6 +1,7 @@
 # ADR 0010 — Non-destructive, reversible plan downgrade (soft-lock)
 
 **Status:** Accepted
+**Amended by:** [[0013-external-teams]] — adds a **feature**-based lock trigger alongside the capacity-based ones here: an [[External Team]] (`kind='external'`) and its synced sessions are Locked whenever `plan !== 'premium'`, so the lock fires even on premium→pro (where own-team cloud data is retained).
 
 ## Context
 

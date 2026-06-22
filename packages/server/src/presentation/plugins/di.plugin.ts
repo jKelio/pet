@@ -159,6 +159,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const syncSession = new SyncSessionUseCase({
     sessionRepository,
     membershipRepository,
+    teamRepository,
     entitlementService,
   });
 

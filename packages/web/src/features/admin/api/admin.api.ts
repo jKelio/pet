@@ -37,6 +37,9 @@ export const adminApi = {
   createTeam: (name: string, accessToken: string) =>
     apiClient.post<Team>('/admin/teams', { name }, accessToken),
 
+  createExternalTeam: (name: string, externalClubName: string, accessToken: string) =>
+    apiClient.post<Team>('/admin/external-teams', { name, externalClubName }, accessToken),
+
   listTeams: (accessToken: string) =>
     apiClient.get<Team[]>('/admin/teams', accessToken),
 

@@ -2,7 +2,7 @@ import { describe, test, expect, mock } from 'bun:test';
 import { SyncSessionUseCase, UnauthorizedError } from './sync-session.js';
 import { UpgradeRequiredError, type EntitlementService } from '../services/entitlement.service.js';
 import type { SessionRepository } from '../../domain/ports/session.repository.js';
-import type { MembershipRepository } from '../../domain/ports/user.repository.js';
+import type { MembershipRepository, TeamRepository } from '../../domain/ports/user.repository.js';
 import type { SyncSessionInput, UserRole } from '@pet/shared';
 
 const SESSION_INPUT: SyncSessionInput = {
@@ -48,11 +48,20 @@ function makeSessionRepo(existing: null = null): SessionRepository {
   } as unknown as SessionRepository;
 }
 
+function makeTeamRepo(): TeamRepository {
+  return {
+    findById: mock(async () => null),
+    findByTenant: mock(async () => []),
+    save: mock(async () => {}),
+  } as unknown as TeamRepository;
+}
+
 function makeEntitlement(allow = true): EntitlementService {
   return {
     assertCanSync: mock(async () => {
       if (!allow) throw new UpgradeRequiredError('Cloud sync requires a Pro or Premium plan.', 'sync');
     }),
+    assertCanUseExternalTeams: mock(async () => {}),
   } as unknown as EntitlementService;
 }
 
@@ -63,7 +72,7 @@ describe('SyncSessionUseCase', () => {
       teamIds: ['team-1'],
     });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
 
     const result = await useCase.execute(SESSION_INPUT, CTX);
 
@@ -78,7 +87,7 @@ describe('SyncSessionUseCase', () => {
   test('throws UnauthorizedError when user is not a tenant member', async () => {
     const membershipRepo = makeMembershipRepo({ membership: null, teamIds: [] });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
 
     expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
   });
@@ -89,7 +98,7 @@ describe('SyncSessionUseCase', () => {
       teamIds: ['team-99'], // different team
     });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
 
     expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
   });
@@ -100,7 +109,7 @@ describe('SyncSessionUseCase', () => {
       teamIds: ['team-1'],
     });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
 
     expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
     expect(sessionRepo.save).not.toHaveBeenCalled();
@@ -112,7 +121,7 @@ describe('SyncSessionUseCase', () => {
       teamIds: [], // not on any roster
     });
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
 
     const result = await useCase.execute(SESSION_INPUT, CTX);
 
@@ -144,7 +153,7 @@ describe('SyncSessionUseCase', () => {
       findByTeam: mock(async () => []),
     } as unknown as SessionRepository;
 
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, entitlementService: makeEntitlement() });
+    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
     const result = await useCase.execute(SESSION_INPUT, CTX);
 
     expect(result.createdAt).toBe(existingCreatedAt);
@@ -159,6 +168,7 @@ describe('SyncSessionUseCase', () => {
     const useCase = new SyncSessionUseCase({
       sessionRepository: sessionRepo,
       membershipRepository: membershipRepo,
+      teamRepository: makeTeamRepo(),
       entitlementService: makeEntitlement(false),
     });
 
@@ -191,6 +201,7 @@ describe('SyncSessionUseCase', () => {
     const useCase = new SyncSessionUseCase({
       sessionRepository: sessionRepo,
       membershipRepository: membershipRepo,
+      teamRepository: makeTeamRepo(),
       entitlementService: entitlement,
     });
 

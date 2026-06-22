@@ -82,12 +82,20 @@ export class EntitlementService {
     return snapshot;
   }
 
-  // ── Boolean feature ──
+  // ── Boolean features ──
 
   async assertCanUseAi(tenantId: string): Promise<EntitlementSnapshot> {
     const snapshot = await this.getSnapshot(tenantId);
     if (!snapshot.ai.allowed) {
       throw new UpgradeRequiredError('AI analysis requires a Pro or Premium plan.', 'ai');
+    }
+    return snapshot;
+  }
+
+  async assertCanUseExternalTeams(tenantId: string): Promise<EntitlementSnapshot> {
+    const snapshot = await this.getSnapshot(tenantId);
+    if (!snapshot.externalTeams.allowed) {
+      throw new UpgradeRequiredError('External Teams require a Premium plan.', 'externalTeams');
     }
     return snapshot;
   }

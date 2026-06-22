@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Users, Plus, Loader2, Trash2, UserPlus, ChevronDown, X, Pencil, Check } from 'lucide-react';
+import { Building2, Users, Plus, Loader2, Trash2, UserPlus, ChevronDown, X, Pencil, Check, Globe } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
 import { Label } from '../../shared/components/ui/label.js';
@@ -104,6 +104,66 @@ function CreateTeamForm({ accessToken }: { accessToken: string }) {
         placeholder={t('admin.teamNamePlaceholder')}
         className="h-9"
       />
+      <Button type="submit" size="sm" disabled={loading}>
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('admin.create')}
+      </Button>
+      <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
+        {t('admin.cancel')}
+      </Button>
+    </form>
+  );
+}
+
+function CreateExternalTeamForm({ accessToken }: { accessToken: string }) {
+  const { t } = useTranslation('pet');
+  const [name, setName] = useState('');
+  const [clubName, setClubName] = useState('');
+  const [open, setOpen] = useState(false);
+  const { createExternalTeam, loading } = useAdminStore();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !clubName.trim()) return;
+    await createExternalTeam(name.trim(), clubName.trim(), accessToken);
+    setName('');
+    setClubName('');
+    setOpen(false);
+  };
+
+  if (!open) {
+    return (
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Plus className="mr-1.5 h-4 w-4" />
+        {t('admin.addExternalTeam')}
+      </Button>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-end">
+      <div className="space-y-1">
+        <Label htmlFor="extClubName" className="text-xs">{t('admin.externalClubNameLabel')}</Label>
+        <Input
+          id="extClubName"
+          autoFocus
+          value={clubName}
+          onChange={(e) => setClubName(e.target.value)}
+          placeholder={t('admin.externalClubNamePlaceholder')}
+          className="h-9 w-44"
+          required
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="extTeamName" className="text-xs">{t('admin.teamNameLabel')}</Label>
+        <Input
+          id="extTeamName"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t('admin.teamNamePlaceholder')}
+          className="h-9 w-32"
+          required
+        />
+      </div>
       <Button type="submit" size="sm" disabled={loading}>
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('admin.create')}
       </Button>
@@ -255,7 +315,12 @@ function TeamRosterAccordion({
         className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/40 transition-colors"
       >
         <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-        <span className="font-medium flex-1">{team.name}</span>
+        <span className="flex-1 min-w-0">
+          <span className="font-medium block">{team.name}</span>
+          {team.kind === 'external' && team.externalClubName && (
+            <span className="text-xs text-muted-foreground">{team.externalClubName}</span>
+          )}
+        </span>
         <span className="text-xs text-muted-foreground">{roster.length}</span>
         <ChevronDown
           className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
@@ -418,7 +483,7 @@ function MemberRow({
 export function AdminPage() {
   const { t } = useTranslation('pet');
   const accessToken = useAuthStore((s) => s.accessToken);
-  const { tenant, membership, teams, members, loading, error, loadProfile, loadMembers } =
+  const { tenant, membership, teams, members, loading, error, loadProfile, loadMembers, entitlements } =
     useAdminStore();
 
   useEffect(() => {
@@ -448,6 +513,9 @@ export function AdminPage() {
   }
 
   const isAdmin = membership.role === 'club_admin';
+  const ownTeams = teams.filter((t) => t.kind === 'own');
+  const externalTeams = teams.filter((t) => t.kind === 'external');
+  const canUseExternalTeams = entitlements?.externalTeams.allowed ?? false;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -471,19 +539,19 @@ export function AdminPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Users className="h-4 w-4" />
-              {t('admin.teams')} ({teams.length})
+              {t('admin.teams')} ({ownTeams.length})
             </h2>
             {isAdmin && <CreateTeamForm accessToken={accessToken} />}
           </div>
 
-          {teams.length === 0 && (
+          {ownTeams.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
               {t('admin.noTeams')}
             </p>
           )}
 
           <div className="space-y-2">
-            {teams.map((team) => (
+            {ownTeams.map((team) => (
               <TeamRosterAccordion
                 key={team.id}
                 team={team}
@@ -494,6 +562,36 @@ export function AdminPage() {
             ))}
           </div>
         </section>
+
+        {(canUseExternalTeams || externalTeams.length > 0) && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="h-4 w-4" />
+                {t('admin.externalTeams')} ({externalTeams.length})
+              </h2>
+              {isAdmin && canUseExternalTeams && <CreateExternalTeamForm accessToken={accessToken} />}
+            </div>
+
+            {externalTeams.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {t('admin.noExternalTeams')}
+              </p>
+            )}
+
+            <div className="space-y-2">
+              {externalTeams.map((team) => (
+                <TeamRosterAccordion
+                  key={team.id}
+                  team={team}
+                  members={members}
+                  isAdmin={isAdmin}
+                  accessToken={accessToken}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">

@@ -108,10 +108,15 @@ export interface Tenant {
 
 export type TenantPlan = (typeof import('./constants.js').TENANT_PLANS)[number];
 
+export type TeamKind = 'own' | 'external';
+
 export interface Team {
   id: string;
   tenantId: string;
   name: string;
+  kind: TeamKind;
+  /** Name of the club this team belongs to. Only set when kind='external'. */
+  externalClubName: string | null;
   createdAt: string;
 }
 

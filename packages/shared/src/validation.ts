@@ -97,6 +97,11 @@ export const CreateTeamSchema = z.object({
   name: z.string().trim().min(1).max(100),
 });
 
+export const CreateExternalTeamSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  externalClubName: z.string().trim().min(1).max(100),
+});
+
 export const UpdateMemberSchema = z.object({
   name: z.string().trim().max(100),
 });
@@ -248,6 +253,7 @@ export type VerifyMagicLinkInput = z.infer<typeof VerifyMagicLinkSchema>;
 export type SyncSessionInput = z.infer<typeof SyncSessionSchema>;
 export type InviteUserInput = z.infer<typeof InviteUserSchema>;
 export type CreateTeamInput = z.infer<typeof CreateTeamSchema>;
+export type CreateExternalTeamInput = z.infer<typeof CreateExternalTeamSchema>;
 export type UpdateMemberInput = z.infer<typeof UpdateMemberSchema>;
 export type SetPlanInput = z.infer<typeof SetPlanSchema>;
 export type PdfReportModel = z.infer<typeof PdfReportSchema>;

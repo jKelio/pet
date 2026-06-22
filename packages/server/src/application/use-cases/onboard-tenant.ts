@@ -53,6 +53,8 @@ export class OnboardTenantUseCase {
       id: teamId,
       tenantId,
       name: input.teamName.trim(),
+      kind: 'own',
+      externalClubName: null,
       createdAt: now,
     };
 

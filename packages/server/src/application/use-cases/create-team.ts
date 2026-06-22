@@ -8,6 +8,12 @@ export interface CreateTeamDeps {
   entitlementService: EntitlementService;
 }
 
+export interface CreateTeamInput {
+  name: string;
+  kind?: 'own' | 'external';
+  externalClubName?: string;
+}
+
 export class ForbiddenError extends Error {
   readonly statusCode = 403;
   constructor(message: string) {
@@ -19,19 +25,28 @@ export class ForbiddenError extends Error {
 export class CreateTeamUseCase {
   constructor(private readonly deps: CreateTeamDeps) {}
 
-  async execute(name: string, userId: string, tenantId: string): Promise<Team> {
+  async execute(input: CreateTeamInput, userId: string, tenantId: string): Promise<Team> {
     const membership = await this.deps.membershipRepository.findByUserAndTenant(userId, tenantId);
     if (!membership || membership.role !== 'club_admin') {
       throw new ForbiddenError('Only club admins can create teams');
     }
 
-    // Enforce the plan's team limit before creating another team.
-    await this.deps.entitlementService.assertCanCreateTeam(tenantId);
+    const kind = input.kind ?? 'own';
+
+    if (kind === 'external') {
+      // External Teams are a Premium-only boolean feature — not gated by the own-team capacity.
+      await this.deps.entitlementService.assertCanUseExternalTeams(tenantId);
+    } else {
+      // Own Teams count against the plan's team capacity limit.
+      await this.deps.entitlementService.assertCanCreateTeam(tenantId);
+    }
 
     const team: Team = {
       id: crypto.randomUUID(),
       tenantId,
-      name: name.trim(),
+      name: input.name.trim(),
+      kind,
+      externalClubName: kind === 'external' ? (input.externalClubName?.trim() ?? null) : null,
       createdAt: new Date().toISOString(),
     };
 

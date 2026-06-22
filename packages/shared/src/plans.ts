@@ -15,7 +15,7 @@ export type Limit = number | null;
 export interface PlanLimits {
   /** Max Memberships (seats) in the tenant, including the club_admin. Capacity limit. */
   seats: Limit;
-  /** Max Teams in the tenant. Capacity limit. */
+  /** Max own Teams in the tenant. Capacity limit. External Teams are not counted here. */
   teams: Limit;
   /** Cloud Syncs (distinct sessions) allowed per calendar month. `0` disables sync entirely. Consumption limit. */
   syncPerMonth: Limit;
@@ -23,13 +23,15 @@ export interface PlanLimits {
   pdfPerMonth: Limit;
   /** Whether AI Recommendation generation is available at all. Boolean gate. */
   ai: boolean;
+  /** Whether External Teams (kind='external') may be created and synced. Boolean gate. Premium-only. */
+  externalTeams: boolean;
 }
 
 /** `null` means uncapped (∞). */
 export const PLAN_LIMITS: Record<TenantPlan, PlanLimits> = {
-  free: { seats: 1, teams: 1, syncPerMonth: 0, pdfPerMonth: 2, ai: false },
-  pro: { seats: 5, teams: 10, syncPerMonth: 10, pdfPerMonth: null, ai: true },
-  premium: { seats: null, teams: null, syncPerMonth: null, pdfPerMonth: null, ai: true },
+  free: { seats: 1, teams: 1, syncPerMonth: 0, pdfPerMonth: 2, ai: false, externalTeams: false },
+  pro: { seats: 5, teams: 10, syncPerMonth: 10, pdfPerMonth: null, ai: true, externalTeams: false },
+  premium: { seats: null, teams: null, syncPerMonth: null, pdfPerMonth: null, ai: true, externalTeams: true },
 };
 
 /** Limits for a given plan. */
@@ -94,6 +96,8 @@ export interface EntitlementSnapshot {
   pdf: FeatureEntitlement;
   /** AI is a boolean feature, not a quota. */
   ai: { allowed: boolean };
+  /** External Teams (kind='external') are a boolean feature — Premium-only. */
+  externalTeams: { allowed: boolean };
 }
 
 function feature(limit: Limit, used: number): FeatureEntitlement {
@@ -110,6 +114,7 @@ export function resolveEntitlements(plan: TenantPlan, usage: TenantUsage): Entit
     sync: feature(limits.syncPerMonth, usage.syncThisPeriod),
     pdf: feature(limits.pdfPerMonth, usage.pdfThisPeriod),
     ai: { allowed: limits.ai },
+    externalTeams: { allowed: limits.externalTeams },
   };
 }
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
-import { CreateTeamSchema, InviteUserSchema, UpdateMemberSchema } from '@pet/shared';
+import { CreateTeamSchema, CreateExternalTeamSchema, InviteUserSchema, UpdateMemberSchema } from '@pet/shared';
 import type { GetMyProfileUseCase } from '../../application/use-cases/get-my-profile.js';
 import type { OnboardTenantUseCase } from '../../application/use-cases/onboard-tenant.js';
 import type { CreateTeamUseCase } from '../../application/use-cases/create-team.js';
@@ -96,7 +96,45 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
     }
 
     try {
-      const team = await deps.createTeam.execute(result.data.name, request.userId, tenantId);
+      const team = await deps.createTeam.execute({ name: result.data.name }, request.userId, tenantId);
+      return reply.code(201).send(team);
+    } catch (err) {
+      if (err instanceof ForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
+      }
+      if (isEntitlementError(err)) {
+        return reply.code(err.statusCode).send({ code: err.code, message: err.message, statusCode: err.statusCode });
+      }
+      throw err;
+    }
+  });
+
+  // POST /admin/external-teams — create an External Team (club_admin + Premium only)
+  fastify.post('/admin/external-teams', async (request, reply) => {
+    const result = CreateExternalTeamSchema.safeParse(request.body);
+    if (!result.success) {
+      return reply.code(400).send({
+        code: 'VALIDATION_ERROR',
+        message: result.error.issues[0].message,
+        statusCode: 400,
+      });
+    }
+
+    const tenantId = request.tenantId;
+    if (!tenantId) {
+      return reply.code(403).send({
+        code: 'NO_TENANT',
+        message: 'No tenant in token. Complete onboarding first.',
+        statusCode: 403,
+      });
+    }
+
+    try {
+      const team = await deps.createTeam.execute(
+        { name: result.data.name, kind: 'external', externalClubName: result.data.externalClubName },
+        request.userId,
+        tenantId,
+      );
       return reply.code(201).send(team);
     } catch (err) {
       if (err instanceof ForbiddenError) {
