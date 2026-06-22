@@ -340,6 +340,7 @@ const resources = {
             { term: 'Explanation', definition: 'Timer. Time the coach spends verbally explaining a drill, rules, sequences, or learning objectives. Players are inactive during this time.' },
             { term: 'Demonstration', definition: 'Timer. Time spent showing how a drill or movement should be performed. If a player demonstrates, all players are considered inactive for tracking purposes.' },
             { term: 'Feedback (Team)', definition: 'Timer. Time for verbal or practical feedback to the entire group during or after a drill. The coach pauses or ends the drill; the tracked player is inactive during this time.' },
+            { term: 'Feedback (Player)', definition: 'Counter. One piece of individual feedback directed at the tracked player — unlike Feedback (Team), which is timed. Also includes conversations or commands during a drill or during waiting time.' },
             {
               term: 'Movement Time',
               definition: 'Timer. Active movement time of a player — the time the tracked player is measured and used for efficiency evaluation. Free skating before, during, or after drills does not count. Subdivided into with and without puck for a more detailed view.',
@@ -356,7 +357,6 @@ const resources = {
                 { term: 'Passing & Shooting', definition: 'The timer runs during the activity; passes and shots are tracked.' },
               ],
             },
-            { term: 'Feedback (Player)', definition: 'Counter. One piece of individual feedback directed at the tracked player — unlike Feedback (Team), which is timed. Also includes conversations or commands during a drill or during waiting time.' },
             { term: 'Shots', definition: 'Counter. A shot by the tracked player — switches Movement Time to “without Puck”. Shot quality and technical execution (e.g. snap shot, slap shot) are not tracked.' },
             { term: 'Passes', definition: 'Counter. Every controlled handoff of the puck to a teammate — switches Movement Time to “without Puck”. Pass quality and technical execution (e.g. bank pass) are not tracked.' },
           ],
@@ -740,6 +740,7 @@ const resources = {
             { term: 'Erklärung', definition: 'Timer. Zeit, die der Trainer damit verbringt, eine Übung, Regeln, Abläufe oder Lernziele zu erklären. In dieser Zeit sind die Spieler inaktiv.' },
             { term: 'Demonstration', definition: 'Timer. Zeit, in der der Trainer zeigt, wie eine Übung oder Bewegung ausgeführt werden soll. Wenn ein Spieler demonstriert, gelten beim Tracking alle Spieler als inaktiv.' },
             { term: 'Feedback (Team)', definition: 'Timer. Zeit für verbales oder praktisches Feedback an die gesamte Gruppe während oder nach einer Übung. Der Trainer unterbricht oder beendet die Übung; der getrackte Spieler ist während dieser Zeit inaktiv.' },
+            { term: 'Feedback (Spieler)', definition: 'Zähler. Ein individuelles Feedback an den beobachteten Spieler – wird gezählt, anders als Feedback (Team), das zeitlich erfasst wird. Hierzu zählen auch Gespräche oder Kommandos während einer Übung oder während der Wartezeit.' },
             {
               term: 'Bewegungszeit',
               definition: 'Timer. Aktive Bewegungszeit eines Spielers – die Zeit, in der der getrackte Spieler gemessen wird und die für die effizient genutzte Trainingszeit herangezogen wird. Freies Laufen vor, während oder nach Übungen zählt nicht. Wird in mit und ohne Puck unterteilt, um eine differenzierte Sichtweise zu erhalten.',
@@ -756,7 +757,6 @@ const resources = {
                 { term: 'Passen & Schießen', definition: 'Der Timer läuft während der Aktivität; Pässe sowie Schüsse werden getrackt.' },
               ],
             },
-            { term: 'Feedback (Spieler)', definition: 'Zähler. Ein individuelles Feedback an den beobachteten Spieler – wird gezählt, anders als Feedback (Team), das zeitlich erfasst wird. Hierzu zählen auch Gespräche oder Kommandos während einer Übung oder während der Wartezeit.' },
             { term: 'Schüsse', definition: 'Zähler. Ein Schuss des beobachteten Spielers – schaltet die Bewegungszeit auf „Ohne Puck”. Schussqualität und technische Ausführung (z. B. Snap-Shot, Schlagschuss) werden nicht erfasst.' },
             { term: 'Pässe', definition: 'Zähler. Jede kontrollierte Weitergabe des Pucks an einen Mitspieler – schaltet die Bewegungszeit auf „Ohne Puck”. Passqualität und technische Ausführung (z. B. Pass über die Bande) werden nicht erfasst.' },
           ],
