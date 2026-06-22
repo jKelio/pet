@@ -41,6 +41,7 @@ export function PracticeInfoForm() {
     setPracticeInfo({ ...practiceInfo, [field]: value });
 
   const selectedTeam = teams.find((t) => t.name === practiceInfo.teamName);
+  const isClubReadOnly = !selectedTeam || selectedTeam.kind !== 'external';
   const coachSuggestions = members
     .filter((m) => m.membership.role === 'coach')
     .filter((m) => !selectedTeam || m.teamIds.includes(selectedTeam.id));
@@ -98,6 +99,7 @@ export function PracticeInfoForm() {
               value={practiceInfo.clubName}
               suggestions={[]}
               onChange={(clubName) => update('clubName', clubName)}
+              readOnly={isClubReadOnly}
             />
           </div>
           <div className="space-y-1.5">
@@ -109,9 +111,10 @@ export function PracticeInfoForm() {
               onChange={(teamName) => {
                 const match = teams.find((tm) => tm.name === teamName);
                 const updates: Partial<typeof practiceInfo> = { teamName, teamId: match?.id };
-                // For external teams, auto-fill the club name from the registered entity.
                 if (match?.kind === 'external' && match.externalClubName) {
                   updates.clubName = match.externalClubName;
+                } else if (tenant?.name) {
+                  updates.clubName = tenant.name;
                 }
                 setPracticeInfo({ ...practiceInfo, ...updates });
               }}

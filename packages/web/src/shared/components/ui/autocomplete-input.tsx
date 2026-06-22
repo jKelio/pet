@@ -10,9 +10,10 @@ interface AutocompleteInputProps {
   suggestions: string[];
   placeholder?: string;
   className?: string;
+  readOnly?: boolean;
 }
 
-export function AutocompleteInput({ id, value, onChange, suggestions, placeholder, className }: AutocompleteInputProps) {
+export function AutocompleteInput({ id, value, onChange, suggestions, placeholder, className, readOnly }: AutocompleteInputProps) {
   const [open, setOpen] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(-1);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -64,16 +65,18 @@ export function AutocompleteInput({ id, value, onChange, suggestions, placeholde
         id={id}
         value={value}
         placeholder={placeholder}
-        className={cn(value ? 'pr-8' : '', className)}
-        onFocus={() => setOpen(true)}
+        className={cn(value && !readOnly ? 'pr-8' : '', readOnly ? 'bg-muted/50 cursor-default' : '', className)}
+        onFocus={() => !readOnly && setOpen(true)}
         onChange={(e) => {
+          if (readOnly) return;
           onChange(e.target.value);
           setOpen(true);
         }}
         onKeyDown={handleKeyDown}
         autoComplete="off"
+        readOnly={readOnly}
       />
-      {value && (
+      {value && !readOnly && (
         <button
           type="button"
           onClick={() => onChange('')}
@@ -82,7 +85,7 @@ export function AutocompleteInput({ id, value, onChange, suggestions, placeholde
           <X className="h-3.5 w-3.5" />
         </button>
       )}
-      {open && filtered.length > 0 && (
+      {!readOnly && open && filtered.length > 0 && (
         <ul className="absolute z-50 w-full mt-1 max-h-48 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md">
           {filtered.map((suggestion, i) => (
             <li key={suggestion}>
