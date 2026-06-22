@@ -28,6 +28,12 @@ _Avoid_: Loss, giveaway.
 One continuous movement bout of the tracked player, made up of adjacent `with Puck` and `without Puck` children. It ends when neither puck timer is running (the player stops moving) and a new one begins when movement resumes. A drill may contain several. Episodes are *derived* from the children's timestamps, not stored.
 _Avoid_: Segment (reserved for a single timer start/stop interval), bout.
 
+### Results
+
+**Session Results** (DE: Trainingsauswertung):
+The on-screen charts, KPI cards, and timelines shown immediately after a Completed Session finishes, or when re-opening a session from the History view. A transient view — it exists only in the context of one specific session and is reached either (a) automatically after finishing live tracking, or (b) via "View results" in the History view. It is not a persistent navigation destination; there is no sidebar link. Direct access to `/sessions` without session data in the store redirects to the History view. Distinct from the [[PDF Report]], which is a generated document artifact.
+_Avoid_: Results page, Ergebnisse, Trainingsergebnisse.
+
 ### Sessions
 
 **Planned Session**:

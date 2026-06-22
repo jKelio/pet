@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   PieChart,
   Pie,
@@ -252,15 +252,7 @@ export function ResultsPage() {
   const handleBack = () => navigate(-1);
 
   if (localDrills.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
-        <p className="text-muted-foreground">{t('results.noData')}</p>
-        <Button onClick={() => navigate('/')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t('results.newTraining')}
-        </Button>
-      </div>
-    );
+    return <Navigate to="/history" replace />;
   }
 
   return (

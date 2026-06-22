@@ -11,7 +11,6 @@ const resources = {
       },
       nav: {
         tracking: 'Tracking',
-        results: 'Results',
         history: 'History',
         glossary: 'Glossary',
         team: 'Team',
@@ -225,7 +224,7 @@ const resources = {
         passiveTime: 'Passive Time',
         noData: 'No tracking data available.',
         newTraining: 'New training',
-        title: 'Training Results',
+        title: 'Session Results',
         pdfExport: 'PDF Export',
         exporting: 'Exporting…',
         exportSection: 'Exporting section {{current}} of {{total}}…',
@@ -371,7 +370,6 @@ const resources = {
       },
       nav: {
         tracking: 'Tracking',
-        results: 'Ergebnisse',
         history: 'Historie',
         glossary: 'Glossar',
         team: 'Team',
@@ -585,7 +583,7 @@ const resources = {
         passiveTime: 'Passivzeit',
         noData: 'Keine Tracking-Daten vorhanden.',
         newTraining: 'Neues Training',
-        title: 'Trainingsergebnisse',
+        title: 'Trainingsauswertung',
         pdfExport: 'PDF Export',
         exporting: 'Exportiere…',
         exportSection: 'Exportiere Abschnitt {{current}} von {{total}}…',
