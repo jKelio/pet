@@ -26,11 +26,6 @@ export default defineConfig({
         orientation: 'portrait',
         start_url: '/',
         scope: '/',
-        // Chrome 139+ (Android & Desktop): open in-scope links in the installed PWA
-        // instead of a new browser tab when the app is installed.
-        capture_links: 'existing-client-navigate',
-        // Edge on Windows: prefer opening in-scope links in the installed PWA.
-        handle_links: 'preferred',
         icons: [
           { src: 'icon.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: 'icon.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
