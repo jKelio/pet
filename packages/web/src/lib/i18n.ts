@@ -325,6 +325,8 @@ const resources = {
     glossary: {
       title: 'Hockey Glossary',
       subtitle: 'Terms used in practice efficiency tracking',
+      searchPlaceholder: 'Search terms and definitions…',
+      noResults: 'No terms found.',
       sections: [
         {
           heading: 'Actions you log',
@@ -685,6 +687,8 @@ const resources = {
     glossary: {
       title: 'Hockey-Glossar',
       subtitle: 'Begriffe für das Trainingseffizienz-Tracking',
+      searchPlaceholder: 'Begriffe und Definitionen suchen…',
+      noResults: 'Keine Begriffe gefunden.',
       sections: [
         {
           heading: 'Aktionen, die du erfasst',
