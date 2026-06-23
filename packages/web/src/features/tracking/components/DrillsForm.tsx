@@ -14,9 +14,9 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { DRILL_TAGS } from '@pet/shared';
 import { useTrackingStore } from '../stores/tracking.store.js';
 import { SortableActionItem } from './SortableActionItem.js';
+import { DrillTagSelector } from './DrillTagSelector.js';
 
 export function DrillsForm() {
   const { t } = useTranslation('pet');
@@ -54,8 +54,6 @@ export function DrillsForm() {
 
   if (!currentDrill) return null;
 
-  const selectedTags = currentDrill.tags as string[];
-
   return (
     <div className="space-y-6">
       {/* Drill navigator */}
@@ -77,27 +75,12 @@ export function DrillsForm() {
         </div>
       )}
 
-      {/* Category tags */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          {t('drills.selectCategoriesLabel')}
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {DRILL_TAGS.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => handleTagChange(tag)}
-              className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
-                selectedTags.includes(tag)
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'border-border text-muted-foreground hover:border-primary/50'
-              }`}
-            >
-              {t(`drills.${tag}`)}
-            </button>
-          ))}
-        </div>
-      </section>
+      {/* Drill tags */}
+      <DrillTagSelector
+        label={t('drills.selectCategoriesLabel')}
+        selectedTags={currentDrill.tags as string[]}
+        onToggle={handleTagChange}
+      />
 
       {/* Action buttons */}
       <section className="space-y-3">

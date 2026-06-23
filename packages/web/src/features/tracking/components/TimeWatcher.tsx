@@ -10,6 +10,7 @@ import { Button } from '../../../shared/components/ui/button.js';
 import { useTrackingStore } from '../stores/tracking.store.js';
 import { useTimerStore, formatTime } from '../stores/timer.store.js';
 import { useTimerEngine } from '../hooks/useTimerEngine.js';
+import { DrillTagSelector } from './DrillTagSelector.js';
 
 interface Props {
   onFinish: () => void;
@@ -27,6 +28,7 @@ export function TimeWatcher({ onFinish }: Props) {
   const sessionType = useTrackingStore((s) => s.sessionType);
   const appendDrill = useTrackingStore((s) => s.appendDrill);
   const setPracticeInfo = useTrackingStore((s) => s.setPracticeInfo);
+  const updateCurrentDrill = useTrackingStore((s) => s.updateCurrentDrill);
 
   const timers = useTimerStore((s) => s.timers);
   const counters = useTimerStore((s) => s.counters);
@@ -98,6 +100,17 @@ export function TimeWatcher({ onFinish }: Props) {
     startDrill();
   };
 
+  // In a gap after a drill ended, currentDrillIndex still points at that
+  // just-finished drill, so the tag selector edits exactly that drill.
+  const handleToggleTag = (tag: string) => {
+    if (!currentDrill) return;
+    const current = currentDrill.tags as string[];
+    const next = current.includes(tag)
+      ? current.filter((tg) => tg !== tag)
+      : [...current, tag];
+    updateCurrentDrill({ ...currentDrill, tags: next as typeof currentDrill.tags });
+  };
+
   const handleTimerClick = (actionId: string, isRunning: boolean) => {
     if (isRunning) {
       pauseTimer(actionId);
@@ -125,6 +138,18 @@ export function TimeWatcher({ onFinish }: Props) {
                 {t('timeWatcher.active')}
               </span>
             </div>
+
+            {/* Tag (or revise) the drill that just ended. Hidden in the very
+                first gap, before any drill has run. */}
+            {drillHasEnded && currentDrill && (
+              <div className="rounded-xl border border-border bg-card p-4">
+                <DrillTagSelector
+                  label={`${t('drills.drill')} ${currentDrillIndex + 1} · ${t('timeWatcher.drillTags')}`}
+                  selectedTags={currentDrill.tags as string[]}
+                  onToggle={handleToggleTag}
+                />
+              </div>
+            )}
           </div>
         </div>
 
