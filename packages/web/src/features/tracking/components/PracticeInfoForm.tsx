@@ -46,7 +46,6 @@ export function PracticeInfoForm() {
 
   const ownTeams = teams.filter((t) => t.kind === 'own');
   const externalTeams = teams.filter((t) => t.kind === 'external');
-  const selectedTeam = teams.find((t) => t.id === practiceInfo.teamId);
 
   const externalClubs = [...new Set(
     externalTeams.map((t) => t.externalClubName).filter(Boolean) as string[],
