@@ -568,14 +568,14 @@ export function ResultsPage() {
                 <div className="rounded-lg border border-border bg-card p-4 grid @sm:grid-cols-2 gap-6">
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">{t('results.timePerAction')}</p>
-                    <ResponsiveContainer width="100%" height={200}>
+                    <ResponsiveContainer width="100%" height={Math.max(200, actionData.length * 28 + 100)}>
                       <PieChart>
                         <Pie
                           data={actionData}
                           dataKey="totalTime"
                           nameKey="actionLabel"
                           cx="50%"
-                          cy="50%"
+                          cy="45%"
                           outerRadius={70}
                         >
                           {actionData.map((entry, i) => (
