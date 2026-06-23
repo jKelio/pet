@@ -23,13 +23,17 @@ export function PracticeInfoForm() {
   const tenant = useAdminStore((s) => s.tenant);
   const members = useAdminStore((s) => s.members);
   const loadMembers = useAdminStore((s) => s.loadMembers);
+  const entitlements = useAdminStore((s) => s.entitlements);
+  const canUseExternalTeams = entitlements?.externalTeams.allowed ?? false;
   const accessToken = useAuthStore((s) => s.accessToken);
 
+  const tenantName = tenant?.name ?? '';
+
   useEffect(() => {
-    if (tenant?.name) {
-      setPracticeInfo((prev) => prev.clubName ? prev : { ...prev, clubName: tenant.name });
+    if (tenantName && !localOnly) {
+      setPracticeInfo((prev) => (prev.clubName ? prev : { ...prev, clubName: tenantName }));
     }
-  }, [tenant?.name]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tenantName, localOnly, setPracticeInfo]);
 
   useEffect(() => {
     if (members.length === 0 && accessToken) {
@@ -40,8 +44,29 @@ export function PracticeInfoForm() {
   const update = (field: string, value: string | number) =>
     setPracticeInfo({ ...practiceInfo, [field]: value });
 
+  const ownTeams = teams.filter((t) => t.kind === 'own');
+  const externalTeams = teams.filter((t) => t.kind === 'external');
   const selectedTeam = teams.find((t) => t.name === practiceInfo.teamName);
-  const isClubReadOnly = !selectedTeam || selectedTeam.kind !== 'external';
+
+  const isClubReadOnly = !localOnly;
+  const clubSuggestions = localOnly
+    ? [...new Set(externalTeams.map((t) => t.externalClubName).filter(Boolean) as string[])]
+    : [];
+  const teamSuggestions = localOnly
+    ? externalTeams
+        .filter((t) => !practiceInfo.clubName || t.externalClubName === practiceInfo.clubName)
+        .map((t) => t.name)
+    : ownTeams.map((t) => t.name);
+
+  const handleLocalOnlyToggle = (value: boolean) => {
+    setLocalOnly(value);
+    if (value) {
+      setPracticeInfo((prev) => ({ ...prev, clubName: '', teamName: '', teamId: undefined }));
+    } else {
+      setPracticeInfo((prev) => ({ ...prev, clubName: tenantName, teamName: '', teamId: undefined }));
+    }
+  };
+
   const coachSuggestions = members
     .filter((m) => m.membership.role === 'coach')
     .filter((m) => !selectedTeam || m.teamIds.includes(selectedTeam.id));
@@ -97,8 +122,10 @@ export function PracticeInfoForm() {
             <AutocompleteInput
               id="clubName"
               value={practiceInfo.clubName}
-              suggestions={[]}
-              onChange={(clubName) => update('clubName', clubName)}
+              suggestions={clubSuggestions}
+              onChange={(clubName) => {
+                setPracticeInfo((prev) => ({ ...prev, clubName, teamName: '', teamId: undefined }));
+              }}
               readOnly={isClubReadOnly}
             />
           </div>
@@ -107,20 +134,19 @@ export function PracticeInfoForm() {
             <AutocompleteInput
               id="teamName"
               value={practiceInfo.teamName}
-              suggestions={teams.map((t) => t.name)}
+              suggestions={teamSuggestions}
               onChange={(teamName) => {
-                const match = teams.find((tm) => tm.name === teamName);
+                const match = externalTeams.find((tm) => tm.name === teamName)
+                  ?? ownTeams.find((tm) => tm.name === teamName);
                 const updates: Partial<typeof practiceInfo> = { teamName, teamId: match?.id };
-                if (match?.kind === 'external' && match.externalClubName) {
+                if (localOnly && match?.externalClubName) {
                   updates.clubName = match.externalClubName;
-                } else if (tenant?.name) {
-                  updates.clubName = tenant.name;
                 }
                 setPracticeInfo({ ...practiceInfo, ...updates });
               }}
             />
             <div className="flex items-center gap-2 pt-1">
-              <Switch id="localOnly" checked={localOnly} onCheckedChange={setLocalOnly} />
+              <Switch id="localOnly" checked={localOnly} onCheckedChange={handleLocalOnlyToggle} disabled={!canUseExternalTeams} title={!canUseExternalTeams ? t('sessions.externalTeamUpgradeHint') : undefined} />
               <Label
                 htmlFor="localOnly"
                 className="text-xs font-normal text-muted-foreground cursor-pointer"
