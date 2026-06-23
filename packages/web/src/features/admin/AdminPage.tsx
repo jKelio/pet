@@ -7,7 +7,7 @@ import { Label } from '../../shared/components/ui/label.js';
 import { Card } from '../../shared/components/ui/card.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from './stores/admin.store.js';
-import type { UserRole } from '@pet/shared';
+import type { UserRole, FeatureEntitlement } from '@pet/shared';
 import type { MemberWithUser } from './api/admin.api.js';
 
 const ROLE_KEYS: UserRole[] = ['admin', 'member'];
@@ -354,6 +354,88 @@ function MemberRow({
   );
 }
 
+function QuotaRow({ label, entitlement }: { label: string; entitlement: FeatureEntitlement }) {
+  const { t } = useTranslation('pet');
+  const { limit, used } = entitlement;
+
+  if (limit === null) {
+    return (
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-medium">∞</span>
+      </div>
+    );
+  }
+
+  if (limit === 0) {
+    return (
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+          {t('admin.disabled')}
+        </span>
+      </div>
+    );
+  }
+
+  const pct = Math.min(100, (used / limit) * 100);
+  const nearLimit = pct >= 80;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-medium tabular-nums">{used} / {limit}</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${nearLimit ? 'bg-destructive' : 'bg-primary'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function BooleanRow({ label, allowed }: { label: string; allowed: boolean }) {
+  const { t } = useTranslation('pet');
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span
+        className={`text-xs px-2 py-0.5 rounded-full ${
+          allowed ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+        }`}
+      >
+        {allowed ? t('admin.included') : t('admin.notIncluded')}
+      </span>
+    </div>
+  );
+}
+
+function PlanUsageCard() {
+  const { t } = useTranslation('pet');
+  const entitlements = useAdminStore((s) => s.entitlements);
+
+  if (!entitlements) return null;
+
+  const { seats, teams, sync, pdf, ai, externalTeams } = entitlements;
+
+  return (
+    <Card className="p-4 space-y-3">
+      <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+        {t('admin.planUsage')}
+      </p>
+      <QuotaRow label={t('admin.seats')} entitlement={seats} />
+      <QuotaRow label={t('admin.teams')} entitlement={teams} />
+      <QuotaRow label={t('admin.syncThisMonth')} entitlement={sync} />
+      <QuotaRow label={t('admin.pdfThisMonth')} entitlement={pdf} />
+      <BooleanRow label={t('admin.aiRecommendations')} allowed={ai.allowed} />
+      <BooleanRow label={t('admin.externalTeams')} allowed={externalTeams.allowed} />
+    </Card>
+  );
+}
+
 export function AdminPage() {
   const { t } = useTranslation('pet');
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -408,6 +490,8 @@ export function AdminPage() {
           <p className="font-medium">{tenant.name}</p>
           <p className="text-sm text-muted-foreground capitalize">{tenant.plan}</p>
         </Card>
+
+        <PlanUsageCard />
 
         <section className="space-y-3">
           <div className="flex items-center justify-between">
