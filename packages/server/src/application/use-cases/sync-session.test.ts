@@ -12,7 +12,7 @@ const SESSION_INPUT: SyncSessionInput = {
     clubName: 'EHC Test',
     teamName: 'U16 A',
     date: '2026-01-01',
-    coachName: 'Coach Test',
+    coachName: 'Test',
     athletesNumber: 20,
     coachesNumber: 2,
     totalTime: 60,
@@ -25,18 +25,13 @@ const SESSION_INPUT: SyncSessionInput = {
 
 const CTX = { userId: 'user-1', tenantId: 'tenant-1' };
 
-function makeMembershipRepo(opts: {
-  membership: { id: string; userId: string; role: UserRole } | null;
-  teamIds: string[];
-}): MembershipRepository {
+function makeMembershipRepo(membership: { id: string; userId: string; role: UserRole } | null): MembershipRepository {
   return {
     findById: mock(async () => null),
-    findByUserAndTenant: mock(async () => opts.membership),
+    findByUserAndTenant: mock(async () => membership),
     findByTenant: mock(async () => []),
     save: mock(async () => {}),
     delete: mock(async () => {}),
-    assignTeam: mock(async () => {}),
-    getTeamIds: mock(async () => opts.teamIds),
   } as unknown as MembershipRepository;
 }
 
@@ -66,13 +61,14 @@ function makeEntitlement(allow = true): EntitlementService {
 }
 
 describe('SyncSessionUseCase', () => {
-  test('saves and returns the session when user is a member of the team', async () => {
-    const membershipRepo = makeMembershipRepo({
-      membership: { id: 'mem-1', userId: 'user-1', role: 'coach' },
-      teamIds: ['team-1'],
-    });
+  test('saves and returns the session for a member', async () => {
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
+    const useCase = new SyncSessionUseCase({
+      sessionRepository: sessionRepo,
+      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'member' }),
+      teamRepository: makeTeamRepo(),
+      entitlementService: makeEntitlement(),
+    });
 
     const result = await useCase.execute(SESSION_INPUT, CTX);
 
@@ -85,58 +81,33 @@ describe('SyncSessionUseCase', () => {
   });
 
   test('throws UnauthorizedError when user is not a tenant member', async () => {
-    const membershipRepo = makeMembershipRepo({ membership: null, teamIds: [] });
-    const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
+    const useCase = new SyncSessionUseCase({
+      sessionRepository: makeSessionRepo(),
+      membershipRepository: makeMembershipRepo(null),
+      teamRepository: makeTeamRepo(),
+      entitlementService: makeEntitlement(),
+    });
 
     expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
   });
 
-  test('throws UnauthorizedError when user is not assigned to the team', async () => {
-    const membershipRepo = makeMembershipRepo({
-      membership: { id: 'mem-1', userId: 'user-1', role: 'coach' },
-      teamIds: ['team-99'], // different team
-    });
+  test('admin can also track sessions', async () => {
     const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
-
-    expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
-  });
-
-  test('throws UnauthorizedError when role may not track (analyst)', async () => {
-    const membershipRepo = makeMembershipRepo({
-      membership: { id: 'mem-1', userId: 'user-1', role: 'analyst' },
-      teamIds: ['team-1'],
+    const useCase = new SyncSessionUseCase({
+      sessionRepository: sessionRepo,
+      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'admin' }),
+      teamRepository: makeTeamRepo(),
+      entitlementService: makeEntitlement(),
     });
-    const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
-
-    expect(useCase.execute(SESSION_INPUT, CTX)).rejects.toBeInstanceOf(UnauthorizedError);
-    expect(sessionRepo.save).not.toHaveBeenCalled();
-  });
-
-  test('club_admin may track for a team it is not assigned to', async () => {
-    const membershipRepo = makeMembershipRepo({
-      membership: { id: 'mem-1', userId: 'user-1', role: 'club_admin' },
-      teamIds: [], // not on any roster
-    });
-    const sessionRepo = makeSessionRepo();
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
 
     const result = await useCase.execute(SESSION_INPUT, CTX);
 
     expect(result.teamId).toBe('team-1');
     expect(sessionRepo.save).toHaveBeenCalledTimes(1);
-    // team-assignment lookup must be skipped for club_admin
-    expect(membershipRepo.getTeamIds).not.toHaveBeenCalled();
   });
 
   test('preserves createdAt from existing session on re-sync', async () => {
     const existingCreatedAt = '2026-01-01T10:00:00.000Z';
-    const membershipRepo = makeMembershipRepo({
-      membership: { id: 'mem-1', userId: 'user-1', role: 'coach' },
-      teamIds: ['team-1'],
-    });
     const sessionRepo = {
       findById: mock(async () => ({
         id: 'session-1',
@@ -153,21 +124,22 @@ describe('SyncSessionUseCase', () => {
       findByTeam: mock(async () => []),
     } as unknown as SessionRepository;
 
-    const useCase = new SyncSessionUseCase({ sessionRepository: sessionRepo, membershipRepository: membershipRepo, teamRepository: makeTeamRepo(), entitlementService: makeEntitlement() });
+    const useCase = new SyncSessionUseCase({
+      sessionRepository: sessionRepo,
+      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'member' }),
+      teamRepository: makeTeamRepo(),
+      entitlementService: makeEntitlement(),
+    });
     const result = await useCase.execute(SESSION_INPUT, CTX);
 
     expect(result.createdAt).toBe(existingCreatedAt);
   });
 
   test('blocks a NEW session sync when entitlement denies it', async () => {
-    const membershipRepo = makeMembershipRepo({
-      membership: { id: 'mem-1', userId: 'user-1', role: 'coach' },
-      teamIds: ['team-1'],
-    });
     const sessionRepo = makeSessionRepo();
     const useCase = new SyncSessionUseCase({
       sessionRepository: sessionRepo,
-      membershipRepository: membershipRepo,
+      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'member' }),
       teamRepository: makeTeamRepo(),
       entitlementService: makeEntitlement(false),
     });
@@ -177,10 +149,6 @@ describe('SyncSessionUseCase', () => {
   });
 
   test('re-syncing an existing session bypasses the entitlement check (idempotent)', async () => {
-    const membershipRepo = makeMembershipRepo({
-      membership: { id: 'mem-1', userId: 'user-1', role: 'coach' },
-      teamIds: ['team-1'],
-    });
     const sessionRepo = {
       findById: mock(async () => ({
         id: 'session-1',
@@ -196,11 +164,10 @@ describe('SyncSessionUseCase', () => {
       save: mock(async () => {}),
       findByTeam: mock(async () => []),
     } as unknown as SessionRepository;
-    // Entitlement denies, but the session already exists → must still succeed.
     const entitlement = makeEntitlement(false);
     const useCase = new SyncSessionUseCase({
       sessionRepository: sessionRepo,
-      membershipRepository: membershipRepo,
+      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'member' }),
       teamRepository: makeTeamRepo(),
       entitlementService: entitlement,
     });

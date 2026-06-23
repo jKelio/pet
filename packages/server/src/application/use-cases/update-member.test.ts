@@ -22,11 +22,11 @@ function makeUserRepo(existing: User | null): UserRepository {
 }
 
 function makeMembershipRepo(
-  callerRole: 'coach' | 'club_admin' | null,
+  callerRole: 'member' | 'admin' | null,
   target: { id: string; userId: string; tenantId: string } | null,
 ): MembershipRepository {
   return {
-    findById: mock(async () => (target ? { ...target, role: 'coach' as const } : null)),
+    findById: mock(async () => (target ? { ...target, role: 'member' as const } : null)),
     findByUser: mock(async () => []),
     findByUserAndTenant: mock(async () =>
       callerRole ? { id: 'mem-caller', userId: 'user-1', tenantId: 'tenant-1', role: callerRole } : null,
@@ -34,20 +34,17 @@ function makeMembershipRepo(
     findByTenant: mock(async () => []),
     save: mock(async () => {}),
     delete: mock(async () => {}),
-    assignTeam: mock(async () => {}),
-    unassignTeam: mock(async () => {}),
-    getTeamIds: mock(async () => []),
   } as unknown as MembershipRepository;
 }
 
 const TARGET = { id: 'mem-2', userId: 'user-2', tenantId: 'tenant-1' };
 
 describe('UpdateMemberUseCase', () => {
-  test('updates the user name when the caller is a club_admin', async () => {
+  test('updates the user name when the caller is an admin', async () => {
     const userRepo = makeUserRepo(USER);
     const useCase = new UpdateMemberUseCase({
       userRepository: userRepo,
-      membershipRepository: makeMembershipRepo('club_admin', TARGET),
+      membershipRepository: makeMembershipRepo('admin', TARGET),
     });
 
     const result = await useCase.execute('mem-2', 'New Name', 'user-1', 'tenant-1');
@@ -56,11 +53,11 @@ describe('UpdateMemberUseCase', () => {
     expect(userRepo.save).toHaveBeenCalledTimes(1);
   });
 
-  test('throws ForbiddenError when the caller is not a club_admin', async () => {
+  test('throws ForbiddenError when the caller is not an admin', async () => {
     const userRepo = makeUserRepo(USER);
     const useCase = new UpdateMemberUseCase({
       userRepository: userRepo,
-      membershipRepository: makeMembershipRepo('coach', TARGET),
+      membershipRepository: makeMembershipRepo('member', TARGET),
     });
 
     expect(useCase.execute('mem-2', 'New Name', 'user-1', 'tenant-1')).rejects.toBeInstanceOf(ForbiddenError);
@@ -71,7 +68,7 @@ describe('UpdateMemberUseCase', () => {
     const userRepo = makeUserRepo(USER);
     const useCase = new UpdateMemberUseCase({
       userRepository: userRepo,
-      membershipRepository: makeMembershipRepo('club_admin', { ...TARGET, tenantId: 'other-tenant' }),
+      membershipRepository: makeMembershipRepo('admin', { ...TARGET, tenantId: 'other-tenant' }),
     });
 
     expect(useCase.execute('mem-2', 'New Name', 'user-1', 'tenant-1')).rejects.toBeInstanceOf(NotFoundError);
@@ -82,7 +79,7 @@ describe('UpdateMemberUseCase', () => {
     const userRepo = makeUserRepo(USER);
     const useCase = new UpdateMemberUseCase({
       userRepository: userRepo,
-      membershipRepository: makeMembershipRepo('club_admin', null),
+      membershipRepository: makeMembershipRepo('admin', null),
     });
 
     expect(useCase.execute('missing', 'New Name', 'user-1', 'tenant-1')).rejects.toBeInstanceOf(NotFoundError);

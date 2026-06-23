@@ -24,7 +24,6 @@ export interface OnboardResult {
 export interface MemberWithUser {
   membership: Membership;
   user: User;
-  teamIds: string[];
 }
 
 export const adminApi = {
@@ -46,18 +45,12 @@ export const adminApi = {
   listMembers: (accessToken: string) =>
     apiClient.get<MemberWithUser[]>('/admin/members', accessToken),
 
-  inviteMember: (email: string, role: UserRole, name: string | undefined, teamIds: string[] | undefined, accessToken: string) =>
-    apiClient.post<Membership>('/admin/members', { email, role, name, teamIds }, accessToken),
+  inviteMember: (email: string, role: UserRole, name: string | undefined, accessToken: string) =>
+    apiClient.post<Membership>('/admin/members', { email, role, name }, accessToken),
 
   updateMember: (membershipId: string, name: string, accessToken: string) =>
     apiClient.patch<User>(`/admin/members/${membershipId}`, { name }, accessToken),
 
   removeMember: (membershipId: string, accessToken: string) =>
     apiClient.delete<void>(`/admin/members/${membershipId}`, accessToken),
-
-  assignTeamMember: (teamId: string, membershipId: string, accessToken: string) =>
-    apiClient.post<void>(`/admin/teams/${teamId}/members`, { membershipId }, accessToken),
-
-  removeTeamMember: (teamId: string, membershipId: string, accessToken: string) =>
-    apiClient.delete<void>(`/admin/teams/${teamId}/members/${membershipId}`, accessToken),
 };

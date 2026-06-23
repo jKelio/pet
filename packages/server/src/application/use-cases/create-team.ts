@@ -33,10 +33,9 @@ export class CreateTeamUseCase {
 
     const kind = input.kind ?? 'own';
 
-    // Both own and External Teams are curated by the club_admin. Coaches no longer
-    // create External Teams on the fly during tracking; they select a curated one.
-    if (membership.role !== 'club_admin') {
-      throw new ForbiddenError('Only club admins can create teams');
+    // Both own and External Teams are curated by the admin.
+    if (membership.role !== 'admin') {
+      throw new ForbiddenError('Only admins can create teams');
     }
 
     if (kind === 'external') {
@@ -57,7 +56,6 @@ export class CreateTeamUseCase {
     };
 
     await this.deps.teamRepository.save(team);
-    await this.deps.membershipRepository.assignTeam(membership.id, team.id);
     return team;
   }
 }

@@ -48,7 +48,6 @@ export function PracticeInfoForm() {
   const externalTeams = teams.filter((t) => t.kind === 'external');
   const selectedTeam = teams.find((t) => t.id === practiceInfo.teamId);
 
-  // External Teams are curated by the club_admin; coaches select one by external club.
   const externalClubs = [...new Set(
     externalTeams.map((t) => t.externalClubName).filter(Boolean) as string[],
   )];
@@ -76,10 +75,7 @@ export function PracticeInfoForm() {
     }));
   };
 
-  const coachSuggestions = members
-    .filter((m) => m.membership.role === 'coach')
-    // Own Teams filter coaches by Roster; External Teams have an open roster (any coach).
-    .filter((m) => !selectedTeam || selectedTeam.kind === 'external' || m.teamIds.includes(selectedTeam.id));
+  const coachSuggestions = members.filter((m) => m.user.name);
 
   const handleDrillsNumber = (n: number) => {
     setPracticeInfo({ ...practiceInfo, drillsNumber: n });

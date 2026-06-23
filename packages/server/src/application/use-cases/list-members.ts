@@ -9,7 +9,6 @@ export interface ListMembersDeps {
 export interface MemberWithUser {
   membership: Membership;
   user: User;
-  teamIds: string[];
 }
 
 export class ListMembersUseCase {
@@ -20,12 +19,9 @@ export class ListMembersUseCase {
 
     const results = await Promise.all(
       memberships.map(async (membership) => {
-        const [user, teamIds] = await Promise.all([
-          this.deps.userRepository.findById(membership.userId),
-          this.deps.membershipRepository.getTeamIds(membership.id),
-        ]);
+        const user = await this.deps.userRepository.findById(membership.userId);
         if (!user) return null;
-        return { membership, user, teamIds };
+        return { membership, user };
       }),
     );
 

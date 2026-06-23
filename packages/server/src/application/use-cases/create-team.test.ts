@@ -11,8 +11,6 @@ function makeMembershipRepo(membership: { id: string; userId: string; role: User
     findByTenant: mock(async () => []),
     save: mock(async () => {}),
     delete: mock(async () => {}),
-    assignTeam: mock(async () => {}),
-    getTeamIds: mock(async () => []),
   } as unknown as MembershipRepository;
 }
 
@@ -32,11 +30,11 @@ function makeEntitlement(): EntitlementService {
 }
 
 describe('CreateTeamUseCase', () => {
-  test('club_admin can create an own team', async () => {
+  test('admin can create an own team', async () => {
     const teamRepo = makeTeamRepo();
     const useCase = new CreateTeamUseCase({
       teamRepository: teamRepo,
-      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'club_admin' }),
+      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'admin' }),
       entitlementService: makeEntitlement(),
     });
 
@@ -47,11 +45,11 @@ describe('CreateTeamUseCase', () => {
     expect(teamRepo.save).toHaveBeenCalledTimes(1);
   });
 
-  test('club_admin can create an External Team', async () => {
+  test('admin can create an External Team', async () => {
     const teamRepo = makeTeamRepo();
     const useCase = new CreateTeamUseCase({
       teamRepository: teamRepo,
-      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'club_admin' }),
+      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'admin' }),
       entitlementService: makeEntitlement(),
     });
 
@@ -66,11 +64,11 @@ describe('CreateTeamUseCase', () => {
     expect(teamRepo.save).toHaveBeenCalledTimes(1);
   });
 
-  test('coach may NOT create an External Team (admin-curated only)', async () => {
+  test('member may NOT create teams (admin-curated only)', async () => {
     const teamRepo = makeTeamRepo();
     const useCase = new CreateTeamUseCase({
       teamRepository: teamRepo,
-      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'coach' }),
+      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'member' }),
       entitlementService: makeEntitlement(),
     });
 
@@ -80,10 +78,10 @@ describe('CreateTeamUseCase', () => {
     expect(teamRepo.save).not.toHaveBeenCalled();
   });
 
-  test('coach may NOT create an own team', async () => {
+  test('member may NOT create an own team', async () => {
     const useCase = new CreateTeamUseCase({
       teamRepository: makeTeamRepo(),
-      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'coach' }),
+      membershipRepository: makeMembershipRepo({ id: 'mem-1', userId: 'user-1', role: 'member' }),
       entitlementService: makeEntitlement(),
     });
 

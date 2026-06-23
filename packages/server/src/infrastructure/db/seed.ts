@@ -1,5 +1,5 @@
 import { createDbClient } from './client.js';
-import { tenants, teams, users, memberships, teamAssignments, practiceSessions, drills } from './schema.js';
+import { tenants, teams, users, memberships, practiceSessions, drills } from './schema.js';
 import { eq } from 'drizzle-orm';
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -41,23 +41,16 @@ const [coachUser] = await db.insert(users).values({
 const [adminMembership] = await db.insert(memberships).values({
   userId: adminUser.id,
   tenantId: tenant.id,
-  role: 'club_admin',
+  role: 'admin',
 }).onConflictDoNothing().returning()
   ?? await db.select().from(memberships).where(eq(memberships.userId, adminUser.id)).limit(1);
 
 const [coachMembership] = await db.insert(memberships).values({
   userId: coachUser.id,
   tenantId: tenant.id,
-  role: 'coach',
+  role: 'member',
 }).onConflictDoNothing().returning()
   ?? await db.select().from(memberships).where(eq(memberships.userId, coachUser.id)).limit(1);
-
-// ─── Team Assignments ─────────────────────────────────────────────────────────
-
-await db.insert(teamAssignments).values([
-  { membershipId: adminMembership.id, teamId: team.id },
-  { membershipId: coachMembership.id, teamId: team.id },
-]).onConflictDoNothing();
 
 // ─── Practice Session (nur anlegen wenn noch keine existiert) ─────────────────
 

@@ -44,9 +44,8 @@ const resources = {
         fallback: 'Tracking',
       },
       roles: {
-        club_admin: 'Club Admin',
-        coach: 'Coach',
-        analyst: 'Analyst',
+        admin: 'Admin',
+        member: 'Member',
       },
       auth: {
         tagline: 'Train Smarter. Improve Performance.',
@@ -447,9 +446,8 @@ const resources = {
         fallback: 'Tracking',
       },
       roles: {
-        club_admin: 'Club Admin',
-        coach: 'Trainer',
-        analyst: 'Analyst',
+        admin: 'Admin',
+        member: 'Mitglied',
       },
       auth: {
         tagline: 'Train Smarter. Improve Performance.',

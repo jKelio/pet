@@ -62,13 +62,12 @@ export class OnboardTenantUseCase {
       id: membershipId,
       userId,
       tenantId,
-      role: 'club_admin',
+      role: 'admin',
     };
 
     await this.deps.tenantRepository.save(tenant);
     await this.deps.teamRepository.save(team);
     await this.deps.membershipRepository.save(membership);
-    await this.deps.membershipRepository.assignTeam(membershipId, teamId);
 
     return { tenant, team, membership };
   }

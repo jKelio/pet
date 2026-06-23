@@ -7,7 +7,7 @@ import { sql } from 'drizzle-orm';
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 export const tenantPlanEnum = pgEnum('tenant_plan', ['free', 'pro', 'premium']);
-export const userRoleEnum = pgEnum('user_role', ['club_admin', 'coach', 'analyst']);
+export const userRoleEnum = pgEnum('user_role', ['admin', 'member']);
 export const sessionStatusEnum = pgEnum('session_status', ['draft', 'in_progress', 'completed']);
 export const teamKindEnum = pgEnum('team_kind', ['own', 'external']);
 
@@ -58,16 +58,6 @@ export const memberships = pgTable('memberships', {
 }, (t) => [
   uniqueIndex('memberships_user_tenant_unique').on(t.userId, t.tenantId),
   index('memberships_tenant_id_idx').on(t.tenantId),
-]);
-
-// ─── Team Assignments ─────────────────────────────────────────────────────────
-
-export const teamAssignments = pgTable('team_assignments', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  membershipId: uuid('membership_id').notNull().references(() => memberships.id, { onDelete: 'cascade' }),
-  teamId: uuid('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
-}, (t) => [
-  uniqueIndex('team_assignments_unique').on(t.membershipId, t.teamId),
 ]);
 
 // ─── Practice Sessions ────────────────────────────────────────────────────────

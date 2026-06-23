@@ -2,7 +2,6 @@ import type { RecommendationRepository } from '../../domain/ports/recommendation
 import type { SessionRepository } from '../../domain/ports/session.repository.js';
 import type { MembershipRepository } from '../../domain/ports/user.repository.js';
 import type { Recommendation } from '@pet/shared';
-import { hasPermission } from '@pet/shared';
 
 export interface GetRecommendationDeps {
   recommendationRepository: RecommendationRepository;
@@ -40,13 +39,6 @@ export class GetRecommendationUseCase {
 
     const session = await this.deps.sessionRepository.findById(sessionId, ctx.tenantId);
     if (!session) throw new RecommendationNotFoundError('Session not found');
-
-    if (!hasPermission(membership.role, 'sessions:view:all')) {
-      const teamIds = await this.deps.membershipRepository.getTeamIds(membership.id);
-      if (!teamIds.includes(session.teamId)) {
-        throw new RecommendationNotFoundError('Session not found');
-      }
-    }
 
     const recommendation = await this.deps.recommendationRepository.findBySession(sessionId, ctx.tenantId);
     if (!recommendation) throw new RecommendationNotFoundError('No recommendation for this session');

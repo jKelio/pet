@@ -15,7 +15,7 @@ const SESSION: PracticeSession = {
     clubName: 'EHC Test',
     teamName: 'U16 A',
     date: '2026-01-01',
-    coachName: 'Coach Test',
+    coachName: 'Test',
     athletesNumber: 20,
     coachesNumber: 2,
     totalTime: 60,
@@ -38,15 +38,13 @@ function makeSessionRepo(existing: PracticeSession | null): SessionRepository {
   } as unknown as SessionRepository;
 }
 
-function makeMembershipRepo(role: 'coach' | 'club_admin' | null, userId = 'user-1'): MembershipRepository {
+function makeMembershipRepo(role: 'member' | 'admin' | null, userId = 'user-1'): MembershipRepository {
   return {
     findById: mock(async () => null),
     findByUserAndTenant: mock(async () => (role ? { id: 'mem-1', userId, tenantId: 'tenant-1', role } : null)),
     findByTenant: mock(async () => []),
     save: mock(async () => {}),
     delete: mock(async () => {}),
-    assignTeam: mock(async () => {}),
-    getTeamIds: mock(async () => []),
   } as unknown as MembershipRepository;
 }
 
@@ -55,7 +53,7 @@ describe('DeleteSessionUseCase', () => {
     const sessionRepo = makeSessionRepo(SESSION);
     const useCase = new DeleteSessionUseCase({
       sessionRepository: sessionRepo,
-      membershipRepository: makeMembershipRepo('coach'),
+      membershipRepository: makeMembershipRepo('member'),
     });
 
     await useCase.execute('session-1', CTX);
@@ -63,11 +61,11 @@ describe('DeleteSessionUseCase', () => {
     expect(sessionRepo.delete).toHaveBeenCalledTimes(1);
   });
 
-  test('deletes when the caller is a club_admin (not the creator)', async () => {
+  test('deletes when the caller is an admin (not the creator)', async () => {
     const sessionRepo = makeSessionRepo({ ...SESSION, createdBy: 'someone-else' });
     const useCase = new DeleteSessionUseCase({
       sessionRepository: sessionRepo,
-      membershipRepository: makeMembershipRepo('club_admin', 'user-1'),
+      membershipRepository: makeMembershipRepo('admin', 'user-1'),
     });
 
     await useCase.execute('session-1', CTX);
@@ -79,7 +77,7 @@ describe('DeleteSessionUseCase', () => {
     const sessionRepo = makeSessionRepo({ ...SESSION, createdBy: 'someone-else' });
     const useCase = new DeleteSessionUseCase({
       sessionRepository: sessionRepo,
-      membershipRepository: makeMembershipRepo('coach', 'user-1'),
+      membershipRepository: makeMembershipRepo('member', 'user-1'),
     });
 
     expect(useCase.execute('session-1', CTX)).rejects.toBeInstanceOf(ForbiddenError);
@@ -90,7 +88,7 @@ describe('DeleteSessionUseCase', () => {
     const sessionRepo = makeSessionRepo(null);
     const useCase = new DeleteSessionUseCase({
       sessionRepository: sessionRepo,
-      membershipRepository: makeMembershipRepo('club_admin'),
+      membershipRepository: makeMembershipRepo('admin'),
     });
 
     expect(useCase.execute('missing', CTX)).rejects.toBeInstanceOf(NotFoundError);

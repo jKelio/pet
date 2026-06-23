@@ -25,8 +25,8 @@ export class RemoveMemberUseCase {
 
   async execute(membershipId: string, callerId: string, tenantId: string): Promise<void> {
     const callerMembership = await this.deps.membershipRepository.findByUserAndTenant(callerId, tenantId);
-    if (!callerMembership || callerMembership.role !== 'club_admin') {
-      throw new ForbiddenError('Only club admins can remove members');
+    if (!callerMembership || callerMembership.role !== 'admin') {
+      throw new ForbiddenError('Only admins can remove members');
     }
 
     const target = await this.deps.membershipRepository.findById(membershipId);

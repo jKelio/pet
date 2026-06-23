@@ -41,7 +41,7 @@ export class SuperAdminAddClubAdminUseCase {
       id: crypto.randomUUID(),
       userId: user.id,
       tenantId,
-      role: 'club_admin',
+      role: 'admin',
     };
     await this.deps.membershipRepository.save(membership);
     return membership;
