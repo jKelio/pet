@@ -33,11 +33,10 @@ export class CreateTeamUseCase {
 
     const kind = input.kind ?? 'own';
 
-    const canCreate =
-      membership.role === 'club_admin' ||
-      (membership.role === 'coach' && kind === 'external');
-    if (!canCreate) {
-      throw new ForbiddenError('Only club admins can create own teams');
+    // Both own and External Teams are curated by the club_admin. Coaches no longer
+    // create External Teams on the fly during tracking; they select a curated one.
+    if (membership.role !== 'club_admin') {
+      throw new ForbiddenError('Only club admins can create teams');
     }
 
     if (kind === 'external') {

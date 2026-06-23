@@ -41,14 +41,14 @@ interface TrackingStore {
   practiceInfo: PracticeInfo;
   drills: Drill[];
   currentDrillIndex: number;
-  /** Foreign/scouting session: keep local only, never sync to the cloud */
-  localOnly: boolean;
+  /** Tracking a curated External Team (premium): the session binds to a kind='external' Team and syncs. */
+  trackExternal: boolean;
 
   setPracticeInfo: (info: PracticeInfo | ((prev: PracticeInfo) => PracticeInfo)) => void;
   setDrills: (drills: Drill[] | ((prev: Drill[]) => Drill[])) => void;
   setCurrentDrillIndex: (i: number) => void;
   setSessionType: (t: SessionType) => void;
-  setLocalOnly: (v: boolean) => void;
+  setTrackExternal: (v: boolean) => void;
   initDrills: (n: number) => void;
   appendDrill: () => void;
   updateDrillAction: (drillIndex: number, actionId: string, partial: Partial<ActionButton>) => void;
@@ -57,7 +57,7 @@ interface TrackingStore {
   goToPrevStep: () => void;
   resetAllData: () => void;
   /** Restore session state from a persisted draft */
-  restoreFromDraft: (sessionId: string, practiceInfo: PracticeInfo, drills: Drill[], localOnly?: boolean, currentDrillIndex?: number) => void;
+  restoreFromDraft: (sessionId: string, practiceInfo: PracticeInfo, drills: Drill[], currentDrillIndex?: number) => void;
 }
 
 export const useTrackingStore = create<TrackingStore>()((set, get) => ({
@@ -67,7 +67,7 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
   practiceInfo: { ...initialPracticeInfo },
   drills: [],
   currentDrillIndex: 0,
-  localOnly: false,
+  trackExternal: false,
 
   setPracticeInfo: (info) =>
     set((state) => ({
@@ -87,7 +87,7 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
       practiceInfo: { ...state.practiceInfo, sessionType: t },
     })),
 
-  setLocalOnly: (v) => set({ localOnly: v }),
+  setTrackExternal: (v) => set({ trackExternal: v }),
 
   initDrills: (n) => {
     const current = get().drills;
@@ -155,10 +155,10 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
       practiceInfo: { ...initialPracticeInfo, date: new Date().toISOString() },
       drills: [],
       currentDrillIndex: 0,
-      localOnly: false,
+      trackExternal: false,
     }),
 
-  restoreFromDraft: (sessionId, practiceInfo, drills, localOnly = false, currentDrillIndex = 0) =>
+  restoreFromDraft: (sessionId, practiceInfo, drills, currentDrillIndex = 0) =>
     set({
       sessionId,
       practiceInfo,
@@ -166,6 +166,6 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
       sessionType: practiceInfo.sessionType ?? 'planned',
       mode: drills.length > 0 ? 'timeWatcher' : 'practiceInfo',
       currentDrillIndex,
-      localOnly,
+      trackExternal: false,
     }),
 }));
