@@ -15,7 +15,7 @@ interface RecommendationPanelProps {
   disabledReason?: string;
 }
 
-type PanelView = 'intro' | 'streaming' | 'result';
+type PanelView = 'intro' | 'streaming' | 'error' | 'result';
 
 export function RecommendationPanel({ sessionId, accessToken, disabled, disabledReason }: RecommendationPanelProps) {
   const { t } = useTranslation('pet');
@@ -42,6 +42,8 @@ export function RecommendationPanel({ sessionId, accessToken, disabled, disabled
       setView('result');
     } else if (status === 'fetching' || status === 'generating') {
       setView('streaming');
+    } else if (status === 'error') {
+      setView('error');
     }
   }, [status, recommendation]);
 
@@ -99,10 +101,11 @@ export function RecommendationPanel({ sessionId, accessToken, disabled, disabled
             {view === 'intro' && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">{t('recommendation.intro')}</p>
-                {error && (
-                  <p className="text-sm text-destructive">{error}</p>
-                )}
               </div>
+            )}
+
+            {view === 'error' && (
+              <p className="text-sm text-destructive">{error}</p>
             )}
 
             {view === 'streaming' && (

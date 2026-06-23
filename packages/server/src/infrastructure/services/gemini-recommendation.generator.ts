@@ -141,6 +141,9 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
         const retryDelay = body?.error?.details?.find((d: any) => d.retryDelay)?.retryDelay ?? '60s';
         throw new RecommendationGenerationError(`Rate limit exceeded. Please retry in ${retryDelay}.`);
       }
+      if (res.status === 503) {
+        throw new RecommendationGenerationError('The AI service is temporarily unavailable due to high demand. Please try again in a few minutes.');
+      }
       const text = await res.text();
       throw new RecommendationGenerationError(`Gemini API error ${res.status}: ${text}`);
     }
