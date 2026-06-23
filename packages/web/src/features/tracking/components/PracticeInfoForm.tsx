@@ -131,7 +131,7 @@ export function PracticeInfoForm() {
                 onChange={(e) =>
                   setPracticeInfo((prev) => ({ ...prev, clubName: e.target.value, teamName: '', teamId: undefined }))
                 }
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="">{t('practice.externalClubPlaceholder')}</option>
                 {externalClubs.map((club) => (
@@ -150,7 +150,7 @@ export function PracticeInfoForm() {
                 value={practiceInfo.teamId ?? ''}
                 onChange={(e) => selectExternalTeam(e.target.value)}
                 disabled={!practiceInfo.clubName}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">{t('practice.externalTeamPlaceholder')}</option>
                 {externalTeamsForClub.map((tm) => (

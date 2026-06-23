@@ -234,7 +234,7 @@ export function HistoryPage() {
                         <option value="">{t('sessions.chooseTeam')}</option>
                         {teams.map((tm) => (
                           <option key={tm.id} value={tm.id}>
-                            {tm.name}
+                            {tm.externalClubName ? `${tm.externalClubName} – ${tm.name}` : tm.name}
                           </option>
                         ))}
                       </select>
