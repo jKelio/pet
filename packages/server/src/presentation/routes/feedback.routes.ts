@@ -3,7 +3,6 @@ import type { UserRepository } from '../../domain/ports/user.repository.js';
 
 const REPO = 'jKelio/pet';
 const GH_API = 'https://api.github.com';
-const GH_UPLOADS = 'https://uploads.github.com';
 
 type FeedbackType = 'bug' | 'feature' | 'general';
 
@@ -22,19 +21,30 @@ function buildTitle(type: FeedbackType, text: string): string {
 }
 
 async function uploadScreenshot(buffer: Buffer, mimeType: string, pat: string): Promise<string> {
-  const res = await fetch(`${GH_UPLOADS}/repos/${REPO}/issues/assets`, {
-    method: 'POST',
+  const ext = mimeType === 'image/jpeg' ? 'jpg' : mimeType === 'image/webp' ? 'webp' : 'png';
+  const slug = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const path = `feedback-screenshots/${slug}`;
+
+  const res = await fetch(`${GH_API}/repos/${REPO}/contents/${path}`, {
+    method: 'PUT',
     headers: {
       Authorization: `Bearer ${pat}`,
-      'Content-Type': mimeType,
+      'Content-Type': 'application/json',
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
     },
-    body: new Uint8Array(buffer),
+    body: JSON.stringify({
+      message: `chore: add feedback screenshot ${slug}`,
+      content: buffer.toString('base64'),
+    }),
   });
-  if (!res.ok) throw new Error(`GitHub asset upload failed: ${res.status}`);
-  const { url } = (await res.json()) as { url: string };
-  return url;
+
+  const resBody = await res.json() as Record<string, unknown>;
+  if (!res.ok) throw new Error(`GitHub content upload failed: ${res.status} — ${JSON.stringify(resBody)}`);
+
+  const downloadUrl = (resBody as { content?: { download_url?: string } }).content?.download_url;
+  if (!downloadUrl) throw new Error(`GitHub content upload: no download_url in response`);
+  return downloadUrl;
 }
 
 interface FeedbackRoutesDeps {
@@ -73,8 +83,8 @@ export function registerFeedbackRoutes(fastify: FastifyInstance, deps: FeedbackR
           if (buffer.length > 0) {
             try {
               screenshotUrl = await uploadScreenshot(buffer, part.mimetype, deps.githubPat);
-            } catch {
-              fastify.log.warn('Screenshot upload to GitHub failed, submitting without it');
+            } catch (err) {
+              fastify.log.warn({ err }, 'Screenshot upload to GitHub failed, submitting without it');
             }
           }
         } else {

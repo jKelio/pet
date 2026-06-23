@@ -105,7 +105,7 @@ export function AppFeedbackPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t('appFeedback.screenshotLabel')}</Label>
+              <Label className="block">{t('appFeedback.screenshotLabel')}</Label>
               {screenshot ? (
                 <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
                   <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -122,7 +122,7 @@ export function AppFeedbackPage() {
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Paperclip className="h-4 w-4" />
-                  {t('appFeedback.screenshotLabel')}
+                  {t('appFeedback.screenshotButton')}
                 </Button>
               )}
               <input
