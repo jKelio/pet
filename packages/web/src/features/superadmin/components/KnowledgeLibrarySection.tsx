@@ -90,12 +90,12 @@ export function KnowledgeLibrarySection({ accessToken }: KnowledgeLibrarySection
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
-        <CardTitle className="text-base flex items-center gap-1.5">
-          <BookOpen className="h-4 w-4" />
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 space-y-0">
+        <CardTitle className="text-base flex items-center gap-1.5 min-w-0">
+          <BookOpen className="h-4 w-4 shrink-0" />
           {t('library.title')}
         </CardTitle>
-        <Button size="sm" variant="outline" onClick={() => { setShowAdd(true); setEditId(null); setAddForm(EMPTY_FORM); }}>
+        <Button size="sm" variant="outline" className="shrink-0" onClick={() => { setShowAdd(true); setEditId(null); setAddForm(EMPTY_FORM); }}>
           <Plus className="h-4 w-4 mr-1" />
           {t('library.addEntry')}
         </Button>
