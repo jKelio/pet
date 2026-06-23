@@ -36,6 +36,7 @@ export function HistoryPage() {
   const teams = useAdminStore((s) => s.teams);
   const membership = useAdminStore((s) => s.membership);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [selectedClub, setSelectedClub] = useState<string>('');
   const [sessions, setSessions] = useState<PracticeSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,12 +63,20 @@ export function HistoryPage() {
     void loadPending();
   }, [loadPending]);
 
-  // Pre-select first team
+  const ownTeams = teams.filter((t) => t.kind === 'own');
+  const externalTeams = teams.filter((t) => t.kind === 'external');
+  const externalClubs = [...new Set(externalTeams.map((t) => t.externalClubName).filter(Boolean) as string[])];
+
+  const visibleTeams = selectedClub
+    ? externalTeams.filter((t) => t.externalClubName === selectedClub)
+    : ownTeams;
+
+  // Pre-select first visible team
   useEffect(() => {
-    if (teams.length > 0 && !selectedTeamId) {
-      setSelectedTeamId(teams[0].id);
+    if (visibleTeams.length > 0 && !visibleTeams.find((t) => t.id === selectedTeamId)) {
+      setSelectedTeamId(visibleTeams[0].id);
     }
-  }, [teams, selectedTeamId]);
+  }, [visibleTeams, selectedTeamId]);
 
   // Load sessions when team changes
   useEffect(() => {
@@ -135,19 +144,31 @@ export function HistoryPage() {
         </p>
       </div>
 
-      {teams.length > 1 && (
-        <div className="px-6 py-3 border-b border-border bg-card">
-          <select
-            value={selectedTeamId}
-            onChange={(e) => setSelectedTeamId(e.target.value)}
-            className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+      {(teams.length > 1 || externalClubs.length > 0) && (
+        <div className="px-6 py-3 border-b border-border bg-card flex flex-wrap gap-2">
+          {externalClubs.length > 0 && (
+            <select
+              value={selectedClub}
+              onChange={(e) => { setSelectedClub(e.target.value); setSelectedTeamId(''); }}
+              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">{t('sessions.ownTeamsFilter')}</option>
+              {externalClubs.map((club) => (
+                <option key={club} value={club}>{club}</option>
+              ))}
+            </select>
+          )}
+          {visibleTeams.length > 1 && (
+            <select
+              value={selectedTeamId}
+              onChange={(e) => setSelectedTeamId(e.target.value)}
+              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {visibleTeams.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
         </div>
       )}
 

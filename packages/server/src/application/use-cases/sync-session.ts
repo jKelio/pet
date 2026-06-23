@@ -35,9 +35,11 @@ export class SyncSessionUseCase {
       throw new UnauthorizedError('Role is not allowed to track sessions');
     }
 
-    // club_admin may track for any team in the tenant; everyone else must be
-    // assigned to the team they are tracking for.
-    if (membership.role !== 'club_admin') {
+    const team = await this.deps.teamRepository.findById(input.teamId, ctx.tenantId);
+
+    // club_admin may track for any team; coaches on External Teams need no roster
+    // assignment (all tenant coaches may observe any External Team's sessions).
+    if (membership.role !== 'club_admin' && team?.kind !== 'external') {
       const teamIds = await this.deps.membershipRepository.getTeamIds(membership.id);
       if (!teamIds.includes(input.teamId)) {
         throw new UnauthorizedError('User is not assigned to this team');
@@ -45,7 +47,6 @@ export class SyncSessionUseCase {
     }
 
     // Syncing to an External Team requires Premium, checked before metering.
-    const team = await this.deps.teamRepository.findById(input.teamId, ctx.tenantId);
     if (team?.kind === 'external') {
       await this.deps.entitlementService.assertCanUseExternalTeams(ctx.tenantId);
     }

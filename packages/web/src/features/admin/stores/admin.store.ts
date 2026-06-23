@@ -24,7 +24,7 @@ interface AdminState {
   loadProfile: (accessToken: string) => Promise<void>;
   onboard: (tenantName: string, teamName: string, accessToken: string) => Promise<void>;
   createTeam: (name: string, accessToken: string) => Promise<void>;
-  createExternalTeam: (name: string, externalClubName: string, accessToken: string) => Promise<void>;
+  createExternalTeam: (name: string, externalClubName: string, accessToken: string) => Promise<Team>;
   loadMembers: (accessToken: string) => Promise<void>;
   inviteMember: (email: string, role: UserRole, name: string | undefined, teamIds: string[] | undefined, accessToken: string) => Promise<void>;
   updateMemberName: (membershipId: string, name: string, accessToken: string) => Promise<void>;
@@ -108,6 +108,7 @@ export const useAdminStore = create<AdminState>()(
         try {
           const team = await adminApi.createExternalTeam(name, externalClubName, accessToken);
           set((s) => ({ teams: [...s.teams, team], loading: false }));
+          return team;
         } catch (err) {
           set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorCreate') });
           throw err;

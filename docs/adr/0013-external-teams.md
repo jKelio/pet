@@ -43,3 +43,12 @@ The ask is to make such a foreign team a real, syncable record — sold as a [[p
 - New gates in `CreateTeam` and `SyncSession`; own-team list/capacity queries must exclude `kind='external'`.
 - An external-team session's `clubName` derives from the team's `externalClubName`, not the tenant-name default.
 - The lock predicate gains a feature dimension (`kind='external'` ⇒ locked unless premium) — see [[0010-non-destructive-plan-downgrade]].
+
+## Amendment — On-the-fly creation & open roster
+
+**Decision:** External Teams can be created on the fly by `coach` or `club_admin` during Tracking Setup; no prior admin configuration is required.
+
+- `CreateTeam` role check relaxed: `coach` may create `kind='external'`; `kind='own'` remains `club_admin`-only.
+- Roster is optional for External Teams. `SyncSession` skips the team-assignment check when `team.kind === 'external'` — all coaches in the Tenant may sync External Team sessions without roster membership.
+- Deduplication is handled by UX (Autocomplete surfaces existing External Teams); no server-side uniqueness constraint on `(tenantId, name)` is added.
+- History view gains a Club filter to navigate sessions across many External Teams from different clubs.

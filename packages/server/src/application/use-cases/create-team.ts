@@ -27,11 +27,18 @@ export class CreateTeamUseCase {
 
   async execute(input: CreateTeamInput, userId: string, tenantId: string): Promise<Team> {
     const membership = await this.deps.membershipRepository.findByUserAndTenant(userId, tenantId);
-    if (!membership || membership.role !== 'club_admin') {
-      throw new ForbiddenError('Only club admins can create teams');
+    if (!membership) {
+      throw new ForbiddenError('Not a member of this tenant');
     }
 
     const kind = input.kind ?? 'own';
+
+    const canCreate =
+      membership.role === 'club_admin' ||
+      (membership.role === 'coach' && kind === 'external');
+    if (!canCreate) {
+      throw new ForbiddenError('Only club admins can create own teams');
+    }
 
     if (kind === 'external') {
       // External Teams are a Premium-only boolean feature — not gated by the own-team capacity.
