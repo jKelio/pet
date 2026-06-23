@@ -11,6 +11,20 @@ export class RecommendationGenerationError extends Error {
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
+// Gemini occasionally translates JSON field names into the requested language.
+// This normalizer resolves known translations back to the canonical English keys.
+export function normalizeRecommendationDocument(raw: Record<string, unknown>): RecommendationDocument {
+  const pick = (...keys: string[]) => keys.find((k) => raw[k] !== undefined);
+  const str = (...keys: string[]) => { const k = pick(...keys); return typeof raw[k!] === 'string' ? raw[k!] as string : ''; };
+  const arr = (...keys: string[]) => { const k = pick(...keys); return Array.isArray(raw[k!]) ? raw[k!] as string[] : []; };
+  return {
+    summary: str('summary', 'zusammenfassung', 'резюме', 'résumé', 'resumen'),
+    strengths: arr('strengths', 'staerken', 'stärken', 'сильные_стороны', 'fortalezas'),
+    concerns: arr('concerns', 'bedenken', 'опасения', 'préoccupations', 'preocupaciones'),
+    recommendations: arr('recommendations', 'empfehlungen', 'рекомендации', 'recommandations', 'recomendaciones'),
+  };
+}
+
 
 function formatSessionSummary(session: PracticeSession): string {
   const info = session.practiceInfo;
@@ -72,8 +86,8 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
       `You are an expert ice hockey development coach. Analyze the following practice session tracking data`,
       `in the context of the curated reference knowledge to produce a structured coaching recommendation report.`,
       ``,
-      `IMPORTANT: Write ALL text exclusively in ${languageName}. This includes every field in the JSON output`,
-      `(summary, strengths, concerns, recommendations). Do not use any other language.`,
+      `IMPORTANT: Write ALL string VALUES exclusively in ${languageName}. Do not use any other language for the values.`,
+      `The JSON field NAMES (summary, strengths, concerns, recommendations) MUST always remain in English exactly as shown.`,
       ``,
       `## Tracked Session Data`,
       sessionSummary,
@@ -97,7 +111,19 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
 
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {},
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            summary: { type: 'STRING' },
+            strengths: { type: 'ARRAY', items: { type: 'STRING' } },
+            concerns: { type: 'ARRAY', items: { type: 'STRING' } },
+            recommendations: { type: 'ARRAY', items: { type: 'STRING' } },
+          },
+          required: ['summary', 'strengths', 'concerns', 'recommendations'],
+        },
+      },
     };
 
     const res = await fetch(
@@ -129,12 +155,7 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
     try {
       const json = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
       const parsed = JSON.parse(json);
-      document = {
-        summary: parsed.summary ?? '',
-        strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
-        concerns: Array.isArray(parsed.concerns) ? parsed.concerns : [],
-        recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
-      };
+      document = normalizeRecommendationDocument(parsed);
     } catch {
       throw new RecommendationGenerationError('Gemini returned invalid JSON');
     }

@@ -2,7 +2,8 @@ import { eq, and } from 'drizzle-orm';
 import type { DbClient } from '../db/client.js';
 import { sessionRecommendations } from '../db/schema.js';
 import type { RecommendationRepository } from '../../domain/ports/recommendation.repository.js';
-import type { Recommendation, RecommendationDocument } from '@pet/shared';
+import type { Recommendation } from '@pet/shared';
+import { normalizeRecommendationDocument } from '../services/gemini-recommendation.generator.js';
 
 export class PgRecommendationRepository implements RecommendationRepository {
   constructor(private readonly db: DbClient) {}
@@ -51,7 +52,7 @@ export class PgRecommendationRepository implements RecommendationRepository {
       id: row.id,
       sessionId: row.sessionId,
       tenantId: row.tenantId,
-      document: row.document as RecommendationDocument,
+      document: normalizeRecommendationDocument(row.document as Record<string, unknown>),
       sourceUrls: row.sourceUrls ?? [],
       model: row.model,
       createdBy: row.createdBy,
