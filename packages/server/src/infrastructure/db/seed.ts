@@ -38,19 +38,17 @@ const [coachUser] = await db.insert(users).values({
 
 // ─── Memberships ──────────────────────────────────────────────────────────────
 
-const [adminMembership] = await db.insert(memberships).values({
+await db.insert(memberships).values({
   userId: adminUser.id,
   tenantId: tenant.id,
   role: 'admin',
-}).onConflictDoNothing().returning()
-  ?? await db.select().from(memberships).where(eq(memberships.userId, adminUser.id)).limit(1);
+}).onConflictDoNothing();
 
-const [coachMembership] = await db.insert(memberships).values({
+await db.insert(memberships).values({
   userId: coachUser.id,
   tenantId: tenant.id,
   role: 'member',
-}).onConflictDoNothing().returning()
-  ?? await db.select().from(memberships).where(eq(memberships.userId, coachUser.id)).limit(1);
+}).onConflictDoNothing();
 
 // ─── Practice Session (nur anlegen wenn noch keine existiert) ─────────────────
 
