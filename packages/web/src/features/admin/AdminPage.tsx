@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Users, Plus, Loader2, Trash2, UserPlus, X, Pencil, Check, Globe, Infinity, Lock } from 'lucide-react';
+import { Building2, Users, Plus, Loader2, Trash2, UserPlus, X, Pencil, Check, Infinity, Lock } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
 import { Label } from '../../shared/components/ui/label.js';
@@ -528,47 +528,50 @@ export function AdminPage() {
           </TabsList>
 
           <TabsContent value="teams">
-            <div className="space-y-8">
-              <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Users className="h-4 w-4" />
-                    {t('admin.teams')} ({ownTeams.length})
-                  </h2>
-                  {isAdmin && <CreateTeamForm accessToken={accessToken} />}
-                </div>
+            <Tabs defaultValue="own">
+              <TabsList>
+                <TabsTrigger value="own">{t('admin.ownTeamsTab')} ({ownTeams.length})</TabsTrigger>
+                <TabsTrigger value="external">{t('admin.externalTeamsTab')} ({externalTeams.length})</TabsTrigger>
+              </TabsList>
 
-                {ownTeams.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    {t('admin.noTeams')}
-                  </p>
-                )}
-
-                <div className="space-y-2">
-                  {ownTeams.map((team) => (
-                    <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
-                      <span className="font-medium text-sm">{team.name}</span>
+              <TabsContent value="own">
+                <div className="space-y-3">
+                  {isAdmin && (
+                    <div className="flex justify-end">
+                      <CreateTeamForm accessToken={accessToken} />
                     </div>
-                  ))}
-                </div>
-              </section>
+                  )}
 
-              <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Globe className="h-4 w-4" />
-                    {t('admin.externalTeams')} ({externalTeams.length})
-                  </h2>
-                  {isAdmin && canUseExternalTeams && <CreateExternalTeamForm accessToken={accessToken} />}
-                </div>
+                  {ownTeams.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      {t('admin.noTeams')}
+                    </p>
+                  )}
 
+                  <div className="space-y-2">
+                    {ownTeams.map((team) => (
+                      <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
+                        <span className="font-medium text-sm">{team.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="external">
                 {!canUseExternalTeams && externalTeams.length === 0 ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
                     <Lock className="h-4 w-4 shrink-0" />
                     <span>{t('admin.externalTeamsLockedNote')}</span>
                   </div>
                 ) : (
-                  <>
+                  <div className="space-y-3">
+                    {isAdmin && canUseExternalTeams && (
+                      <div className="flex justify-end">
+                        <CreateExternalTeamForm accessToken={accessToken} />
+                      </div>
+                    )}
+
                     {externalTeams.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-8">
                         {t('admin.noExternalTeams')}
@@ -585,10 +588,10 @@ export function AdminPage() {
                         </div>
                       ))}
                     </div>
-                  </>
+                  </div>
                 )}
-              </section>
-            </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="members">
