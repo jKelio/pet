@@ -35,7 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.tracking', href: '/', icon: Timer, requiresAuth: true, requiresPermission: 'sessions:track' },
   { labelKey: 'nav.history', href: '/history', icon: History, requiresAuth: true },
   { labelKey: 'nav.glossary', href: '/glossary', icon: BookOpen, requiresAuth: false },
-  { labelKey: 'nav.team', href: '/admin', icon: Users, requiresAuth: true },
+  { labelKey: 'nav.admin', href: '/admin', icon: Users, requiresAuth: true },
   { labelKey: 'nav.superAdmin', href: '/superadmin', icon: Shield, requiresAuth: true, requiresSuperAdmin: true },
   { labelKey: 'nav.appFeedback', href: '/app-feedback', icon: MessageSquare, requiresAuth: true },
 ];

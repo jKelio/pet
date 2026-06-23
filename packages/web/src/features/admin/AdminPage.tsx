@@ -13,7 +13,7 @@ import type { MemberWithUser } from './api/admin.api.js';
 
 const ROLE_KEYS: UserRole[] = ['admin', 'member'];
 
-const VALID_TABS = ['teams', 'external-teams', 'members', 'plan'] as const;
+const VALID_TABS = ['teams', 'members', 'plan'] as const;
 type AdminTab = (typeof VALID_TABS)[number];
 const DEFAULT_TAB: AdminTab = 'teams';
 
@@ -523,45 +523,37 @@ export function AdminPage() {
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="teams">{t('admin.teams')}</TabsTrigger>
-            <TabsTrigger value="external-teams">{t('admin.externalTeams')}</TabsTrigger>
             <TabsTrigger value="members">{t('admin.members')}</TabsTrigger>
             <TabsTrigger value="plan">{t('admin.plan')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="teams">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Users className="h-4 w-4" />
-                  {t('admin.teams')} ({ownTeams.length})
-                </h2>
-                {isAdmin && <CreateTeamForm accessToken={accessToken} />}
-              </div>
+            <div className="space-y-8">
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="h-4 w-4" />
+                    {t('admin.teams')} ({ownTeams.length})
+                  </h2>
+                  {isAdmin && <CreateTeamForm accessToken={accessToken} />}
+                </div>
 
-              {ownTeams.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  {t('admin.noTeams')}
-                </p>
-              )}
+                {ownTeams.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    {t('admin.noTeams')}
+                  </p>
+                )}
 
-              <div className="space-y-2">
-                {ownTeams.map((team) => (
-                  <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
-                    <span className="font-medium text-sm">{team.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
+                <div className="space-y-2">
+                  {ownTeams.map((team) => (
+                    <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
+                      <span className="font-medium text-sm">{team.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
 
-          <TabsContent value="external-teams">
-            {!canUseExternalTeams && externalTeams.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-                <Lock className="h-8 w-8" />
-                <p className="text-sm text-center">{t('admin.externalTeamsLockedNote')}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
+              <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                     <Globe className="h-4 w-4" />
@@ -570,24 +562,33 @@ export function AdminPage() {
                   {isAdmin && canUseExternalTeams && <CreateExternalTeamForm accessToken={accessToken} />}
                 </div>
 
-                {externalTeams.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    {t('admin.noExternalTeams')}
-                  </p>
-                )}
+                {!canUseExternalTeams && externalTeams.length === 0 ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                    <Lock className="h-4 w-4 shrink-0" />
+                    <span>{t('admin.externalTeamsLockedNote')}</span>
+                  </div>
+                ) : (
+                  <>
+                    {externalTeams.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        {t('admin.noExternalTeams')}
+                      </p>
+                    )}
 
-                <div className="space-y-2">
-                  {externalTeams.map((team) => (
-                    <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
-                      <span className="font-medium text-sm">{team.name}</span>
-                      {team.externalClubName && (
-                        <span className="block text-xs text-muted-foreground">{team.externalClubName}</span>
-                      )}
+                    <div className="space-y-2">
+                      {externalTeams.map((team) => (
+                        <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
+                          <span className="font-medium text-sm">{team.name}</span>
+                          {team.externalClubName && (
+                            <span className="block text-xs text-muted-foreground">{team.externalClubName}</span>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  </>
+                )}
+              </section>
+            </div>
           </TabsContent>
 
           <TabsContent value="members">
