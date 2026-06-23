@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Users, Plus, Loader2, Trash2, UserPlus, X, Pencil, Check, Globe } from 'lucide-react';
+import { Building2, Users, Plus, Loader2, Trash2, UserPlus, X, Pencil, Check, Globe, Infinity } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
 import { Label } from '../../shared/components/ui/label.js';
@@ -362,7 +362,7 @@ function QuotaRow({ label, entitlement }: { label: string; entitlement: FeatureE
     return (
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">∞</span>
+        <Infinity className="h-4 w-4 text-muted-foreground" />
       </div>
     );
   }
