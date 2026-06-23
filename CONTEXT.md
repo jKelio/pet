@@ -133,7 +133,7 @@ _Avoid_: using "Action" to mean only the timed kind.
 An Action measured as *elapsed time* (e.g. Explanation, Demonstration, `with Puck`, `without Puck`). It accumulates duration while running.
 
 **Counter**:
-An Action measured as a *number of occurrences* (e.g. Repetition, Shot, Pass, Feedback to a player). Each trigger records one event; there is no duration.
+An Action measured as a *number of occurrences* (e.g. Shot, Pass, Feedback to a player). Each trigger records one event; there is no duration.
 _Avoid_: Tally, hit count.
 
 ### AI recommendations

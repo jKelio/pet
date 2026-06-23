@@ -204,6 +204,34 @@ export function TimeWatcher({ onFinish }: Props) {
     (withoutPuck?.totalTime ?? 0) +
     (withoutPuck?.elapsedTime ?? 0);
 
+  // The two puck timers are presented as a single grouped "Bewegungszeit"
+  // control — but only when BOTH are enabled. With just one, it falls back to a
+  // normal simple-timer card so the segmented toggle never has a dead side.
+  const puckActions = timerActions.filter((a) =>
+    (PUCK_TIMER_IDS as readonly string[]).includes(a.id),
+  );
+  const showPuckGroup = puckActions.length === 2;
+
+  // Ordered render slots for the timer grid. Simple timers are 1-column cells;
+  // when both puck timers are enabled they collapse into a single Bewegungszeit
+  // card spanning 2 columns, inserted at the puck timers' position so it tiles
+  // inline with the other timers (e.g. one row with Technique Time).
+  type TimerAction = (typeof timerActions)[number];
+  type TimerSlot = { kind: 'timer'; action: TimerAction } | { kind: 'puckGroup' };
+  const timerSlots: TimerSlot[] = [];
+  let puckGroupInserted = false;
+  for (const a of timerActions) {
+    const isPuck = (PUCK_TIMER_IDS as readonly string[]).includes(a.id);
+    if (showPuckGroup && isPuck) {
+      if (!puckGroupInserted) {
+        timerSlots.push({ kind: 'puckGroup' });
+        puckGroupInserted = true;
+      }
+      continue;
+    }
+    timerSlots.push({ kind: 'timer', action: a });
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Drill header */}
@@ -229,51 +257,121 @@ export function TimeWatcher({ onFinish }: Props) {
               <Timer className="h-3.5 w-3.5" />
               {t('timeWatcher.timers')}
             </h3>
-            {timerActions.map((action) => {
-              const timer = timers[action.id];
-              const total = (timer?.totalTime ?? 0) + (timer?.elapsedTime ?? 0);
-              const isRunning = timer?.isRunning ?? false;
-              const isActive = currentTimer === action.id;
-              // The two Time Moving puck timers may always switch directly
-              // between each other; other timers stay mutually exclusive.
-              const isPuckPair =
-                (PUCK_TIMER_IDS as readonly string[]).includes(action.id) &&
-                !!currentTimer &&
-                (PUCK_TIMER_IDS as readonly string[]).includes(currentTimer);
-              const isDisabled = !!currentTimer && !isActive && !isPuckPair;
+            {/* Compact 3-up grid. Simple timers are equal-height cards with the
+                start/stop button pinned to the bottom so buttons align across a
+                row. The grouped Bewegungszeit control is a 2-column cell inserted
+                at the puck timers' position (e.g. one row with Technique Time):
+                a mit-Puck | ohne-Puck segmented toggle where tapping a side
+                starts it and stops the other (= Reception / Turnover) and tapping
+                the active side again stops movement (ends the Time-Moving-Episode). */}
+            {timerSlots.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {timerSlots.map((slot) => {
+                  if (slot.kind === 'puckGroup') {
+                    return (
+                      <div
+                        key="puck-group"
+                        className={`relative col-span-2 flex flex-col gap-1.5 rounded-lg border bg-card p-2 ${
+                          !!currentTimer && (PUCK_TIMER_IDS as readonly string[]).includes(currentTimer)
+                            ? 'border-green-500'
+                            : 'border-border'
+                        }`}
+                      >
+                        {(() => {
+                          const isPuckActive = !!currentTimer && (PUCK_TIMER_IDS as readonly string[]).includes(currentTimer);
+                          return (
+                            <span className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full ${isPuckActive ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
+                          );
+                        })()}
+                        <div className="flex items-center justify-between gap-2 pr-4">
+                          <p className="text-xs font-medium">{t('actions.timemoving')}</p>
+                          <p className="font-mono text-sm font-bold tabular-nums">
+                            {formatTime(timeMovingTotal)}
+                          </p>
+                        </div>
+                        <div className="flex flex-1 gap-2">
+                          {(PUCK_TIMER_IDS as readonly string[]).map((id) => {
+                            const timer = timers[id];
+                            const total = (timer?.totalTime ?? 0) + (timer?.elapsedTime ?? 0);
+                            const isRunning = timer?.isRunning ?? false;
+                            const isActive = currentTimer === id;
+                            const isWith = id === TIME_MOVING_WITH_PUCK;
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                onClick={() => handleTimerClick(id, isRunning)}
+                                className={`flex-1 rounded-md border px-2 py-1.5 text-center transition-colors ${
+                                  isActive
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border bg-muted/40 text-foreground'
+                                }`}
+                              >
+                                <span className="flex items-center justify-center gap-1 text-[11px] font-medium">
+                                  {isActive ? (
+                                    <Square className="h-3 w-3" />
+                                  ) : (
+                                    <Play className="h-3 w-3" />
+                                  )}
+                                  {t(isWith ? 'timeWatcher.withPuck' : 'timeWatcher.withoutPuck')}
+                                </span>
+                                <span className="block font-mono text-sm font-bold tabular-nums">
+                                  {formatTime(total)}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
 
-              return (
-                <div
-                  key={action.id}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{t(`actions.${action.id}`)}</p>
-                    <p className="font-mono text-lg font-bold tabular-nums">{formatTime(total)}</p>
-                  </div>
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                      isActive
-                        ? 'bg-green-500/10 text-green-600'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {isActive ? t('timeWatcher.active') : t('timeWatcher.inactive')}
-                  </span>
-                  <Button
-                    size="icon"
-                    variant={isRunning ? 'destructive' : 'default'}
-                    disabled={isDisabled}
-                    onClick={() => handleTimerClick(action.id, isRunning)}
-                    className="shrink-0"
-                  >
-                    {isRunning ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  </Button>
-                </div>
-              );
-            })}
+                  const action = slot.action;
+                  const timer = timers[action.id];
+                  const total = (timer?.totalTime ?? 0) + (timer?.elapsedTime ?? 0);
+                  const isRunning = timer?.isRunning ?? false;
+                  const isActive = currentTimer === action.id;
+                  // The two Time Moving puck timers may always switch directly
+                  // between each other; other timers stay mutually exclusive.
+                  const isPuckPair =
+                    (PUCK_TIMER_IDS as readonly string[]).includes(action.id) &&
+                    !!currentTimer &&
+                    (PUCK_TIMER_IDS as readonly string[]).includes(currentTimer);
+                  const isDisabled = !!currentTimer && !isActive && !isPuckPair;
 
-            {showTimeMovingTotal && (
+                  return (
+                    <div
+                      key={action.id}
+                      className={`relative flex flex-col items-center gap-1 rounded-lg border bg-card p-2 ${isActive ? 'border-green-500' : 'border-border'}`}
+                    >
+                      <span
+                        className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full ${
+                          isActive ? 'bg-green-500' : 'bg-muted-foreground/30'
+                        }`}
+                      />
+                      <p className="min-h-[2rem] text-center text-xs font-medium leading-tight line-clamp-2">
+                        {t(`actions.${action.id}`)}
+                      </p>
+                      <p className="font-mono text-base font-bold tabular-nums">
+                        {formatTime(total)}
+                      </p>
+                      <Button
+                        size="icon"
+                        variant={isRunning ? 'destructive' : 'default'}
+                        disabled={isDisabled}
+                        onClick={() => handleTimerClick(action.id, isRunning)}
+                        className="mt-auto shrink-0"
+                      >
+                        {isRunning ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Single-puck-timer fallback keeps the standalone dashed total. */}
+            {!showPuckGroup && showTimeMovingTotal && (
               <div className="flex items-center gap-3 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-muted-foreground truncate">
@@ -295,38 +393,42 @@ export function TimeWatcher({ onFinish }: Props) {
               <Hash className="h-3.5 w-3.5" />
               {t('timeWatcher.counters')}
             </h3>
-            {counterActions.map((action) => {
-              const counter = counters[action.id];
-              const count = counter?.count ?? 0;
+            <div className="grid grid-cols-3 gap-2">
+              {counterActions.map((action) => {
+                const counter = counters[action.id];
+                const count = counter?.count ?? 0;
 
-              return (
-                <div
-                  key={action.id}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{t(`actions.${action.id}`)}</p>
+                return (
+                  <div
+                    key={action.id}
+                    className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card p-2"
+                  >
+                    <p className="min-h-[2rem] text-center text-xs font-medium leading-tight line-clamp-2">
+                      {t(`actions.${action.id}`)}
+                    </p>
                     <p className="text-2xl font-bold tabular-nums">{count}</p>
+                    <div className="mt-auto flex gap-1">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-9 w-9"
+                        onClick={() => decrementCounter(action.id)}
+                        disabled={count === 0}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => incrementCounter(action.id)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => decrementCounter(action.id)}
-                      disabled={count === 0}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      onClick={() => incrementCounter(action.id)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </section>
         )}
 
