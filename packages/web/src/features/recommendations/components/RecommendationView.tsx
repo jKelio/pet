@@ -95,30 +95,30 @@ export function RecommendationView({ recommendation }: RecommendationViewProps) 
           <MarkdownSection content={doc.summary} />
         </section>
 
-        {doc.strengths.length > 0 && (
+        {(doc.strengths?.length ?? 0) > 0 && (
           <section className="pdf-section space-y-2 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-4">
             <h3 className="text-sm font-semibold text-green-800 dark:text-green-300 uppercase tracking-wider">
               {t('recommendation.sectionStrengths')}
             </h3>
-            <BulletSection items={doc.strengths} className="text-green-900 dark:text-green-100" />
+            <BulletSection items={doc.strengths ?? []} className="text-green-900 dark:text-green-100" />
           </section>
         )}
 
-        {doc.concerns.length > 0 && (
+        {(doc.concerns?.length ?? 0) > 0 && (
           <section className="pdf-section space-y-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-4">
             <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300 uppercase tracking-wider">
               {t('recommendation.sectionConcerns')}
             </h3>
-            <BulletSection items={doc.concerns} className="text-amber-900 dark:text-amber-100" />
+            <BulletSection items={doc.concerns ?? []} className="text-amber-900 dark:text-amber-100" />
           </section>
         )}
 
-        {doc.recommendations.length > 0 && (
+        {(doc.recommendations?.length ?? 0) > 0 && (
           <section className="pdf-section space-y-2 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 p-4">
             <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">
               {t('recommendation.sectionRecommendations')}
             </h3>
-            <BulletSection items={doc.recommendations} className="text-blue-900 dark:text-blue-100" />
+            <BulletSection items={doc.recommendations ?? []} className="text-blue-900 dark:text-blue-100" />
           </section>
         )}
 

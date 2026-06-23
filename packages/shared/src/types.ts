@@ -161,9 +161,12 @@ export interface LibraryEntry {
 
 export interface RecommendationDocument {
   summary: string;
-  strengths: string[];
-  concerns: string[];
-  recommendations: string[];
+  /** May be absent in records generated before this field was introduced. */
+  strengths?: string[];
+  /** May be absent in records generated before this field was introduced. */
+  concerns?: string[];
+  /** May be absent in records generated before this field was introduced. */
+  recommendations?: string[];
   /** Legacy field: no longer produced. Retained as optional for historical records. */
   sourceReferences?: string[];
 }
