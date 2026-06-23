@@ -53,13 +53,14 @@ export class GetMyProfileUseCase {
     }
 
     const allTeams = await this.deps.teamRepository.findByTenant(tenantId);
-    // club_admin sees all teams; others see only their assigned teams
+    // club_admin sees all teams; others see their assigned own Teams plus every
+    // External Team (open roster — any coach may select/track a curated External Team).
     let teams: Team[];
     if (membership.role === 'club_admin') {
       teams = allTeams;
     } else {
       const assignedIds = await this.deps.membershipRepository.getTeamIds(membership.id);
-      teams = allTeams.filter((t) => assignedIds.includes(t.id));
+      teams = allTeams.filter((t) => t.kind === 'external' || assignedIds.includes(t.id));
     }
 
     const entitlements = await this.deps.entitlementService.getSnapshot(tenantId);

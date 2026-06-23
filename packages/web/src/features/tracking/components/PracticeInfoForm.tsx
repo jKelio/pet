@@ -17,8 +17,8 @@ export function PracticeInfoForm() {
   const initDrills = useTrackingStore((s) => s.initDrills);
   const sessionType = useTrackingStore((s) => s.sessionType);
   const setSessionType = useTrackingStore((s) => s.setSessionType);
-  const localOnly = useTrackingStore((s) => s.localOnly);
-  const setLocalOnly = useTrackingStore((s) => s.setLocalOnly);
+  const trackExternal = useTrackingStore((s) => s.trackExternal);
+  const setTrackExternal = useTrackingStore((s) => s.setTrackExternal);
   const teams = useAdminStore((s) => s.teams);
   const tenant = useAdminStore((s) => s.tenant);
   const members = useAdminStore((s) => s.members);
@@ -30,10 +30,10 @@ export function PracticeInfoForm() {
   const tenantName = tenant?.name ?? '';
 
   useEffect(() => {
-    if (tenantName && !localOnly) {
+    if (tenantName && !trackExternal) {
       setPracticeInfo((prev) => (prev.clubName ? prev : { ...prev, clubName: tenantName }));
     }
-  }, [tenantName, localOnly, setPracticeInfo]);
+  }, [tenantName, trackExternal, setPracticeInfo]);
 
   useEffect(() => {
     if (members.length === 0 && accessToken) {
@@ -46,30 +46,40 @@ export function PracticeInfoForm() {
 
   const ownTeams = teams.filter((t) => t.kind === 'own');
   const externalTeams = teams.filter((t) => t.kind === 'external');
-  const selectedTeam = teams.find((t) => t.name === practiceInfo.teamName);
+  const selectedTeam = teams.find((t) => t.id === practiceInfo.teamId);
 
-  const isClubReadOnly = !localOnly;
-  const clubSuggestions = localOnly
-    ? [...new Set(externalTeams.map((t) => t.externalClubName).filter(Boolean) as string[])]
-    : [];
-  const teamSuggestions = localOnly
-    ? externalTeams
-        .filter((t) => !practiceInfo.clubName || t.externalClubName === practiceInfo.clubName)
-        .map((t) => t.name)
-    : ownTeams.map((t) => t.name);
+  // External Teams are curated by the club_admin; coaches select one by external club.
+  const externalClubs = [...new Set(
+    externalTeams.map((t) => t.externalClubName).filter(Boolean) as string[],
+  )];
+  const externalTeamsForClub = externalTeams.filter(
+    (t) => t.externalClubName === practiceInfo.clubName,
+  );
 
-  const handleLocalOnlyToggle = (value: boolean) => {
-    setLocalOnly(value);
-    if (value) {
-      setPracticeInfo((prev) => ({ ...prev, clubName: '', teamName: '', teamId: undefined }));
-    } else {
-      setPracticeInfo((prev) => ({ ...prev, clubName: tenantName, teamName: '', teamId: undefined }));
-    }
+  const handleExternalToggle = (value: boolean) => {
+    setTrackExternal(value);
+    setPracticeInfo((prev) => ({
+      ...prev,
+      clubName: value ? '' : tenantName,
+      teamName: '',
+      teamId: undefined,
+    }));
+  };
+
+  const selectExternalTeam = (teamId: string) => {
+    const team = externalTeams.find((t) => t.id === teamId);
+    setPracticeInfo((prev) => ({
+      ...prev,
+      teamId: team?.id,
+      teamName: team?.name ?? '',
+      clubName: team?.externalClubName ?? prev.clubName,
+    }));
   };
 
   const coachSuggestions = members
     .filter((m) => m.membership.role === 'coach')
-    .filter((m) => !selectedTeam || m.teamIds.includes(selectedTeam.id));
+    // Own Teams filter coaches by Roster; External Teams have an open roster (any coach).
+    .filter((m) => !selectedTeam || selectedTeam.kind === 'external' || m.teamIds.includes(selectedTeam.id));
 
   const handleDrillsNumber = (n: number) => {
     setPracticeInfo({ ...practiceInfo, drillsNumber: n });
@@ -119,41 +129,61 @@ export function PracticeInfoForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="clubName">{t('general.clubLabel')}</Label>
-            <AutocompleteInput
-              id="clubName"
-              value={practiceInfo.clubName}
-              suggestions={clubSuggestions}
-              onChange={(clubName) => {
-                setPracticeInfo((prev) => ({ ...prev, clubName, teamName: '', teamId: undefined }));
-              }}
-              readOnly={isClubReadOnly}
-            />
+            {trackExternal ? (
+              <select
+                id="clubName"
+                value={practiceInfo.clubName}
+                onChange={(e) =>
+                  setPracticeInfo((prev) => ({ ...prev, clubName: e.target.value, teamName: '', teamId: undefined }))
+                }
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">{t('practice.externalClubPlaceholder')}</option>
+                {externalClubs.map((club) => (
+                  <option key={club} value={club}>{club}</option>
+                ))}
+              </select>
+            ) : (
+              <Input id="clubName" value={practiceInfo.clubName} readOnly />
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="teamName">{t('general.teamLabel')}</Label>
-            <AutocompleteInput
-              id="teamName"
-              value={practiceInfo.teamName}
-              suggestions={teamSuggestions}
-              onChange={(teamName) => {
-                const match = externalTeams.find((tm) => tm.name === teamName)
-                  ?? ownTeams.find((tm) => tm.name === teamName);
-                const updates: Partial<typeof practiceInfo> = { teamName, teamId: match?.id };
-                if (localOnly && match?.externalClubName) {
-                  updates.clubName = match.externalClubName;
-                }
-                setPracticeInfo({ ...practiceInfo, ...updates });
-              }}
-            />
-            <div className="flex items-center gap-2 pt-1">
-              <Switch id="localOnly" checked={localOnly} onCheckedChange={handleLocalOnlyToggle} disabled={!canUseExternalTeams} title={!canUseExternalTeams ? t('sessions.externalTeamUpgradeHint') : undefined} />
-              <Label
-                htmlFor="localOnly"
-                className="text-xs font-normal text-muted-foreground cursor-pointer"
+            {trackExternal ? (
+              <select
+                id="teamName"
+                value={practiceInfo.teamId ?? ''}
+                onChange={(e) => selectExternalTeam(e.target.value)}
+                disabled={!practiceInfo.clubName}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {t('sessions.localOnlyLabel')}
-              </Label>
-            </div>
+                <option value="">{t('practice.externalTeamPlaceholder')}</option>
+                {externalTeamsForClub.map((tm) => (
+                  <option key={tm.id} value={tm.id}>{tm.name}</option>
+                ))}
+              </select>
+            ) : (
+              <AutocompleteInput
+                id="teamName"
+                value={practiceInfo.teamName}
+                suggestions={ownTeams.map((tm) => tm.name)}
+                onChange={(teamName) => {
+                  const match = ownTeams.find((tm) => tm.name === teamName);
+                  setPracticeInfo({ ...practiceInfo, teamName, teamId: match?.id });
+                }}
+              />
+            )}
+            {canUseExternalTeams && (
+              <div className="flex items-center gap-2 pt-1">
+                <Switch id="trackExternal" checked={trackExternal} onCheckedChange={handleExternalToggle} />
+                <Label
+                  htmlFor="trackExternal"
+                  className="text-xs font-normal text-muted-foreground cursor-pointer"
+                >
+                  {t('sessions.trackExternalLabel')}
+                </Label>
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="date">{t('general.dateLabel')}</Label>

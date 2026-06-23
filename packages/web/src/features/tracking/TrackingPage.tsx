@@ -15,7 +15,6 @@ import {
 } from '../../shared/components/ui/alert-dialog.js';
 import { useTrackingStore } from './stores/tracking.store.js';
 import { useAdminStore } from '../admin/stores/admin.store.js';
-import { useAuthStore } from '../auth/stores/auth.store.js';
 import { PracticeInfoForm } from './components/PracticeInfoForm.js';
 import { DrillsForm } from './components/DrillsForm.js';
 import { TimeWatcher } from './components/TimeWatcher.js';
@@ -34,11 +33,8 @@ export function TrackingPage() {
   const resetAllData = useTrackingStore((s) => s.resetAllData);
   const setPracticeInfo = useTrackingStore((s) => s.setPracticeInfo);
   const practiceInfo = useTrackingStore((s) => s.practiceInfo);
-  const localOnly = useTrackingStore((s) => s.localOnly);
+  const trackExternal = useTrackingStore((s) => s.trackExternal);
   const tenant = useAdminStore((s) => s.tenant);
-  const teams = useAdminStore((s) => s.teams);
-  const createExternalTeam = useAdminStore((s) => s.createExternalTeam);
-  const accessToken = useAuthStore((s) => s.accessToken);
 
   const [showStartConfirm, setShowStartConfirm] = useState(false);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
@@ -86,25 +82,12 @@ export function TrackingPage() {
 
   const canAdvance = mode === 'practiceInfo'
     ? (sessionType === 'open' || drillsNumber > 0) &&
-      (!localOnly || (!!practiceInfo.teamName && !!practiceInfo.clubName))
+      (!trackExternal || !!practiceInfo.teamId)
     : true;
 
-  const handleStartTracking = async () => {
+  const handleStartTracking = () => {
     hasStartedManuallyRef.current = true;
     setShowStartConfirm(false);
-    if (localOnly && !practiceInfo.teamId && practiceInfo.teamName && practiceInfo.clubName && accessToken) {
-      const existing = teams.find(
-        (t) => t.kind === 'external' && t.name === practiceInfo.teamName,
-      );
-      if (!existing) {
-        try {
-          const created = await createExternalTeam(practiceInfo.teamName, practiceInfo.clubName, accessToken);
-          setPracticeInfo((prev) => ({ ...prev, teamId: created.id }));
-        } catch {
-          // Creation failed — proceed without a teamId (session stays local-only)
-        }
-      }
-    }
     goToNextStep();
   };
 
@@ -188,7 +171,7 @@ export function TrackingPage() {
             <AlertDialogCancel onClick={() => setShowStartConfirm(false)}>
               {t('buttons.cancel')}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={() => void handleStartTracking()}>
+            <AlertDialogAction onClick={handleStartTracking}>
               {t('buttons.startTraining')}
             </AlertDialogAction>
           </AlertDialogFooter>

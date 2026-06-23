@@ -52,3 +52,20 @@ The ask is to make such a foreign team a real, syncable record — sold as a [[p
 - Roster is optional for External Teams. `SyncSession` skips the team-assignment check when `team.kind === 'external'` — all coaches in the Tenant may sync External Team sessions without roster membership.
 - Deduplication is handled by UX (Autocomplete surfaces existing External Teams); no server-side uniqueness constraint on `(tenantId, name)` is added.
 - History view gains a Club filter to navigate sessions across many External Teams from different clubs.
+
+> **Superseded in part by Amendment 2** — the on-the-fly *creation* path below is reversed; the *open-roster* rule is retained.
+
+## Amendment 2 — Admin-curated creation, coach selects
+
+**Status:** Accepted. **Supersedes** Amendment 1's on-the-fly creation (open roster stays).
+
+**Decision:** External Teams are a **`club_admin`-curated catalogue**. Coaches no longer create them during Tracking Setup; they **select** an existing one, by external club then team. Free-text foreign-team tracking below premium is dropped.
+
+- **Creation is `club_admin`-only**, for both kinds. `CreateTeam` no longer admits `coach` for `kind='external'`. Curation happens in the admin area (the existing `POST /admin/external-teams` path), not at tracking time.
+- **Open roster retained.** `SyncSession` still skips the assignment check for `kind='external'`. To make curated teams *selectable*, `GetMyProfile` now returns, for non-admins, their assigned own Teams **plus every `kind='external'` Team** (previously only assigned teams) — otherwise an admin-created External Team would be invisible to coaches.
+- **Selection UX.** Tracking Setup gains a premium-only "track an external team" toggle that, when on, turns Club and Team into cascading dropdowns sourced from the curated catalogue (no free-text, no auto-create). The toggle is **hidden** below premium, not disabled.
+- **Free-tier foreign tracking dropped.** The conflated `localOnly` "keep local only" checkbox — which both flagged a non-syncing session and auto-created an External Team — is retired. New foreign-team sessions are only the premium, syncable External Team; below premium a foreign team cannot be tracked. Existing [[Local-Only Session]]s remain viewable and exportable; none are newly created.
+
+**Why:** On-the-fly creation relied on Autocomplete dedup only (Amendment 1 added no `(tenantId, name)` uniqueness). Typos silently fork one opponent into two External Teams, splitting the cross-session history that is the whole point of the entity. Curation by the `club_admin` — natural for the federation use case premium targets — removes that failure mode and de-conflates the `localOnly` toggle, which had fused the premium *External Team* and the every-plan *Local-Only Session* into one premium-gated switch.
+
+**Trade-off:** A coach can no longer track a member club the admin hasn't curated yet (the every-plan free-text escape hatch is gone). Accepted: premium tenants are federations with a known, structured set of member clubs, and curation is a one-time admin action.

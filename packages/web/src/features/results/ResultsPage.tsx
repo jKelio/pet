@@ -70,7 +70,6 @@ export function ResultsPage() {
   const [localSessionId] = useState(() => useTrackingStore.getState().sessionId);
   const [localDrills] = useState(() => useTrackingStore.getState().drills);
   const [localPracticeInfo] = useState(() => useTrackingStore.getState().practiceInfo);
-  const [localOnly] = useState(() => useTrackingStore.getState().localOnly);
   // The id under which the completed session was actually stored (normalized to a UUID).
   const savedIdRef = useRef(localSessionId);
 
@@ -99,7 +98,6 @@ export function ResultsPage() {
     syncedAt: null,
     teamId: null,
     tenantId,
-    localOnly,
   });
 
   // Save completed session to the local outbox, clear the store so the auto-save
@@ -108,11 +106,10 @@ export function ResultsPage() {
   // Skipped in view-only mode.
   useEffect(() => {
     if (viewOnly || localDrills.length === 0) return;
-    completeSession(localSessionId, localPracticeInfo, localDrills, tenantId, localOnly)
+    completeSession(localSessionId, localPracticeInfo, localDrills, tenantId)
       .then((savedId) => {
         savedIdRef.current = savedId;
         resetAllData();
-        if (localOnly) return; // foreign/scouting session — never sync
         const session = buildLocalSession(savedId);
         const teamId = resolveSyncTeamId(session, useAdminStore.getState().teams);
         if (accessToken && teamId && navigator.onLine) {
@@ -275,7 +272,7 @@ export function ResultsPage() {
                   : ''}
               </span>
             </Button>
-            {accessToken && !viewOnly && !synced && !localOnly && (
+            {accessToken && !viewOnly && !synced && (
               entitlements?.sync.limit === 0 ? (
                 <Button variant="outline" size="sm" disabled title={t('results.syncUpgradeHint')}>
                   <Cloud className="h-4 w-4" />
@@ -292,7 +289,7 @@ export function ResultsPage() {
                 </Button>
               )
             )}
-            {accessToken && (synced || viewOnly) && !localOnly && (
+            {accessToken && (synced || viewOnly) && (
               <RecommendationPanel
                 sessionId={toServerSessionId(savedIdRef.current)}
                 accessToken={accessToken}
@@ -300,18 +297,13 @@ export function ResultsPage() {
                 disabledReason={entitlements && !entitlements.ai.allowed ? t('results.aiUpgradeHint') : undefined}
               />
             )}
-            {accessToken && !synced && !viewOnly && !localOnly && (
+            {accessToken && !synced && !viewOnly && (
               <RecommendationPanel
                 sessionId={toServerSessionId(savedIdRef.current)}
                 accessToken={accessToken}
                 disabled
                 disabledReason={t('results.analyseNotSynced')}
               />
-            )}
-            {!viewOnly && localOnly && (
-              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">
-                {t('sessions.localBadge')}
-              </span>
             )}
             {viewOnly ? (
               <Button variant="outline" size="sm" onClick={handleBack}>
