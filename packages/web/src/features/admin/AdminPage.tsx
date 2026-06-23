@@ -1,16 +1,40 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Users, Plus, Loader2, Trash2, UserPlus, X, Pencil, Check, Globe, Infinity } from 'lucide-react';
+import { Building2, Users, Plus, Loader2, Trash2, UserPlus, X, Pencil, Check, Globe, Infinity, Lock } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
 import { Label } from '../../shared/components/ui/label.js';
 import { Card } from '../../shared/components/ui/card.js';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../shared/components/ui/tabs.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from './stores/admin.store.js';
-import type { UserRole, FeatureEntitlement } from '@pet/shared';
+import type { TenantPlan, UserRole, FeatureEntitlement } from '@pet/shared';
 import type { MemberWithUser } from './api/admin.api.js';
 
 const ROLE_KEYS: UserRole[] = ['admin', 'member'];
+
+const VALID_TABS = ['teams', 'external-teams', 'members', 'plan'] as const;
+type AdminTab = (typeof VALID_TABS)[number];
+const DEFAULT_TAB: AdminTab = 'teams';
+
+function readHashTab(): AdminTab {
+  const hash = window.location.hash.replace('#', '') as AdminTab;
+  return VALID_TABS.includes(hash) ? hash : DEFAULT_TAB;
+}
+
+const PLAN_BADGE_CLASSES: Record<TenantPlan, string> = {
+  free: 'bg-muted text-muted-foreground',
+  pro: 'bg-primary/10 text-primary',
+  premium: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+};
+
+function PlanBadge({ plan }: { plan: TenantPlan }) {
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${PLAN_BADGE_CLASSES[plan]}`}>
+      {plan}
+    </span>
+  );
+}
 
 function OnboardingForm({ accessToken }: { accessToken: string }) {
   const { t } = useTranslation('pet');
@@ -442,6 +466,14 @@ export function AdminPage() {
   const { tenant, membership, teams, members, loading, error, loadProfile, loadMembers, entitlements } =
     useAdminStore();
 
+  const [activeTab, setActiveTab] = useState<AdminTab>(readHashTab);
+
+  const handleTabChange = (value: string) => {
+    const tab = value as AdminTab;
+    setActiveTab(tab);
+    window.location.hash = tab;
+  };
+
   useEffect(() => {
     if (accessToken) {
       loadProfile(accessToken);
@@ -476,103 +508,122 @@ export function AdminPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="px-6 py-4 border-b border-border bg-card">
-        <h1 className="text-xl font-bold">{t('admin.teamManagement')}</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{tenant.name}</p>
+        <h1 className="text-xl font-bold">{t('admin.administration')}</h1>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-sm text-muted-foreground">{tenant.name}</p>
+          <PlanBadge plan={tenant.plan} />
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6">
         {error && (
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive mb-4">{error}</p>
         )}
 
-        <Card className="p-4 space-y-1">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t('admin.club')}</p>
-          <p className="font-medium">{tenant.name}</p>
-          <p className="text-sm text-muted-foreground capitalize">{tenant.plan}</p>
-        </Card>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList>
+            <TabsTrigger value="teams">{t('admin.teams')}</TabsTrigger>
+            <TabsTrigger value="external-teams">{t('admin.externalTeams')}</TabsTrigger>
+            <TabsTrigger value="members">{t('admin.members')}</TabsTrigger>
+            <TabsTrigger value="plan">{t('admin.plan')}</TabsTrigger>
+          </TabsList>
 
-        <PlanUsageCard />
-
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              {t('admin.teams')} ({ownTeams.length})
-            </h2>
-            {isAdmin && <CreateTeamForm accessToken={accessToken} />}
-          </div>
-
-          {ownTeams.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              {t('admin.noTeams')}
-            </p>
-          )}
-
-          <div className="space-y-2">
-            {ownTeams.map((team) => (
-              <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
-                <span className="font-medium text-sm">{team.name}</span>
+          <TabsContent value="teams">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="h-4 w-4" />
+                  {t('admin.teams')} ({ownTeams.length})
+                </h2>
+                {isAdmin && <CreateTeamForm accessToken={accessToken} />}
               </div>
-            ))}
-          </div>
-        </section>
 
-        {(canUseExternalTeams || externalTeams.length > 0) && (
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="h-4 w-4" />
-                {t('admin.externalTeams')} ({externalTeams.length})
-              </h2>
-              {isAdmin && canUseExternalTeams && <CreateExternalTeamForm accessToken={accessToken} />}
+              {ownTeams.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  {t('admin.noTeams')}
+                </p>
+              )}
+
+              <div className="space-y-2">
+                {ownTeams.map((team) => (
+                  <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
+                    <span className="font-medium text-sm">{team.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
+          </TabsContent>
 
-            {externalTeams.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                {t('admin.noExternalTeams')}
-              </p>
-            )}
-
-            <div className="space-y-2">
-              {externalTeams.map((team) => (
-                <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
-                  <span className="font-medium text-sm">{team.name}</span>
-                  {team.externalClubName && (
-                    <span className="block text-xs text-muted-foreground">{team.externalClubName}</span>
-                  )}
+          <TabsContent value="external-teams">
+            {!canUseExternalTeams && externalTeams.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
+                <Lock className="h-8 w-8" />
+                <p className="text-sm text-center">{t('admin.externalTeamsLockedNote')}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Globe className="h-4 w-4" />
+                    {t('admin.externalTeams')} ({externalTeams.length})
+                  </h2>
+                  {isAdmin && canUseExternalTeams && <CreateExternalTeamForm accessToken={accessToken} />}
                 </div>
-              ))}
+
+                {externalTeams.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    {t('admin.noExternalTeams')}
+                  </p>
+                )}
+
+                <div className="space-y-2">
+                  {externalTeams.map((team) => (
+                    <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
+                      <span className="font-medium text-sm">{team.name}</span>
+                      {team.externalClubName && (
+                        <span className="block text-xs text-muted-foreground">{team.externalClubName}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="members">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="h-4 w-4" />
+                  {t('admin.members')} ({members.length})
+                </h2>
+                {isAdmin && <InviteMemberForm accessToken={accessToken} />}
+              </div>
+
+              {members.length === 0 && !loading && (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  {t('admin.noMembers')}
+                </p>
+              )}
+
+              <div className="space-y-2">
+                {members.map((member) => (
+                  <MemberRow
+                    key={member.membership.id}
+                    member={member}
+                    isAdmin={isAdmin}
+                    isSelf={member.membership.userId === membership.userId}
+                    accessToken={accessToken}
+                  />
+                ))}
+              </div>
             </div>
-          </section>
-        )}
+          </TabsContent>
 
-        <section className="space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              {t('admin.members')} ({members.length})
-            </h2>
-            {isAdmin && <InviteMemberForm accessToken={accessToken} />}
-          </div>
-
-          {members.length === 0 && !loading && (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              {t('admin.noMembers')}
-            </p>
-          )}
-
-          <div className="space-y-2">
-            {members.map((member) => (
-              <MemberRow
-                key={member.membership.id}
-                member={member}
-                isAdmin={isAdmin}
-                isSelf={member.membership.userId === membership.userId}
-                accessToken={accessToken}
-              />
-            ))}
-          </div>
-        </section>
+          <TabsContent value="plan">
+            <PlanUsageCard />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
