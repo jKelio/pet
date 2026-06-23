@@ -138,6 +138,30 @@ export const apiClient = {
     return res.blob();
   },
 
+  /** POST with FormData (multipart). Browser sets Content-Type with boundary automatically. */
+  async postForm<T>(path: string, form: FormData, accessToken?: string): Promise<T> {
+    await whenServerReady();
+    const headers: HeadersInit = {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    };
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      headers,
+      body: form,
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const error: ApiError = await res.json().catch(() => ({
+        code: 'UNKNOWN_ERROR',
+        message: 'An unexpected error occurred',
+        statusCode: res.status,
+      }));
+      throw new ApiClientError(error.code, error.message, error.statusCode);
+    }
+    if (res.status === 204 || res.status === 201) return undefined as T;
+    return res.json() as Promise<T>;
+  },
+
   delete: <T>(path: string, accessToken?: string) =>
     request<T>(path, { method: 'DELETE' }, accessToken),
 

@@ -1,5 +1,7 @@
 # App Feedback via a prefilled public GitHub issue
 
+**Status: superseded by [ADR 0015](0015-app-feedback-via-server-side-github-api.md)**
+
 ## Decision
 
 The App Feedback feature (a coach reporting a bug, requesting a feature, or leaving a general
