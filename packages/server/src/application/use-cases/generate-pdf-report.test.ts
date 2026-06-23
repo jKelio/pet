@@ -70,7 +70,7 @@ const CTX = { userId: 'user-1', tenantId: 'tenant-1' };
 
 function makeMembershipRepo(isMember = true): MembershipRepository {
   return {
-    findByUserAndTenant: mock(async () => (isMember ? { id: 'mem-1', userId: 'user-1', tenantId: 'tenant-1', role: 'coach' } : null)),
+    findByUserAndTenant: mock(async () => (isMember ? { id: 'mem-1', userId: 'user-1', tenantId: 'tenant-1', role: 'member' } : null)),
   } as unknown as MembershipRepository;
 }
 

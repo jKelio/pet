@@ -22,8 +22,6 @@ import { ListMembersUseCase } from '../../application/use-cases/list-members.js'
 import { InviteMemberUseCase } from '../../application/use-cases/invite-member.js';
 import { RemoveMemberUseCase } from '../../application/use-cases/remove-member.js';
 import { UpdateMemberUseCase } from '../../application/use-cases/update-member.js';
-import { AssignTeamMemberUseCase } from '../../application/use-cases/assign-team-member.js';
-import { RemoveTeamMemberUseCase } from '../../application/use-cases/remove-team-member.js';
 import { SuperAdminListTenantsUseCase } from '../../application/use-cases/superadmin-list-tenants.js';
 import { SuperAdminDeleteTenantUseCase } from '../../application/use-cases/superadmin-delete-tenant.js';
 import { SuperAdminAddClubAdminUseCase } from '../../application/use-cases/superadmin-add-club-admin.js';
@@ -83,8 +81,6 @@ declare module 'fastify' {
       inviteMember: InviteMemberUseCase;
       removeMember: RemoveMemberUseCase;
       updateMember: UpdateMemberUseCase;
-      assignTeamMember: AssignTeamMemberUseCase;
-      removeTeamMember: RemoveTeamMemberUseCase;
       superAdminListTenants: SuperAdminListTenantsUseCase;
       superAdminDeleteTenant: SuperAdminDeleteTenantUseCase;
       superAdminAddClubAdmin: SuperAdminAddClubAdminUseCase;
@@ -224,8 +220,6 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   });
   const removeMember = new RemoveMemberUseCase({ membershipRepository });
   const updateMember = new UpdateMemberUseCase({ userRepository, membershipRepository });
-  const assignTeamMember = new AssignTeamMemberUseCase({ membershipRepository, teamRepository });
-  const removeTeamMember = new RemoveTeamMemberUseCase({ membershipRepository, teamRepository });
 
   const listLibraryEntries = new ListLibraryEntriesUseCase({ libraryRepository });
   const createLibraryEntry = new CreateLibraryEntryUseCase({ libraryRepository });
@@ -270,8 +264,6 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     inviteMember,
     removeMember,
     updateMember,
-    assignTeamMember,
-    removeTeamMember,
     superAdminListTenants,
     superAdminDeleteTenant,
     superAdminAddClubAdmin,

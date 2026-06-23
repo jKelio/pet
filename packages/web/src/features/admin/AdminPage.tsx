@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Users, Plus, Loader2, Trash2, UserPlus, ChevronDown, X, Pencil, Check, Globe } from 'lucide-react';
+import { Building2, Users, Plus, Loader2, Trash2, UserPlus, X, Pencil, Check, Globe } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { Input } from '../../shared/components/ui/input.js';
 import { Label } from '../../shared/components/ui/label.js';
 import { Card } from '../../shared/components/ui/card.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from './stores/admin.store.js';
-import type { Team, UserRole } from '@pet/shared';
+import type { UserRole } from '@pet/shared';
 import type { MemberWithUser } from './api/admin.api.js';
 
-const ROLE_KEYS: UserRole[] = ['club_admin', 'coach', 'analyst'];
+const ROLE_KEYS: UserRole[] = ['admin', 'member'];
 
 function OnboardingForm({ accessToken }: { accessToken: string }) {
   const { t } = useTranslation('pet');
@@ -174,34 +174,20 @@ function CreateExternalTeamForm({ accessToken }: { accessToken: string }) {
   );
 }
 
-function InviteMemberForm({ accessToken, teams }: { accessToken: string; teams: Team[] }) {
+function InviteMemberForm({ accessToken }: { accessToken: string }) {
   const { t } = useTranslation('pet');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<UserRole>('coach');
-  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
+  const [role, setRole] = useState<UserRole>('member');
   const [open, setOpen] = useState(false);
   const { inviteMember, loading } = useAdminStore();
-
-  const toggleTeam = (teamId: string) => {
-    setSelectedTeamIds((ids) =>
-      ids.includes(teamId) ? ids.filter((id) => id !== teamId) : [...ids, teamId],
-    );
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    await inviteMember(
-      email.trim(),
-      role,
-      name.trim() || undefined,
-      selectedTeamIds.length > 0 ? selectedTeamIds : undefined,
-      accessToken,
-    );
+    await inviteMember(email.trim(), role, name.trim() || undefined, accessToken);
     setName('');
     setEmail('');
-    setSelectedTeamIds([]);
     setOpen(false);
   };
 
@@ -253,24 +239,6 @@ function InviteMemberForm({ accessToken, teams }: { accessToken: string; teams: 
           ))}
         </select>
       </div>
-      {teams.length > 0 && (
-        <div className="space-y-1">
-          <Label className="text-xs">{t('admin.teamsLabel')}</Label>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {teams.map((team) => (
-              <label key={team.id} className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={selectedTeamIds.includes(team.id)}
-                  onChange={() => toggleTeam(team.id)}
-                  className="rounded border-input"
-                />
-                {team.name}
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
       <Button type="submit" size="sm" disabled={loading}>
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('admin.invite')}
       </Button>
@@ -278,100 +246,6 @@ function InviteMemberForm({ accessToken, teams }: { accessToken: string; teams: 
         {t('admin.cancel')}
       </Button>
     </form>
-  );
-}
-
-function TeamRosterAccordion({
-  team,
-  members,
-  isAdmin,
-  accessToken,
-}: {
-  team: Team;
-  members: MemberWithUser[];
-  isAdmin: boolean;
-  accessToken: string;
-}) {
-  const { t } = useTranslation('pet');
-  const { assignTeamMember, removeTeamMember } = useAdminStore();
-  const [expanded, setExpanded] = useState(false);
-  const [addSelect, setAddSelect] = useState('');
-
-  const roster = members.filter((m) => m.teamIds?.includes(team.id));
-  const available = members.filter((m) => !m.teamIds?.includes(team.id));
-
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!addSelect) return;
-    await assignTeamMember(team.id, addSelect, accessToken);
-    setAddSelect('');
-  };
-
-  return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-muted/40 transition-colors"
-      >
-        <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-        <span className="flex-1 min-w-0">
-          <span className="font-medium block">{team.name}</span>
-          {team.kind === 'external' && team.externalClubName && (
-            <span className="text-xs text-muted-foreground">{team.externalClubName}</span>
-          )}
-        </span>
-        <span className="text-xs text-muted-foreground">{roster.length}</span>
-        <ChevronDown
-          className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      {expanded && (
-        <div className="px-4 pb-3 space-y-2 border-t border-border">
-          {roster.length === 0 && (
-            <p className="text-xs text-muted-foreground pt-2">{t('admin.noRoster')}</p>
-          )}
-          {roster.map(({ membership: m, user }) => (
-            <div key={m.id} className="flex items-center gap-2 pt-1">
-              <span className="flex-1 text-sm">{user.name || user.email}</span>
-              <span className="text-xs text-muted-foreground">{t(`roles.${m.role}`)}</span>
-              {isAdmin && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 text-destructive hover:text-destructive"
-                  onClick={() => removeTeamMember(team.id, m.id, accessToken)}
-                  title={t('admin.removeMember')}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              )}
-            </div>
-          ))}
-
-          {isAdmin && available.length > 0 && (
-            <form onSubmit={handleAdd} className="flex gap-2 pt-1">
-              <select
-                value={addSelect}
-                onChange={(e) => setAddSelect(e.target.value)}
-                className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">—</option>
-                {available.map(({ membership: m, user }) => (
-                  <option key={m.id} value={m.id}>
-                    {user.name || user.email}
-                  </option>
-                ))}
-              </select>
-              <Button type="submit" size="sm" disabled={!addSelect} className="h-8">
-                {t('admin.addToTeam')}
-              </Button>
-            </form>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -512,7 +386,7 @@ export function AdminPage() {
     return <OnboardingForm accessToken={accessToken} />;
   }
 
-  const isAdmin = membership.role === 'club_admin';
+  const isAdmin = membership.role === 'admin';
   const ownTeams = teams.filter((t) => t.kind === 'own');
   const externalTeams = teams.filter((t) => t.kind === 'external');
   const canUseExternalTeams = entitlements?.externalTeams.allowed ?? false;
@@ -552,13 +426,9 @@ export function AdminPage() {
 
           <div className="space-y-2">
             {ownTeams.map((team) => (
-              <TeamRosterAccordion
-                key={team.id}
-                team={team}
-                members={members}
-                isAdmin={isAdmin}
-                accessToken={accessToken}
-              />
+              <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
+                <span className="font-medium text-sm">{team.name}</span>
+              </div>
             ))}
           </div>
         </section>
@@ -581,13 +451,12 @@ export function AdminPage() {
 
             <div className="space-y-2">
               {externalTeams.map((team) => (
-                <TeamRosterAccordion
-                  key={team.id}
-                  team={team}
-                  members={members}
-                  isAdmin={isAdmin}
-                  accessToken={accessToken}
-                />
+                <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
+                  <span className="font-medium text-sm">{team.name}</span>
+                  {team.externalClubName && (
+                    <span className="block text-xs text-muted-foreground">{team.externalClubName}</span>
+                  )}
+                </div>
               ))}
             </div>
           </section>
@@ -599,7 +468,7 @@ export function AdminPage() {
               <Users className="h-4 w-4" />
               {t('admin.members')} ({members.length})
             </h2>
-            {isAdmin && <InviteMemberForm accessToken={accessToken} teams={teams} />}
+            {isAdmin && <InviteMemberForm accessToken={accessToken} />}
           </div>
 
           {members.length === 0 && !loading && (

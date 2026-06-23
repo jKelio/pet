@@ -1,6 +1,6 @@
 # PET — Practice Efficiency Tracking
 
-Domain language for tracking ice-hockey practice efficiency. Coaches log timing and count data per drill during a training session.
+Domain language for tracking ice-hockey practice efficiency. Members log timing and count data per drill during a training session.
 
 ## Language
 
@@ -49,7 +49,7 @@ A session whose live tracking has finished and which has been stored locally in 
 _Avoid_: Saved Session (use in code only), finished session.
 
 **Pending Sync (Outbox)**:
-The set of Completed Sessions not yet transferred to the backend. The local `db.sessions` table *is* this outbox — it holds only sessions awaiting sync. Surfaced to the coach in the "Pending — not synced" section of the History view.
+The set of Completed Sessions not yet transferred to the backend. The local `db.sessions` table *is* this outbox — it holds only sessions awaiting sync. Surfaced to the member in the "Pending — not synced" section of the History view.
 _Avoid_: queue, unsynced backlog.
 _Note_: applies only where [[Cloud Sync]] is possible. On the [[free]] [[Plan]] sync is disabled, so sessions are not framed as a draining "pending" backlog — the UI presents them as local-only with an upgrade prompt, not as awaiting sync.
 
@@ -62,7 +62,7 @@ A Completed Session that has been transferred to the backend via [[Cloud Sync]].
 _Avoid_: uploaded session.
 
 **Local-Only Session**:
-**Retired for new tracking.** Historically, a Completed Session the coach explicitly marked as **not for the cloud** — typically a foreign/scouting team from another club with no registered Team to sync to — via a checkbox at tracking time. That checkbox was **removed** when the foreign-team scenario moved entirely to the [[premium]] [[External Team]] (admin-curated, syncable): below premium a foreign team is no longer trackable at all, so no new not-for-cloud sessions are created. Existing Local-Only Sessions persist in the local outbox under a "Local only" section, still re-viewable and exportable as a [[PDF Report]]; they are never auto-synced. Distinct from [[Pending Sync (Outbox)]], which *is* awaiting sync.
+**Retired for new tracking.** Historically, a Completed Session a member explicitly marked as **not for the cloud** — typically a foreign/scouting team from another club with no registered Team to sync to — via a checkbox at tracking time. That checkbox was **removed** when the foreign-team scenario moved entirely to the [[premium]] [[External Team]] (admin-curated, syncable): below premium a foreign team is no longer trackable at all, so no new not-for-cloud sessions are created. Existing Local-Only Sessions persist in the local outbox under a "Local only" section, still re-viewable and exportable as a [[PDF Report]]; they are never auto-synced. Distinct from [[Pending Sync (Outbox)]], which *is* awaiting sync.
 _Note_: a [[PDF Report]] for a Local-Only Session is produced by posting its data to the server render endpoint (it never needs to sync), metered like any other Report. AI [[Recommendation]]s remain unavailable for Local-Only Sessions (they are synced-only). On the [[free]] [[Plan]] all sessions stay on-device because [[Cloud Sync]] is disabled — that is a Plan effect, not a per-session mark.
 _Avoid_: draft, offline session.
 
@@ -73,12 +73,12 @@ A club — the top-level organisational unit. One club owns one or more Teams an
 _Avoid_: Organisation, account, club (use Tenant in code; "club" is fine in UI copy).
 
 **Team**:
-A group **the Tenant fields** (e.g. "U16", "Herren 1") — its own players, with a [[Roster]]. A Tenant has one or more Teams. A Member can be assigned to multiple Teams. Contrast with an [[External Team]], which the Tenant tracks but does not field.
+A group **the Tenant fields** (e.g. "U16", "Herren 1"). A Tenant has one or more Teams. All Members can track and view any Team — there is no per-Team assignment. Contrast with an [[External Team]], which the Tenant tracks but does not field.
 _Avoid_: Group, squad.
 _Note_: A practice session carries a free-text **team name** (a display label, possibly typed ad hoc). It is bound to an actual registered Team only when that name matches one; that binding is what decides which Team the session syncs into. An unmatched name leaves the session's Team ambiguous.
 
 **External Team**:
-A team a Tenant **tracks but does not field** — e.g. a federation tracking a training of one of its member clubs. Its players take the ice for another club; the tracking Tenant only observes. Registered under the *tracking* Tenant (the federation), so the results are stored in **its own** Tenant, never in the tracked club's Tenant. Stored as a [[Team]] with `kind='external'`, carrying the **name of the club it belongs to** (the tracked member club) — distinct from the tracking Tenant's own club name, and set once at registration rather than retyped per session. **Created and maintained by the [[club_admin]] in the admin area** (a [[premium]]-only curated catalogue); a [[coach]] **selects** a curated External Team during Tracking Setup, picking by external club then team — no free-text, no on-the-fly creation. Unlike own Teams, a [[Roster]] is optional: **all** coaches in the Tenant may select, track and view *every* External Team session without roster assignment (open roster). Sessions bound to an External Team sync to the cloud like own-team sessions (still a [[premium]]-only [[Entitlement]]). Below premium the feature is unavailable and the "track an external team" option is **hidden** (not merely disabled).
+A team a Tenant **tracks but does not field** — e.g. a federation tracking a training of one of its member clubs. Its players take the ice for another club; the tracking Tenant only observes. Registered under the *tracking* Tenant (the federation), so the results are stored in **its own** Tenant, never in the tracked club's Tenant. Stored as a [[Team]] with `kind='external'`, carrying the **name of the club it belongs to** (the tracked member club) — distinct from the tracking Tenant's own club name, and set once at registration rather than retyped per session. **Created and maintained by the [[admin]] in the admin area** (a [[premium]]-only curated catalogue); a [[member]] **selects** a curated External Team during Tracking Setup, picking by external club then team — no free-text, no on-the-fly creation. Like own Teams, any [[member]] may select, track and view *every* External Team session. Sessions bound to an External Team sync to the cloud like own-team sessions (still a [[premium]]-only [[Entitlement]]). Below premium the feature is unavailable and the "track an external team" option is **hidden** (not merely disabled).
 _Avoid_: foreign team, opponent, non-tenant team, scouted team (use "External Team" in code; "foreign team" is fine in UI copy).
 
 **Membership**:
@@ -86,24 +86,20 @@ The relationship between a User and a Tenant, carrying a single Role. A User has
 _Avoid_: Account, subscription.
 
 **Roster**:
-The set of Members assigned to a specific Team. Managed by the club_admin; coaches see only their own Roster(s) in the app.
-_Avoid_: Team members (ambiguous with the broader Membership concept).
+**Retired.** The former concept of assigning Members to specific Teams for access-control purposes. Dropped when the role model was simplified to `admin`/`member`: all Members can track and view any Team without prior assignment. The word should not appear in new code or UI copy.
+_Avoid_: everywhere — use Team assignment only in the admin sense of creating/deleting Teams.
 
 **Role**:
-The permission level of a Membership within its Tenant. One of three: `club_admin`, `coach`, `analyst`. A single Role per Membership — not per Team.
+The permission level of a Membership within its Tenant. One of two: `admin`, `member`. A single Role per Membership — not per Team.
 _Avoid_: Permission, access level.
 
-**club_admin**:
-The person who runs the club in the app: manages Teams, Memberships and Roles, and the club's settings. Tenant-wide in everything — sees every Team's sessions and may track for any Team without being on its Roster.
-_Avoid_: owner, manager.
+**admin**:
+The person who runs the club in the app: manages Teams, Memberships and Roles, and the club's settings. Has all capabilities of a [[member]] plus club management rights. Tenant-wide in everything — sees every Team's sessions and may track for any Team.
+_Avoid_: owner, manager, club_admin.
 
-**coach**:
-A trainer who runs practices for the Team(s) they are assigned to. Tracks sessions (creates, tracks and syncs them) and reads/exports sessions — but only for their own Roster(s). Has no club-management rights.
-_Avoid_: trainer (use in UI copy only), head coach.
-
-**analyst**:
-A read-only, club-wide role: reads and exports the sessions of every Team but never tracks and never manages the club. The dedicated data/video analyst who evaluates but does not run on-ice tracking.
-_Avoid_: viewer, observer.
+**member**:
+A club member who uses the tracking and analysis functions. Tracks sessions (creates, tracks and syncs them), reads and exports sessions for all Teams club-wide — without club management rights.
+_Avoid_: coach, analyst (not all members are trainers — use the person's name or a neutral term in UI copy rather than assuming a specific real-world role).
 
 ### Drills & tags
 
@@ -116,7 +112,7 @@ An optional classification label applied to a Drill from a fixed vocabulary (`st
 _Avoid_: Category, type, drill kind.
 
 **Technique Time (stationary)** (DE: Technikzeit (stationär)):
-A [[Timer Action]] and session-level metric for station drills where the tracked player stays at a fixed position and practises a technical skill without moving — e.g. partner passing (players stand and exchange the puck). The stationary counterpart to [[Time Moving]]: both count as active training time and are the opposite of [[Waste Time]]. Belongs to a different drill type than `with Puck` / `without Puck`; the two are not used together by convention. In a [[Planned Session]] the separation is enforced by the coach's action selection at setup time; in an [[Open Session]] all actions are always available. Pass and Shot counters can still be logged while this timer runs. Stops when any coach-led [[Timer Action]] (Explanation, Demonstration, Feedback (Team)) starts.
+A [[Timer Action]] and session-level metric for station drills where the tracked player stays at a fixed position and practises a technical skill without moving — e.g. partner passing (players stand and exchange the puck). The stationary counterpart to [[Time Moving]]: both count as active training time and are the opposite of [[Waste Time]]. Belongs to a different drill type than `with Puck` / `without Puck`; the two are not used together by convention. In a [[Planned Session]] the separation is enforced by the member's action selection at setup time; in an [[Open Session]] all actions are always available. Pass and Shot counters can still be logged while this timer runs. Stops when any coach-led [[Timer Action]] (Explanation, Demonstration, Feedback (Team)) starts.
 _Avoid_: Stationary Active, Stationszeit.
 
 **Waste Time** (DE: Verschwendete Zeit):
@@ -124,13 +120,13 @@ Time elapsed while no [[Timer Action]] is running — whether within an active D
 _Avoid_: Gap Time, Pausenzeit (use "Verschwendete Zeit" / "Waste Time" everywhere — the within-drill vs. between-drill distinction is an implementation detail, not a domain concept).
 
 **Passive Time** (DE: Passivzeit):
-Total time during which the tracked player is physically inactive within a practice session: the sum of [[Waste Time]] across all Drills and between-Drill gaps, plus intentional coach-led [[Timer Action]]s (Explanation, Demonstration, Feedback (Team)). [[Waste Time]] is unintentional; coach-led phases are intentional — both contribute to physical inactivity.
-_Avoid_: inactive time, idle time (too narrow — does not capture coach-led phases).
+Total time during which the tracked player is physically inactive within a practice session: the sum of [[Waste Time]] across all Drills and between-Drill gaps, plus intentional trainer-led [[Timer Action]]s (Explanation, Demonstration, Feedback (Team)). [[Waste Time]] is unintentional; trainer-led phases are intentional — both contribute to physical inactivity.
+_Avoid_: inactive time, idle time (too narrow — does not capture trainer-led phases).
 
 ### Actions & counters
 
 **Action**:
-Any single thing a coach can log against a drill. Every Action is one of two kinds — a **Timer Action** or a **Counter** — so "Action" is the umbrella term, not a third category alongside them.
+Any single thing a member can log against a drill. Every Action is one of two kinds — a **Timer Action** or a **Counter** — so "Action" is the umbrella term, not a third category alongside them.
 _Avoid_: using "Action" to mean only the timed kind.
 
 **Timer Action**:
@@ -162,7 +158,7 @@ The subscription tier of a [[Tenant]]. One of `free`, `pro`, `premium`. Tenant-w
 _Avoid_: subscription (reserved for the eventual billing object), package, level.
 
 **free**:
-The trial [[Plan]]. A **single, fully-local** club: 1 [[Membership]] (who is the [[club_admin]]), 1 [[Team]], **no [[Cloud Sync]] at all**, 2 [[PDF Report]]s per month, no AI [[Recommendation]]. Tracking and on-screen results are unlimited. Because nothing syncs, a free club's sessions live only in the device's IndexedDB — the only server-side footprint is the account (Tenant + the one Membership), kept for login, the plan flag, and the upgrade path.
+The trial [[Plan]]. A **single, fully-local** club: 1 [[Membership]] (who is the [[admin]]), 1 [[Team]], **no [[Cloud Sync]] at all**, 2 [[PDF Report]]s per month, no AI [[Recommendation]]. Tracking and on-screen results are unlimited. Because nothing syncs, a free club's sessions live only in the device's IndexedDB — the only server-side footprint is the account (Tenant + the one Membership), kept for login, the plan flag, and the upgrade path.
 _Avoid_: trial, starter, lite.
 
 **pro**:
@@ -180,18 +176,18 @@ _Avoid_: quota (informal use only), cap, allowance.
 **Entitlement**:
 The right, derived from a club's [[Plan]], to perform a gated action — either boolean (`ai:generate`) or quota-bounded ([[Cloud Sync]], [[PDF Report]]). Enforced **server-side** (the UI is never the wall); a denied action yields `403 UPGRADE_REQUIRED` (plan too low) or `429`/`403 QUOTA_EXCEEDED` (monthly allowance spent). The resolved Plan, limits, and current usage are surfaced to the client via the profile so the app can show counters and prompt an upgrade rather than fail blindly.
 _Avoid_: permission (reserved for [[Role]]-based access), licence, feature flag.
-_Note_: distinct from [[Role]]. Role answers "what may this person do in the club"; Entitlement answers "what has the club paid for, and how much is left this month". Both must pass — e.g. an [[analyst]] in a `free` club may *read* a [[Recommendation]] but neither role nor plan lets them generate one.
+_Note_: distinct from [[Role]]. Role answers "what may this person do in the club"; Entitlement answers "what has the club paid for, and how much is left this month". Both must pass — e.g. a [[member]] in a `free` club may *read* a [[Recommendation]] but neither role nor plan lets them generate one.
 
 **Locked**:
 The state of data that a club retains but cannot currently access because a [[Plan]] downgrade put it over a [[Plan Limit]] — over-cap [[Team]]s/[[Membership]]s, and **all** cloud sessions once on `free`. Downgrades are **non-destructive**: Locked data is hidden behind an "upgrade to restore" prompt and fully restored on re-upgrade; nothing is ever deleted. New creation over a cap is blocked, but existing rows are never removed.
 _Avoid_: suspended, archived, disabled.
 
 **PDF Report**:
-The PDF document of a session's results, generated **server-side** from session data and returned to the coach. A metered [[Entitlement]] ([[Plan Limit]]: 2/month on `free`, unlimited on `pro`/`premium`), counted per distinct session per month. Rendered statelessly from posted session data (nothing is stored), so it works for any session — including a [[Local-Only Session]] or any free-tier local session — without needing a sync. Distinct from the always-free **on-screen results** (the charts/tables view), which is not a Report.
+The PDF document of a session's results, generated **server-side** from session data and returned to the member. A metered [[Entitlement]] ([[Plan Limit]]: 2/month on `free`, unlimited on `pro`/`premium`), counted per distinct session per month. Rendered statelessly from posted session data (nothing is stored), so it works for any session — including a [[Local-Only Session]] or any free-tier local session — without needing a sync. Distinct from the always-free **on-screen results** (the charts/tables view), which is not a Report.
 _Avoid_: export, printout, PDF export (use "PDF Report" / "Report" for the artifact; "export" is the verb only).
 
 ### Support / meta
 
 **App Feedback**:
-A coach's report *about the application itself* — a bug, a feature request, or a general comment — submitted from the App Feedback page. Realised as a prefilled GitHub issue in the project repo (`jKelio/pet`), opened in the coach's browser and submitted under their own GitHub identity; it is **not** stored in PET's own data. The issue body carries the coach's display name only (the repo is public), never their email.
+A member's report *about the application itself* — a bug, a feature request, or a general comment — submitted from the App Feedback page. Realised as a prefilled GitHub issue in the project repo (`jKelio/pet`), opened in the member's browser and submitted under their own GitHub identity; it is **not** stored in PET's own data. The issue body carries the member's display name only (the repo is public), never their email.
 _Avoid_: using bare "Feedback" in code for this — it collides with the on-ice **Feedback** Counter ("Feedback to a player"), a drill [[Action]]. Use `appFeedback` in code/routes/i18n.

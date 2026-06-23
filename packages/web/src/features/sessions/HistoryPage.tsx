@@ -114,7 +114,7 @@ export function HistoryPage() {
   };
 
   const canDeleteCloud = (session: PracticeSession) =>
-    membership?.role === 'club_admin' || session.createdBy === membership?.userId;
+    membership?.role === 'admin' || session.createdBy === membership?.userId;
 
   const handleDeleteCloud = async (session: PracticeSession) => {
     if (!accessToken || !confirm(t('sessions.confirmDeleteCloud'))) return;

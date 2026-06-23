@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm';
 import type { DbClient } from '../db/client.js';
-import { users, memberships, teamAssignments } from '../db/schema.js';
+import { users, memberships } from '../db/schema.js';
 import type { UserRepository, MembershipRepository } from '../../domain/ports/user.repository.js';
 import type { User, Membership } from '@pet/shared';
 
@@ -120,27 +120,6 @@ export class PgMembershipRepository implements MembershipRepository {
 
   async delete(id: string): Promise<void> {
     await this.db.delete(memberships).where(eq(memberships.id, id));
-  }
-
-  async assignTeam(membershipId: string, teamId: string): Promise<void> {
-    await this.db
-      .insert(teamAssignments)
-      .values({ membershipId, teamId })
-      .onConflictDoNothing();
-  }
-
-  async unassignTeam(membershipId: string, teamId: string): Promise<void> {
-    await this.db
-      .delete(teamAssignments)
-      .where(and(eq(teamAssignments.membershipId, membershipId), eq(teamAssignments.teamId, teamId)));
-  }
-
-  async getTeamIds(membershipId: string): Promise<string[]> {
-    const rows = await this.db
-      .select({ teamId: teamAssignments.teamId })
-      .from(teamAssignments)
-      .where(eq(teamAssignments.membershipId, membershipId));
-    return rows.map((r) => r.teamId);
   }
 
   private toMembership(row: typeof memberships.$inferSelect): Membership {

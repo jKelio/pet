@@ -29,7 +29,7 @@ export class NotFoundError extends Error {
 
 /**
  * Delete a synced session from the backend. Allowed for the session's creator
- * or a club_admin of the tenant.
+ * or an admin of the tenant.
  */
 export class DeleteSessionUseCase {
   constructor(private readonly deps: DeleteSessionDeps) {}
@@ -45,8 +45,8 @@ export class DeleteSessionUseCase {
       ctx.tenantId,
     );
     const isCreator = session.createdBy === ctx.userId;
-    const isClubAdmin = membership?.role === 'club_admin';
-    if (!isCreator && !isClubAdmin) {
+    const isAdmin = membership?.role === 'admin';
+    if (!isCreator && !isAdmin) {
       throw new ForbiddenError('Not allowed to delete this session');
     }
 

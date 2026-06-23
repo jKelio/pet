@@ -4,7 +4,7 @@ export class Role {
   private constructor(private readonly value: UserRole) {}
 
   static create(raw: string): Role {
-    const valid: UserRole[] = ['club_admin', 'coach', 'analyst'];
+    const valid: UserRole[] = ['admin', 'member'];
     if (!valid.includes(raw as UserRole)) {
       throw new InvalidRoleError(raw);
     }

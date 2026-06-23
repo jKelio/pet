@@ -18,7 +18,6 @@ export interface InviteMemberInput {
   email: string;
   name?: string;
   role: UserRole;
-  teamIds?: string[];
 }
 
 export class ForbiddenError extends Error {
@@ -45,10 +44,9 @@ export class InviteMemberUseCase {
     callerId: string,
     tenantId: string,
   ): Promise<Membership> {
-    // Only club_admin can invite
     const callerMembership = await this.deps.membershipRepository.findByUserAndTenant(callerId, tenantId);
-    if (!callerMembership || callerMembership.role !== 'club_admin') {
-      throw new ForbiddenError('Only club admins can invite members');
+    if (!callerMembership || callerMembership.role !== 'admin') {
+      throw new ForbiddenError('Only admins can invite members');
     }
 
     // Find or create user by email
@@ -79,18 +77,10 @@ export class InviteMemberUseCase {
       id: crypto.randomUUID(),
       userId: user.id,
       tenantId,
-      // role is constrained to the tenant role enum by InviteUserSchema and the
-      // caller is club_admin (highest tenant role) — delegation, not escalation
       role: input.role,
     };
 
     await this.deps.membershipRepository.save(membership);
-
-    if (input.teamIds?.length) {
-      await Promise.all(
-        input.teamIds.map((teamId) => this.deps.membershipRepository.assignTeam(membership.id, teamId)),
-      );
-    }
 
     // Send invite email with a ready-to-use magic link
     const tenant = await this.deps.tenantRepository.findById(tenantId);

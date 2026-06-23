@@ -27,8 +27,8 @@ export class UpdateMemberUseCase {
 
   async execute(membershipId: string, name: string, callerId: string, tenantId: string): Promise<User> {
     const callerMembership = await this.deps.membershipRepository.findByUserAndTenant(callerId, tenantId);
-    if (!callerMembership || callerMembership.role !== 'club_admin') {
-      throw new ForbiddenError('Only club admins can edit members');
+    if (!callerMembership || callerMembership.role !== 'admin') {
+      throw new ForbiddenError('Only admins can edit members');
     }
 
     const target = await this.deps.membershipRepository.findById(membershipId);

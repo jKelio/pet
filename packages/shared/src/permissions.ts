@@ -7,7 +7,6 @@ export type Permission =
   | 'roles:manage'
   | 'teams:manage'
   | 'sessions:track'
-  | 'sessions:view:own_team'
   | 'sessions:view:all'
   | 'sessions:delete:own'
   | 'sessions:delete:any'
@@ -15,26 +14,21 @@ export type Permission =
   | 'club:settings';
 
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
-  club_admin: [
+  admin: [
     'users:manage',
     'roles:manage',
     'teams:manage',
     'sessions:track',
-    'sessions:view:own_team',
     'sessions:view:all',
     'sessions:delete:own',
     'sessions:delete:any',
     'reports:export',
     'club:settings',
   ],
-  coach: [
+  member: [
     'sessions:track',
-    'sessions:view:own_team',
-    'sessions:delete:own',
-    'reports:export',
-  ],
-  analyst: [
     'sessions:view:all',
+    'sessions:delete:own',
     'reports:export',
   ],
 };

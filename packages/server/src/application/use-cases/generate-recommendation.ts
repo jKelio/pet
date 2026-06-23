@@ -4,7 +4,7 @@ import type { LibraryRepository } from '../../domain/ports/library.repository.js
 import type { MembershipRepository } from '../../domain/ports/user.repository.js';
 import type { AiRecommendationGenerator } from '../../domain/ports/ai-recommendation.generator.js';
 import type { Recommendation, Sport, PracticeSession } from '@pet/shared';
-import { hasPermission, DEFAULT_SPORT } from '@pet/shared';
+import { DEFAULT_SPORT } from '@pet/shared';
 import { RecommendationForbiddenError, RecommendationNotFoundError } from './get-recommendation.js';
 
 /** Thrown when a session already has a recommendation — analysis is one-shot, not re-runnable. */
@@ -45,13 +45,6 @@ export class GenerateRecommendationUseCase {
 
     const session = await this.deps.sessionRepository.findById(sessionId, ctx.tenantId);
     if (!session) throw new RecommendationNotFoundError('Session not found');
-
-    if (!hasPermission(membership.role, 'sessions:view:all')) {
-      const teamIds = await this.deps.membershipRepository.getTeamIds(membership.id);
-      if (!teamIds.includes(session.teamId)) {
-        throw new RecommendationNotFoundError('Session not found');
-      }
-    }
 
     const existing = await this.deps.recommendationRepository.findBySession(sessionId, ctx.tenantId);
     if (existing) throw new RecommendationConflictError('A recommendation already exists for this session');
