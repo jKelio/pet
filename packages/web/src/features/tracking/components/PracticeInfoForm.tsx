@@ -24,7 +24,7 @@ export function PracticeInfoForm() {
   const members = useAdminStore((s) => s.members);
   const loadMembers = useAdminStore((s) => s.loadMembers);
   const entitlements = useAdminStore((s) => s.entitlements);
-  const canUseExternalTeams = entitlements?.externalTeams.allowed ?? false;
+  const canUseExternalTeams = entitlements === null || entitlements.externalTeams.allowed;
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const tenantName = tenant?.name ?? '';
