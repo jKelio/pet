@@ -3,6 +3,7 @@ import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
 import fp from 'fastify-plugin';
 import diPlugin from './plugins/di.plugin.js';
 import authMiddlewarePlugin from './middleware/auth.middleware.js';
@@ -14,6 +15,7 @@ import { registerSuperAdminRoutes } from './routes/superadmin.routes.js';
 import { registerLibraryRoutes } from './routes/library.routes.js';
 import { registerRecommendationRoutes } from './routes/recommendation.routes.js';
 import { registerPdfRoutes } from './routes/pdf.routes.js';
+import { registerFeedbackRoutes } from './routes/feedback.routes.js';
 
 function getConfig() {
   const required = ['DATABASE_URL', 'JWT_SECRET', 'APP_BASE_URL', 'SMTP_FROM'];
@@ -42,6 +44,7 @@ function getConfig() {
     resendApiKey: process.env.RESEND_API_KEY || undefined,
     geminiApiKey: process.env.GEMINI_API_KEY || undefined,
     geminiModel: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
+    githubPat: process.env.GITHUB_PAT || undefined,
     appBaseUrl: process.env.APP_BASE_URL!,
     isProduction: process.env.NODE_ENV === 'production',
     port: parseInt(process.env.PORT ?? '3000', 10),
@@ -81,6 +84,9 @@ async function build() {
 
   // Cookies
   await fastify.register(cookie);
+
+  // Multipart (for app-feedback screenshot upload)
+  await fastify.register(multipart);
 
   // Rate limiting — applied globally; magic-link route has a stricter override
   await fastify.register(rateLimit, {
@@ -160,6 +166,13 @@ async function build() {
   await fastify.register(async (scope) => {
     registerPdfRoutes(scope, {
       generatePdfReport: fastify.useCases.generatePdfReport,
+    });
+  });
+
+  await fastify.register(async (scope) => {
+    registerFeedbackRoutes(scope, {
+      githubPat: config.githubPat,
+      userRepository: fastify.repos.user,
     });
   });
 

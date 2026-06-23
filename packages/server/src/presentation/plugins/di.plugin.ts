@@ -61,6 +61,7 @@ export interface AppConfig {
   superAdminEmails: string[];
   geminiApiKey?: string;
   geminiModel: string;
+  githubPat?: string;
 }
 
 declare module 'fastify' {

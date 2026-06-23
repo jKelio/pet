@@ -20,6 +20,7 @@
     "@fastify/cookie": "^11",
     "@fastify/cors": "^10",
     "@fastify/helmet": "^13",
+    "@fastify/multipart": "10.0.0",
     "@fastify/rate-limit": "10.3.0",
     "@pet/shared": "workspace:*",
     "@react-pdf/renderer": "4.5.1",

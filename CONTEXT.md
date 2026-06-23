@@ -189,5 +189,5 @@ _Avoid_: export, printout, PDF export (use "PDF Report" / "Report" for the artif
 ### Support / meta
 
 **App Feedback**:
-A member's report *about the application itself* — a bug, a feature request, or a general comment — submitted from the App Feedback page. Realised as a prefilled GitHub issue in the project repo (`jKelio/pet`), opened in the member's browser and submitted under their own GitHub identity; it is **not** stored in PET's own data. The issue body carries the member's display name only (the repo is public), never their email.
+A member's report *about the application itself* — a bug, a feature request, or a general comment — submitted from the App Feedback page. Realised as a GitHub issue in the project repo (`jKelio/pet`), created directly via the GitHub API using a server-side PAT (the member needs no GitHub account). An optional screenshot may be attached; it is uploaded to GitHub's asset storage and embedded in the issue body as a Markdown image. The issue body carries the member's display name only (the repo is public), never their email. App Feedback is **not** stored in PET's own data.
 _Avoid_: using bare "Feedback" in code for this — it collides with the on-ice **Feedback** Counter ("Feedback to a player"), a drill [[Action]]. Use `appFeedback` in code/routes/i18n.
