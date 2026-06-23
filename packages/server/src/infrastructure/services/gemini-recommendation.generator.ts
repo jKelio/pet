@@ -128,7 +128,13 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
     let document: RecommendationDocument;
     try {
       const json = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-      document = JSON.parse(json) as RecommendationDocument;
+      const parsed = JSON.parse(json);
+      document = {
+        summary: parsed.summary ?? '',
+        strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+        concerns: Array.isArray(parsed.concerns) ? parsed.concerns : [],
+        recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+      };
     } catch {
       throw new RecommendationGenerationError('Gemini returned invalid JSON');
     }
