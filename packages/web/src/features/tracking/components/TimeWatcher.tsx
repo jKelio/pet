@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Square, CheckCircle, Hourglass, Timer, Hash, Plus, Minus } from 'lucide-react';
+import { Play, Square, CheckCircle, Hourglass, Timer, Hash, Plus } from 'lucide-react';
 import {
   PUCK_TIMER_IDS,
   TIME_MOVING_WITH_PUCK,
@@ -47,6 +47,11 @@ export function TimeWatcher({ onFinish }: Props) {
   const [drillHasEnded, setDrillHasEnded] = useState(false);
   const [gapElapsed, setGapElapsed] = useState(0);
   const gapDisplayStartRef = useRef<number | null>(null);
+  const [tappedCounter, setTappedCounter] = useState<{
+    id: string;
+    label: string;
+    count: number;
+  } | null>(null);
 
   const currentDrill = drills[currentDrillIndex];
   const enabledActions = currentDrill?.actionButtons.filter((a) => a.enabled) ?? [];
@@ -56,6 +61,13 @@ export function TimeWatcher({ onFinish }: Props) {
   useEffect(() => {
     startTracking();
   }, [startTracking]);
+
+  // Auto-dismiss counter tap overlay after 1500 ms
+  useEffect(() => {
+    if (!tappedCounter) return;
+    const id = setTimeout(() => setTappedCounter(null), 1500);
+    return () => clearTimeout(id);
+  }, [tappedCounter]);
 
   // Gap elapsed display timer
   useEffect(() => {
@@ -234,6 +246,24 @@ export function TimeWatcher({ onFinish }: Props) {
 
   return (
     <div className="flex flex-col h-full">
+      {tappedCounter && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+          <p className="text-4xl font-bold">
+            {tappedCounter.label} · {tappedCounter.count}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              decrementCounter(tappedCounter.id);
+              setTappedCounter(null);
+            }}
+            className="mt-6 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors active:bg-destructive/80"
+          >
+            {t('timeWatcher.undo')}
+          </button>
+        </div>
+      )}
+
       {/* Drill header */}
       <div className="px-4 py-3 border-b border-border bg-card flex items-center gap-2 flex-wrap">
         <span className="font-semibold text-sm">
@@ -303,8 +333,8 @@ export function TimeWatcher({ onFinish }: Props) {
                                 onClick={() => handleTimerClick(id, isRunning)}
                                 className={`flex-1 rounded-md border px-2 py-1.5 text-center transition-colors ${
                                   isActive
-                                    ? 'border-primary bg-primary text-primary-foreground'
-                                    : 'border-border bg-muted/40 text-foreground'
+                                    ? 'border-destructive bg-destructive text-destructive-foreground'
+                                    : 'border-primary bg-primary text-primary-foreground'
                                 }`}
                               >
                                 <span className="flex items-center justify-center gap-1 text-[11px] font-medium">
@@ -399,33 +429,22 @@ export function TimeWatcher({ onFinish }: Props) {
                 const count = counter?.count ?? 0;
 
                 return (
-                  <div
+                  <button
                     key={action.id}
-                    className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card p-2"
+                    type="button"
+                    onClick={() => {
+                      if (tappedCounter) return;
+                      incrementCounter(action.id);
+                      setTappedCounter({ id: action.id, label: t(`actions.${action.id}`), count: count + 1 });
+                    }}
+                    className="relative flex flex-col items-center gap-1 rounded-lg border border-primary bg-primary p-2 text-center text-primary-foreground transition-colors active:bg-primary/80"
                   >
-                    <p className="min-h-[2rem] text-center text-xs font-medium leading-tight line-clamp-2">
+                    <Plus className="absolute top-1.5 right-1.5 h-3 w-3 text-primary-foreground/60" />
+                    <span className="min-h-[2rem] flex items-center justify-center text-xs font-medium leading-tight line-clamp-2 pr-3">
                       {t(`actions.${action.id}`)}
-                    </p>
-                    <p className="text-2xl font-bold tabular-nums">{count}</p>
-                    <div className="mt-auto flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-9 w-9"
-                        onClick={() => decrementCounter(action.id)}
-                        disabled={count === 0}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        className="h-9 w-9"
-                        onClick={() => incrementCounter(action.id)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                    </span>
+                    <span className="text-2xl font-bold tabular-nums">{count}</span>
+                  </button>
                 );
               })}
             </div>
