@@ -125,7 +125,9 @@ const resources = {
         notIncluded: 'Not included',
       },
       superadmin: {
-        title: 'SuperAdmin — Tenant management',
+        title: 'SuperAdmin',
+        subtitle: 'Platform administration',
+        cancel: 'Cancel',
         createTenant: 'Create new tenant',
         clubNameLabel: 'Club name',
         clubNamePlaceholder: 'EHC Springfield',
@@ -540,7 +542,9 @@ const resources = {
         notIncluded: 'Nicht enthalten',
       },
       superadmin: {
-        title: 'SuperAdmin — Tenant-Verwaltung',
+        title: 'SuperAdmin',
+        subtitle: 'Plattform-Verwaltung',
+        cancel: 'Abbrechen',
         createTenant: 'Neuen Tenant erstellen',
         clubNameLabel: 'Club-Name',
         clubNamePlaceholder: 'EHC Musterstadt',
