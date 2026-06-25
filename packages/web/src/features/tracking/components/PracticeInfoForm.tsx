@@ -42,7 +42,7 @@ export function PracticeInfoForm() {
   }, [accessToken, loadMembers, members.length]);
 
   const update = (field: string, value: string | number) =>
-    setPracticeInfo({ ...practiceInfo, [field]: value });
+    setPracticeInfo((prev) => ({ ...prev, [field]: value }));
 
   const ownTeams = teams.filter((t) => t.kind === 'own');
   const externalTeams = teams.filter((t) => t.kind === 'external');

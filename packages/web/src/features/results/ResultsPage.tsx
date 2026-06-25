@@ -78,7 +78,8 @@ export function ResultsPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const teams = useAdminStore((s) => s.teams);
-  const sessionTeam = teams.find((tm) => tm.id === localPracticeInfo.teamId);
+  const sessionTeam = teams.find((tm) => tm.id === localPracticeInfo.teamId)
+    ?? teams.find((tm) => tm.kind === 'own' && tm.name === localPracticeInfo.teamName);
   const teamAgeClass = localPracticeInfo.teamAgeClass ?? sessionTeam?.ageClass ?? null;
   const membership = useAdminStore((s) => s.membership);
   const entitlements = useAdminStore((s) => s.entitlements);
