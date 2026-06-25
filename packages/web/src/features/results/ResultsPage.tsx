@@ -368,21 +368,16 @@ export function ResultsPage() {
           {/* Practice info */}
           {localPracticeInfo.clubName && (
             <div className="mt-4 rounded-lg border border-border bg-card p-4 grid grid-cols-2 @sm:grid-cols-3 gap-3 text-sm">
-              {localPracticeInfo.clubName && (
-                <InfoRow label={t('results.club')} value={localPracticeInfo.clubName} />
-              )}
-              {localPracticeInfo.teamName && (
-                <div>
-                  <p className="text-xs text-muted-foreground">{t('results.team')}</p>
-                  <div className="flex items-center gap-1.5">
-                    {teamAgeClass != null && (
-                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                        U{teamAgeClass}
-                      </span>
-                    )}
-                    <p className="font-medium">{localPracticeInfo.teamName}</p>
-                  </div>
-                </div>
+              {(localPracticeInfo.clubName || localPracticeInfo.teamName) && (
+                <InfoRow
+                  label={t('results.team')}
+                  value={[
+                    localPracticeInfo.clubName,
+                    teamAgeClass != null
+                      ? `U${teamAgeClass} ${localPracticeInfo.teamName}`
+                      : localPracticeInfo.teamName,
+                  ].filter(Boolean).join(' – ')}
+                />
               )}
               {localPracticeInfo.coachName && (
                 <InfoRow label={t('results.coach')} value={localPracticeInfo.coachName} />
