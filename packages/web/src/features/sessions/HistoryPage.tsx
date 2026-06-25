@@ -22,6 +22,15 @@ function formatDate(iso: string): string {
   });
 }
 
+function AgeClassBadge({ ageClass }: { ageClass: number | null | undefined }) {
+  if (ageClass == null) return null;
+  return (
+    <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
+      U{ageClass}
+    </span>
+  );
+}
+
 function formatDuration(ms: number): string {
   const h = Math.floor(ms / 3_600_000);
   const m = Math.floor((ms % 3_600_000) / 60_000);
@@ -62,6 +71,9 @@ export function HistoryPage() {
   useEffect(() => {
     void loadPending();
   }, [loadPending]);
+
+  const resolveAgeClass = (pi: { teamId?: string; teamName: string }) =>
+    (teams.find((tm) => tm.id === pi.teamId) ?? teams.find((tm) => tm.kind === 'own' && tm.name === pi.teamName))?.ageClass ?? null;
 
   const ownTeams = teams.filter((t) => t.kind === 'own');
   const externalTeams = teams.filter((t) => t.kind === 'external');
@@ -195,7 +207,8 @@ export function HistoryPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-semibold text-sm">
+                      <p className="font-semibold text-sm flex items-center gap-1.5">
+                        <AgeClassBadge ageClass={resolveAgeClass(session.practiceInfo)} />
                         {session.practiceInfo.clubName} – {session.practiceInfo.teamName}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -296,7 +309,8 @@ export function HistoryPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-sm">
+                    <p className="font-semibold text-sm flex items-center gap-1.5">
+                      <AgeClassBadge ageClass={resolveAgeClass(session.practiceInfo)} />
                       {session.practiceInfo.clubName} – {session.practiceInfo.teamName}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -395,7 +409,8 @@ export function HistoryPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-sm">
+                    <p className="font-semibold text-sm flex items-center gap-1.5">
+                      <AgeClassBadge ageClass={resolveAgeClass(session.practiceInfo)} />
                       {session.practiceInfo.clubName} – {session.practiceInfo.teamName}
                     </p>
                     <p className="text-xs text-muted-foreground">
