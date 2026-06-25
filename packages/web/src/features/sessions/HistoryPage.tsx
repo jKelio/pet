@@ -67,10 +67,19 @@ export function HistoryPage() {
   const resolveAgeClass = (pi: { teamId?: string; teamName: string }) =>
     (teams.find((tm) => tm.id === pi.teamId) ?? teams.find((tm) => tm.kind === 'own' && tm.name === pi.teamName))?.ageClass ?? null;
 
-  const sessionLabel = (pi: { clubName: string; teamId?: string; teamName: string }) => {
+  const SessionLabel = ({ pi }: { pi: { clubName: string; teamId?: string; teamName: string } }) => {
     const ac = resolveAgeClass(pi);
-    const team = ac != null ? `U${ac} ${pi.teamName}` : pi.teamName;
-    return pi.teamName ? `${pi.clubName} – ${team}` : pi.clubName;
+    return (
+      <span className="flex items-center gap-1.5 flex-wrap">
+        <span>{pi.clubName} –</span>
+        {ac != null && (
+          <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+            U{ac}
+          </span>
+        )}
+        <span>{pi.teamName}</span>
+      </span>
+    );
   };
 
   const ownTeams = teams.filter((t) => t.kind === 'own');
@@ -205,7 +214,7 @@ export function HistoryPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-semibold text-sm">{sessionLabel(session.practiceInfo)}</p>
+                      <p className="font-semibold text-sm"><SessionLabel pi={session.practiceInfo} /></p>
                       <p className="text-xs text-muted-foreground">
                         {formatDate(session.practiceInfo.date)}
                       </p>
@@ -304,7 +313,7 @@ export function HistoryPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-sm">{sessionLabel(session.practiceInfo)}</p>
+                    <p className="font-semibold text-sm"><SessionLabel pi={session.practiceInfo} /></p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(session.practiceInfo.date)}
                     </p>
@@ -401,7 +410,7 @@ export function HistoryPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-sm">{sessionLabel(session.practiceInfo)}</p>
+                    <p className="font-semibold text-sm"><SessionLabel pi={session.practiceInfo} /></p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(session.practiceInfo.date)}
                     </p>
