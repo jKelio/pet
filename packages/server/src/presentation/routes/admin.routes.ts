@@ -24,6 +24,10 @@ import {
 import type { TeamRepository } from '../../domain/ports/user.repository.js';
 import { isEntitlementError } from '../../application/services/entitlement.service.js';
 
+function isTeamAlreadyExistsError(err: unknown): err is { code: string; message: string } {
+  return typeof err === 'object' && err !== null && (err as { code?: string }).code === 'TEAM_ALREADY_EXISTS';
+}
+
 const OnboardSchema = z.object({
   tenantName: z.string().trim().min(1).max(100),
   teamName: z.string().trim().min(1).max(100),
@@ -86,14 +90,14 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
     try {
       const team = await deps.createTeam.execute({ name: result.data.name, ageClass: result.data.ageClass }, request.userId, tenantId);
       return reply.code(201).send(team);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ForbiddenError) {
         return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
       }
       if (isEntitlementError(err)) {
         return reply.code(err.statusCode).send({ code: err.code, message: err.message, statusCode: err.statusCode });
       }
-      if (err?.code === 'TEAM_ALREADY_EXISTS') {
+      if (isTeamAlreadyExistsError(err)) {
         return reply.code(409).send({ code: 'TEAM_ALREADY_EXISTS', message: err.message, statusCode: 409 });
       }
       throw err;
@@ -127,14 +131,14 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
         tenantId,
       );
       return reply.code(201).send(team);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ForbiddenError) {
         return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
       }
       if (isEntitlementError(err)) {
         return reply.code(err.statusCode).send({ code: err.code, message: err.message, statusCode: err.statusCode });
       }
-      if (err?.code === 'TEAM_ALREADY_EXISTS') {
+      if (isTeamAlreadyExistsError(err)) {
         return reply.code(409).send({ code: 'TEAM_ALREADY_EXISTS', message: err.message, statusCode: 409 });
       }
       throw err;
