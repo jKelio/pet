@@ -313,37 +313,43 @@ export function TimeWatcher({ onFinish }: Props) {
                             <span className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full ${isPuckActive ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
                           );
                         })()}
-                        <div className="flex items-center justify-between gap-2 pr-4">
+                        <div className="flex min-h-[2rem] items-center justify-between gap-2 pr-4">
                           <p className="text-xs font-medium">{t('actions.timemoving')}</p>
                           <p className="font-mono text-sm font-bold tabular-nums">
                             {formatTime(timeMovingTotal)}
                           </p>
                         </div>
-                        <div className="flex flex-1 gap-2">
+                        <div className="flex gap-2">
                           {(PUCK_TIMER_IDS as readonly string[]).map((id) => {
                             const timer = timers[id];
                             const total = (timer?.totalTime ?? 0) + (timer?.elapsedTime ?? 0);
                             const isRunning = timer?.isRunning ?? false;
                             const isActive = currentTimer === id;
                             const isWith = id === TIME_MOVING_WITH_PUCK;
+                            const isDisabled = !!currentTimer && !(PUCK_TIMER_IDS as readonly string[]).includes(currentTimer);
                             return (
                               <button
                                 key={id}
                                 type="button"
+                                disabled={isDisabled}
                                 onClick={() => handleTimerClick(id, isRunning)}
-                                className={`flex-1 rounded-md border px-2 py-1.5 text-center transition-colors ${
+                                className={`flex-1 rounded-md border px-2 py-1.5 text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                                   isActive
                                     ? 'border-destructive bg-destructive text-destructive-foreground'
                                     : 'border-primary bg-primary text-primary-foreground'
                                 }`}
                               >
-                                <span className="flex items-center justify-center gap-1 text-[11px] font-medium">
-                                  {isActive ? (
-                                    <Square className="h-3 w-3" />
-                                  ) : (
-                                    <Play className="h-3 w-3" />
-                                  )}
-                                  {t(isWith ? 'timeWatcher.withPuck' : 'timeWatcher.withoutPuck')}
+                                <span className="flex items-center justify-center gap-1 overflow-hidden whitespace-nowrap text-[11px] font-medium">
+                                  <span className="shrink-0">
+                                    {isActive ? (
+                                      <Square className="h-3 w-3" />
+                                    ) : (
+                                      <Play className="h-3 w-3" />
+                                    )}
+                                  </span>
+                                  <span className="truncate">
+                                    {t(isWith ? 'timeWatcher.withPuck' : 'timeWatcher.withoutPuck')}
+                                  </span>
                                 </span>
                                 <span className="block font-mono text-sm font-bold tabular-nums">
                                   {formatTime(total)}
@@ -372,28 +378,33 @@ export function TimeWatcher({ onFinish }: Props) {
                   return (
                     <div
                       key={action.id}
-                      className={`relative flex flex-col items-center gap-1 rounded-lg border bg-card p-2 ${isActive ? 'border-green-500' : 'border-border'}`}
+                      className={`relative flex flex-col gap-1.5 rounded-lg border bg-card p-2 ${isActive ? 'border-green-500' : 'border-border'}`}
                     >
                       <span
                         className={`absolute top-1.5 right-1.5 h-2 w-2 rounded-full ${
                           isActive ? 'bg-green-500' : 'bg-muted-foreground/30'
                         }`}
                       />
-                      <p className="min-h-[2rem] text-center text-xs font-medium leading-tight line-clamp-2">
+                      <p className="min-h-[2rem] text-xs font-medium leading-tight line-clamp-2 pr-4">
                         {t(`actions.${action.id}`)}
                       </p>
-                      <p className="font-mono text-base font-bold tabular-nums">
-                        {formatTime(total)}
-                      </p>
-                      <Button
-                        size="icon"
-                        variant={isRunning ? 'destructive' : 'default'}
+                      <button
+                        type="button"
                         disabled={isDisabled}
                         onClick={() => handleTimerClick(action.id, isRunning)}
-                        className="mt-auto shrink-0"
+                        className={`flex-1 rounded-md border px-2 py-1.5 text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          isActive
+                            ? 'border-destructive bg-destructive text-destructive-foreground'
+                            : 'border-primary bg-primary text-primary-foreground'
+                        }`}
                       >
-                        {isRunning ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </Button>
+                        <span className="flex items-center justify-center gap-1 text-[11px] font-medium">
+                          {isActive ? <Square className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                        </span>
+                        <span className="block font-mono text-sm font-bold tabular-nums">
+                          {formatTime(total)}
+                        </span>
+                      </button>
                     </div>
                   );
                 })}
