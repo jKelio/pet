@@ -78,6 +78,7 @@ export function ResultsPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const teams = useAdminStore((s) => s.teams);
+  const sessionTeam = teams.find((tm) => tm.id === localPracticeInfo.teamId);
   const membership = useAdminStore((s) => s.membership);
   const entitlements = useAdminStore((s) => s.entitlements);
   const loadProfile = useAdminStore((s) => s.loadProfile);
@@ -369,7 +370,17 @@ export function ResultsPage() {
                 <InfoRow label={t('results.club')} value={localPracticeInfo.clubName} />
               )}
               {localPracticeInfo.teamName && (
-                <InfoRow label={t('results.team')} value={localPracticeInfo.teamName} />
+                <div>
+                  <p className="text-xs text-muted-foreground">{t('results.team')}</p>
+                  <div className="flex items-center gap-1.5">
+                    {sessionTeam?.ageClass != null && (
+                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                        U{sessionTeam.ageClass}
+                      </span>
+                    )}
+                    <p className="font-medium">{localPracticeInfo.teamName}</p>
+                  </div>
+                </div>
               )}
               {localPracticeInfo.coachName && (
                 <InfoRow label={t('results.coach')} value={localPracticeInfo.coachName} />
@@ -421,7 +432,17 @@ export function ResultsPage() {
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v) => formatDuration(v as number)} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      return (
+                        <div className="rounded-md border border-border bg-popover text-popover-foreground px-3 py-2 text-xs shadow-md">
+                          <p className="font-medium mb-0.5">{payload[0].name}</p>
+                          <p>{t('results.totalTime')}: {formatDuration(payload[0].value as number)}</p>
+                        </div>
+                      );
+                    }}
+                  />
                   <Legend formatter={(label) => <span className="text-xs">{label}</span>} />
                 </PieChart>
               </ResponsiveContainer>
@@ -441,7 +462,17 @@ export function ResultsPage() {
                     width={70}
                     domain={drillTimeData.map((d) => d.name)}
                   />
-                  <Tooltip formatter={(v) => formatDuration(v as number)} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      return (
+                        <div className="rounded-md border border-border bg-popover text-popover-foreground px-3 py-2 text-xs shadow-md">
+                          <p className="font-medium mb-0.5">{payload[0].payload.name}</p>
+                          <p>{t('results.totalTime')}: {formatDuration(payload[0].value as number)}</p>
+                        </div>
+                      );
+                    }}
+                  />
                   <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
                     {drillTimeData.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
@@ -585,7 +616,17 @@ export function ResultsPage() {
                             />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(v) => formatDuration(v as number)} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            return (
+                              <div className="rounded-md border border-border bg-popover text-popover-foreground px-3 py-2 text-xs shadow-md">
+                                <p className="font-medium mb-0.5">{payload[0].name}</p>
+                                <p>{t('results.totalTime')}: {formatDuration(payload[0].value as number)}</p>
+                              </div>
+                            );
+                          }}
+                        />
                         <Legend formatter={(label) => <span className="text-xs">{label}</span>} />
                       </PieChart>
                     </ResponsiveContainer>
@@ -601,7 +642,17 @@ export function ResultsPage() {
                           fontSize={10}
                         />
                         <YAxis type="category" dataKey="actionLabel" fontSize={10} width={90} />
-                        <Tooltip formatter={(v) => formatDuration(v as number)} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            return (
+                              <div className="rounded-md border border-border bg-popover text-popover-foreground px-3 py-2 text-xs shadow-md">
+                                <p className="font-medium mb-0.5">{payload[0].payload.actionLabel}</p>
+                                <p>{t('results.totalTime')}: {formatDuration(payload[0].value as number)}</p>
+                              </div>
+                            );
+                          }}
+                        />
                         <Bar dataKey="totalTime" radius={[0, 4, 4, 0]}>
                           {actionData.map((entry, i) => (
                             <Cell
