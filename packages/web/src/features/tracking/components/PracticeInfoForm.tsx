@@ -231,8 +231,9 @@ export function PracticeInfoForm() {
             <NumberInput
               id="totalTime"
               min={0}
-              step={0.5}
-              inputMode="decimal"
+              max={300}
+              step={5}
+              inputMode="numeric"
               value={practiceInfo.totalTime}
               onChange={(v) => update('totalTime', v)}
             />
