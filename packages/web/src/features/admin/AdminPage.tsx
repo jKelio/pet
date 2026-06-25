@@ -99,14 +99,17 @@ function OnboardingForm({ accessToken }: { accessToken: string }) {
 function CreateTeamForm({ accessToken }: { accessToken: string }) {
   const { t } = useTranslation('pet');
   const [name, setName] = useState('');
+  const [ageClass, setAgeClass] = useState('');
   const [open, setOpen] = useState(false);
   const { createTeam, loading } = useAdminStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    await createTeam(name.trim(), accessToken);
+    const age = parseInt(ageClass, 10);
+    if (!name.trim() || !ageClass || age < 7 || age > 21) return;
+    await createTeam(name.trim(), age, accessToken);
     setName('');
+    setAgeClass('');
     setOpen(false);
   };
 
@@ -120,14 +123,33 @@ function CreateTeamForm({ accessToken }: { accessToken: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <Input
-        autoFocus
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder={t('admin.teamNamePlaceholder')}
-        className="h-9"
-      />
+    <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-end">
+      <div className="space-y-1">
+        <Label htmlFor="ageClass" className="text-xs">{t('admin.ageClassLabel')}</Label>
+        <Input
+          id="ageClass"
+          autoFocus
+          type="number"
+          min={7}
+          max={21}
+          value={ageClass}
+          onChange={(e) => setAgeClass(e.target.value)}
+          placeholder={t('admin.ageClassPlaceholder')}
+          className="h-9 w-24"
+          required
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="teamNameOwn" className="text-xs">{t('admin.teamNameLabel')}</Label>
+        <Input
+          id="teamNameOwn"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t('admin.teamNamePlaceholder')}
+          className="h-9 w-36"
+          required
+        />
+      </div>
       <Button type="submit" size="sm" disabled={loading}>
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('admin.create')}
       </Button>
@@ -142,15 +164,18 @@ function CreateExternalTeamForm({ accessToken }: { accessToken: string }) {
   const { t } = useTranslation('pet');
   const [name, setName] = useState('');
   const [clubName, setClubName] = useState('');
+  const [ageClass, setAgeClass] = useState('');
   const [open, setOpen] = useState(false);
   const { createExternalTeam, loading } = useAdminStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !clubName.trim()) return;
-    await createExternalTeam(name.trim(), clubName.trim(), accessToken);
+    const age = parseInt(ageClass, 10);
+    if (!name.trim() || !clubName.trim() || !ageClass || age < 7 || age > 21) return;
+    await createExternalTeam(name.trim(), clubName.trim(), age, accessToken);
     setName('');
     setClubName('');
+    setAgeClass('');
     setOpen(false);
   };
 
@@ -174,6 +199,20 @@ function CreateExternalTeamForm({ accessToken }: { accessToken: string }) {
           onChange={(e) => setClubName(e.target.value)}
           placeholder={t('admin.externalClubNamePlaceholder')}
           className="h-9 w-44"
+          required
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="extAgeClass" className="text-xs">{t('admin.ageClassLabel')}</Label>
+        <Input
+          id="extAgeClass"
+          type="number"
+          min={7}
+          max={21}
+          value={ageClass}
+          onChange={(e) => setAgeClass(e.target.value)}
+          placeholder={t('admin.ageClassPlaceholder')}
+          className="h-9 w-24"
           required
         />
       </div>
@@ -550,7 +589,16 @@ export function AdminPage() {
 
                   <div className="space-y-2">
                     {ownTeams.map((team) => (
-                      <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
+                      <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3 flex items-center gap-2">
+                        {team.ageClass != null ? (
+                          <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
+                            U{team.ageClass}
+                          </span>
+                        ) : (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
+                            {t('admin.ageClassMissing')}
+                          </span>
+                        )}
                         <span className="font-medium text-sm">{team.name}</span>
                       </div>
                     ))}
@@ -580,11 +628,22 @@ export function AdminPage() {
 
                     <div className="space-y-2">
                       {externalTeams.map((team) => (
-                        <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3">
-                          <span className="font-medium text-sm">{team.name}</span>
-                          {team.externalClubName && (
-                            <span className="block text-xs text-muted-foreground">{team.externalClubName}</span>
+                        <div key={team.id} className="rounded-lg border border-border bg-card px-4 py-3 flex items-center gap-2">
+                          {team.ageClass != null ? (
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
+                              U{team.ageClass}
+                            </span>
+                          ) : (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
+                              {t('admin.ageClassMissing')}
+                            </span>
                           )}
+                          <div className="min-w-0">
+                            <span className="font-medium text-sm">{team.name}</span>
+                            {team.externalClubName && (
+                              <span className="block text-xs text-muted-foreground">{team.externalClubName}</span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

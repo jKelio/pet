@@ -9,32 +9,37 @@ const db = createDbClient(DATABASE_URL);
 
 // ─── Tenant + Team ────────────────────────────────────────────────────────────
 
-const [tenant] = await db.insert(tenants).values({
+const tenantRows = await db.insert(tenants).values({
   name: 'EHC Demo Club',
   slug: 'ehc-demo',
   plan: 'pro',
-}).onConflictDoNothing().returning()
-  ?? await db.select().from(tenants).where(eq(tenants.slug, 'ehc-demo')).limit(1);
+}).onConflictDoNothing().returning();
+const tenant = tenantRows[0]
+  ?? (await db.select().from(tenants).where(eq(tenants.slug, 'ehc-demo')).limit(1))[0];
 
-const [team] = await db.insert(teams).values({
+const teamRows = await db.insert(teams).values({
   tenantId: tenant.id,
-  name: 'U18 A',
-}).onConflictDoNothing().returning()
-  ?? await db.select().from(teams).where(eq(teams.tenantId, tenant.id)).limit(1);
+  name: 'A',
+  ageClass: 18,
+}).onConflictDoNothing().returning();
+const team = teamRows[0]
+  ?? (await db.select().from(teams).where(eq(teams.tenantId, tenant.id)).limit(1))[0];
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-const [adminUser] = await db.insert(users).values({
+const adminRows = await db.insert(users).values({
   email: 'admin@demo.local',
   name: 'Admin Demo',
-}).onConflictDoNothing().returning()
-  ?? await db.select().from(users).where(eq(users.email, 'admin@demo.local')).limit(1);
+}).onConflictDoNothing().returning();
+const adminUser = adminRows[0]
+  ?? (await db.select().from(users).where(eq(users.email, 'admin@demo.local')).limit(1))[0];
 
-const [coachUser] = await db.insert(users).values({
+const coachRows = await db.insert(users).values({
   email: 'coach@demo.local',
   name: 'Max Mustermann',
-}).onConflictDoNothing().returning()
-  ?? await db.select().from(users).where(eq(users.email, 'coach@demo.local')).limit(1);
+}).onConflictDoNothing().returning();
+const coachUser = coachRows[0]
+  ?? (await db.select().from(users).where(eq(users.email, 'coach@demo.local')).limit(1))[0];
 
 // ─── Memberships ──────────────────────────────────────────────────────────────
 

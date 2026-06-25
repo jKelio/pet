@@ -84,14 +84,17 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
     }
 
     try {
-      const team = await deps.createTeam.execute({ name: result.data.name }, request.userId, tenantId);
+      const team = await deps.createTeam.execute({ name: result.data.name, ageClass: result.data.ageClass }, request.userId, tenantId);
       return reply.code(201).send(team);
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof ForbiddenError) {
         return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
       }
       if (isEntitlementError(err)) {
         return reply.code(err.statusCode).send({ code: err.code, message: err.message, statusCode: err.statusCode });
+      }
+      if (err?.code === 'TEAM_ALREADY_EXISTS') {
+        return reply.code(409).send({ code: 'TEAM_ALREADY_EXISTS', message: err.message, statusCode: 409 });
       }
       throw err;
     }
@@ -119,17 +122,20 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
 
     try {
       const team = await deps.createTeam.execute(
-        { name: result.data.name, kind: 'external', externalClubName: result.data.externalClubName },
+        { name: result.data.name, ageClass: result.data.ageClass, kind: 'external', externalClubName: result.data.externalClubName },
         request.userId,
         tenantId,
       );
       return reply.code(201).send(team);
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof ForbiddenError) {
         return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
       }
       if (isEntitlementError(err)) {
         return reply.code(err.statusCode).send({ code: err.code, message: err.message, statusCode: err.statusCode });
+      }
+      if (err?.code === 'TEAM_ALREADY_EXISTS') {
+        return reply.code(409).send({ code: 'TEAM_ALREADY_EXISTS', message: err.message, statusCode: 409 });
       }
       throw err;
     }

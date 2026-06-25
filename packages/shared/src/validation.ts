@@ -92,13 +92,17 @@ export const InviteUserSchema = z.object({
   role: z.enum(['admin', 'member']),
 });
 
+const AgeClassSchema = z.number().int().min(7).max(21);
+
 export const CreateTeamSchema = z.object({
   name: z.string().trim().min(1).max(100),
+  ageClass: AgeClassSchema,
 });
 
 export const CreateExternalTeamSchema = z.object({
   name: z.string().trim().min(1).max(100),
   externalClubName: z.string().trim().min(1).max(100),
+  ageClass: AgeClassSchema,
 });
 
 export const UpdateMemberSchema = z.object({

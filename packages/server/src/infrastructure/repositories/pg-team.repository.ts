@@ -22,19 +22,29 @@ export class PgTeamRepository implements TeamRepository {
   }
 
   async save(team: Team): Promise<void> {
-    await this.db
-      .insert(teams)
-      .values({
-        id: team.id,
-        tenantId: team.tenantId,
-        name: team.name,
-        kind: team.kind,
-        externalClubName: team.externalClubName ?? null,
-      })
-      .onConflictDoUpdate({
-        target: teams.id,
-        set: { name: team.name, kind: team.kind, externalClubName: team.externalClubName ?? null },
-      });
+    try {
+      await this.db
+        .insert(teams)
+        .values({
+          id: team.id,
+          tenantId: team.tenantId,
+          name: team.name,
+          ageClass: team.ageClass ?? null,
+          kind: team.kind,
+          externalClubName: team.externalClubName ?? null,
+        })
+        .onConflictDoUpdate({
+          target: teams.id,
+          set: { name: team.name, ageClass: team.ageClass ?? null, kind: team.kind, externalClubName: team.externalClubName ?? null },
+        });
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        const conflict = new Error('A team with this age class and name already exists.');
+        (conflict as any).code = 'TEAM_ALREADY_EXISTS';
+        throw conflict;
+      }
+      throw err;
+    }
   }
 
   private toTeam(row: typeof teams.$inferSelect): Team {
@@ -42,6 +52,7 @@ export class PgTeamRepository implements TeamRepository {
       id: row.id,
       tenantId: row.tenantId,
       name: row.name,
+      ageClass: row.ageClass ?? null,
       kind: row.kind as TeamKind,
       externalClubName: row.externalClubName ?? null,
       createdAt: row.createdAt.toISOString(),

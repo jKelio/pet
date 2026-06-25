@@ -31,17 +31,30 @@ describe('SendMagicLinkSchema', () => {
 });
 
 describe('CreateTeamSchema', () => {
-  test('accepts a valid team name', () => {
-    const result = CreateTeamSchema.parse({ name: '  U16 A  ' });
-    expect(result.name).toBe('U16 A'); // trimmed
+  test('accepts a valid team name and age class', () => {
+    const result = CreateTeamSchema.parse({ name: '  Lions  ', ageClass: 16 });
+    expect(result.name).toBe('Lions'); // trimmed
+    expect(result.ageClass).toBe(16);
   });
 
   test('rejects empty name after trimming', () => {
-    expect(() => CreateTeamSchema.parse({ name: '   ' })).toThrow();
+    expect(() => CreateTeamSchema.parse({ name: '   ', ageClass: 16 })).toThrow();
   });
 
   test('rejects name over 100 characters', () => {
-    expect(() => CreateTeamSchema.parse({ name: 'a'.repeat(101) })).toThrow();
+    expect(() => CreateTeamSchema.parse({ name: 'a'.repeat(101), ageClass: 16 })).toThrow();
+  });
+
+  test('rejects age class below 7', () => {
+    expect(() => CreateTeamSchema.parse({ name: 'Lions', ageClass: 6 })).toThrow();
+  });
+
+  test('rejects age class above 21', () => {
+    expect(() => CreateTeamSchema.parse({ name: 'Lions', ageClass: 22 })).toThrow();
+  });
+
+  test('rejects missing age class', () => {
+    expect(() => CreateTeamSchema.parse({ name: 'Lions' })).toThrow();
   });
 });
 

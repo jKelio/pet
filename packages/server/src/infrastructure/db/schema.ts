@@ -1,5 +1,5 @@
 import {
-  pgTable, uuid, text, integer, timestamp, date,
+  pgTable, uuid, text, integer, smallint, timestamp, date,
   jsonb, uniqueIndex, index, pgEnum,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -27,12 +27,14 @@ export const teams = pgTable('teams', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
+  ageClass: smallint('age_class'),
   kind: teamKindEnum('kind').notNull().default('own'),
   /** Name of the club this team belongs to. Only set for kind='external'. */
   externalClubName: text('external_club_name'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('teams_tenant_id_idx').on(t.tenantId),
+  uniqueIndex('teams_tenant_age_class_name_unique').on(t.tenantId, t.ageClass, t.name).where(sql`${t.ageClass} IS NOT NULL`),
 ]);
 
 // ─── Users ────────────────────────────────────────────────────────────────────

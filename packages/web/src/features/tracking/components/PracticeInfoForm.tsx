@@ -158,15 +158,28 @@ export function PracticeInfoForm() {
                 ))}
               </select>
             ) : (
-              <AutocompleteInput
+              <select
                 id="teamName"
-                value={practiceInfo.teamName}
-                suggestions={ownTeams.map((tm) => tm.name)}
-                onChange={(teamName) => {
-                  const match = ownTeams.find((tm) => tm.name === teamName);
-                  setPracticeInfo({ ...practiceInfo, teamName, teamId: match?.id });
+                value={practiceInfo.teamId ?? ''}
+                onChange={(e) => {
+                  const team = ownTeams.find((tm) => tm.id === e.target.value);
+                  if (team) {
+                    setPracticeInfo({ ...practiceInfo, teamId: team.id, teamName: team.name });
+                  } else {
+                    setPracticeInfo({ ...practiceInfo, teamId: undefined, teamName: '' });
+                  }
                 }}
-              />
+                className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">{t('practice.externalTeamPlaceholder')}</option>
+                {[...ownTeams]
+                  .sort((a, b) => (a.ageClass ?? 99) - (b.ageClass ?? 99) || a.name.localeCompare(b.name))
+                  .map((tm) => (
+                    <option key={tm.id} value={tm.id}>
+                      {tm.ageClass != null ? `U${tm.ageClass} — ` : ''}{tm.name}
+                    </option>
+                  ))}
+              </select>
             )}
             {canUseExternalTeams && (
               <div className="flex items-center gap-2 pt-1">

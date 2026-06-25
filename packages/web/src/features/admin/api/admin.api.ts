@@ -33,11 +33,11 @@ export const adminApi = {
   onboard: (payload: OnboardPayload, accessToken: string) =>
     apiClient.post<OnboardResult>('/onboarding', payload, accessToken),
 
-  createTeam: (name: string, accessToken: string) =>
-    apiClient.post<Team>('/admin/teams', { name }, accessToken),
+  createTeam: (name: string, ageClass: number, accessToken: string) =>
+    apiClient.post<Team>('/admin/teams', { name, ageClass }, accessToken),
 
-  createExternalTeam: (name: string, externalClubName: string, accessToken: string) =>
-    apiClient.post<Team>('/admin/external-teams', { name, externalClubName }, accessToken),
+  createExternalTeam: (name: string, externalClubName: string, ageClass: number, accessToken: string) =>
+    apiClient.post<Team>('/admin/external-teams', { name, externalClubName, ageClass }, accessToken),
 
   listTeams: (accessToken: string) =>
     apiClient.get<Team[]>('/admin/teams', accessToken),

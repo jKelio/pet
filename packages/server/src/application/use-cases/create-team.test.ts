@@ -38,7 +38,7 @@ describe('CreateTeamUseCase', () => {
       entitlementService: makeEntitlement(),
     });
 
-    const team = await useCase.execute({ name: 'U16' }, 'user-1', 'tenant-1');
+    const team = await useCase.execute({ name: 'Lions', ageClass: 16 }, 'user-1', 'tenant-1');
 
     expect(team.kind).toBe('own');
     expect(team.externalClubName).toBeNull();
@@ -54,7 +54,7 @@ describe('CreateTeamUseCase', () => {
     });
 
     const team = await useCase.execute(
-      { name: 'U16', kind: 'external', externalClubName: 'EHC Rival' },
+      { name: 'Lions', ageClass: 16, kind: 'external', externalClubName: 'EHC Rival' },
       'user-1',
       'tenant-1',
     );
@@ -73,7 +73,7 @@ describe('CreateTeamUseCase', () => {
     });
 
     expect(
-      useCase.execute({ name: 'U16', kind: 'external', externalClubName: 'EHC Rival' }, 'user-1', 'tenant-1'),
+      useCase.execute({ name: 'Lions', ageClass: 16, kind: 'external', externalClubName: 'EHC Rival' }, 'user-1', 'tenant-1'),
     ).rejects.toBeInstanceOf(ForbiddenError);
     expect(teamRepo.save).not.toHaveBeenCalled();
   });
@@ -85,7 +85,7 @@ describe('CreateTeamUseCase', () => {
       entitlementService: makeEntitlement(),
     });
 
-    expect(useCase.execute({ name: 'U16' }, 'user-1', 'tenant-1')).rejects.toBeInstanceOf(ForbiddenError);
+    expect(useCase.execute({ name: 'Lions', ageClass: 16 }, 'user-1', 'tenant-1')).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   test('throws ForbiddenError when caller is not a tenant member', async () => {
@@ -95,6 +95,6 @@ describe('CreateTeamUseCase', () => {
       entitlementService: makeEntitlement(),
     });
 
-    expect(useCase.execute({ name: 'U16' }, 'user-1', 'tenant-1')).rejects.toBeInstanceOf(ForbiddenError);
+    expect(useCase.execute({ name: 'Lions', ageClass: 16 }, 'user-1', 'tenant-1')).rejects.toBeInstanceOf(ForbiddenError);
   });
 });

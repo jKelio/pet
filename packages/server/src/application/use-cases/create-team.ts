@@ -10,6 +10,7 @@ export interface CreateTeamDeps {
 
 export interface CreateTeamInput {
   name: string;
+  ageClass: number;
   kind?: 'own' | 'external';
   externalClubName?: string;
 }
@@ -50,6 +51,7 @@ export class CreateTeamUseCase {
       id: crypto.randomUUID(),
       tenantId,
       name: input.name.trim(),
+      ageClass: input.ageClass,
       kind,
       externalClubName: kind === 'external' ? (input.externalClubName?.trim() ?? null) : null,
       createdAt: new Date().toISOString(),

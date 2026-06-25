@@ -109,6 +109,8 @@ export interface Team {
   id: string;
   tenantId: string;
   name: string;
+  /** Integer 7–21, rendered as "U{n}". Null for teams created before this field was introduced. */
+  ageClass: number | null;
   kind: TeamKind;
   /** Name of the club this team belongs to. Only set when kind='external'. */
   externalClubName: string | null;

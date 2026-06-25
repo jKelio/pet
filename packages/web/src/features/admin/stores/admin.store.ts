@@ -23,8 +23,8 @@ interface AdminState {
 
   loadProfile: (accessToken: string) => Promise<void>;
   onboard: (tenantName: string, teamName: string, accessToken: string) => Promise<void>;
-  createTeam: (name: string, accessToken: string) => Promise<void>;
-  createExternalTeam: (name: string, externalClubName: string, accessToken: string) => Promise<Team>;
+  createTeam: (name: string, ageClass: number, accessToken: string) => Promise<void>;
+  createExternalTeam: (name: string, externalClubName: string, ageClass: number, accessToken: string) => Promise<Team>;
   loadMembers: (accessToken: string) => Promise<void>;
   inviteMember: (email: string, role: UserRole, name: string | undefined, accessToken: string) => Promise<void>;
   updateMemberName: (membershipId: string, name: string, accessToken: string) => Promise<void>;
@@ -90,10 +90,10 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      createTeam: async (name, accessToken) => {
+      createTeam: async (name, ageClass, accessToken) => {
         set({ loading: true, error: null });
         try {
-          const team = await adminApi.createTeam(name, accessToken);
+          const team = await adminApi.createTeam(name, ageClass, accessToken);
           set((s) => ({ teams: [...s.teams, team], loading: false }));
         } catch (err) {
           set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorCreate') });
@@ -101,10 +101,10 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      createExternalTeam: async (name, externalClubName, accessToken) => {
+      createExternalTeam: async (name, externalClubName, ageClass, accessToken) => {
         set({ loading: true, error: null });
         try {
-          const team = await adminApi.createExternalTeam(name, externalClubName, accessToken);
+          const team = await adminApi.createExternalTeam(name, externalClubName, ageClass, accessToken);
           set((s) => ({ teams: [...s.teams, team], loading: false }));
           return team;
         } catch (err) {

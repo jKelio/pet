@@ -7,7 +7,7 @@ if (!DATABASE_URL) throw new Error('Missing DATABASE_URL');
 const db = createDbClient(DATABASE_URL);
 
 await db.execute(sql`
-  TRUNCATE drills, practice_sessions, team_assignments, memberships, teams, users, tenants
+  TRUNCATE drills, practice_sessions, memberships, teams, users, tenants
   RESTART IDENTITY CASCADE
 `);
 
