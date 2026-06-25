@@ -46,6 +46,8 @@ export interface PracticeInfo {
   teamName: string;
   /** Id of the registered Team this session belongs to, when teamName resolves to one. Used to route the sync. */
   teamId?: string;
+  /** Age class of the registered Team (U7–U21). Stored at selection time so the results page doesn't depend on a live store lookup. */
+  teamAgeClass?: number | null;
   date: string;
   coachName: string;
   athletesNumber: number;

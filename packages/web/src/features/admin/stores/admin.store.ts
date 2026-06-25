@@ -169,7 +169,7 @@ export const useAdminStore = create<AdminState>()(
     }),
     {
       name: 'pet-admin',
-      version: 2,
+      version: 3,
       partialize: (state) => ({
         user: state.user,
         membership: state.membership,

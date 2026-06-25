@@ -70,6 +70,7 @@ export function PracticeInfoForm() {
       ...prev,
       teamId: team?.id,
       teamName: team?.name ?? '',
+      teamAgeClass: team?.ageClass ?? null,
       clubName: team?.externalClubName ?? prev.clubName,
     }));
   };
@@ -164,9 +165,9 @@ export function PracticeInfoForm() {
                 onChange={(e) => {
                   const team = ownTeams.find((tm) => tm.id === e.target.value);
                   if (team) {
-                    setPracticeInfo({ ...practiceInfo, teamId: team.id, teamName: team.name });
+                    setPracticeInfo({ ...practiceInfo, teamId: team.id, teamName: team.name, teamAgeClass: team.ageClass ?? null });
                   } else {
-                    setPracticeInfo({ ...practiceInfo, teamId: undefined, teamName: '' });
+                    setPracticeInfo({ ...practiceInfo, teamId: undefined, teamName: '', teamAgeClass: null });
                   }
                 }}
                 className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"

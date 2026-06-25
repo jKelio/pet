@@ -79,6 +79,7 @@ export function ResultsPage() {
 
   const teams = useAdminStore((s) => s.teams);
   const sessionTeam = teams.find((tm) => tm.id === localPracticeInfo.teamId);
+  const teamAgeClass = localPracticeInfo.teamAgeClass ?? sessionTeam?.ageClass ?? null;
   const membership = useAdminStore((s) => s.membership);
   const entitlements = useAdminStore((s) => s.entitlements);
   const loadProfile = useAdminStore((s) => s.loadProfile);
@@ -373,9 +374,9 @@ export function ResultsPage() {
                 <div>
                   <p className="text-xs text-muted-foreground">{t('results.team')}</p>
                   <div className="flex items-center gap-1.5">
-                    {sessionTeam?.ageClass != null && (
+                    {teamAgeClass != null && (
                       <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                        U{sessionTeam.ageClass}
+                        U{teamAgeClass}
                       </span>
                     )}
                     <p className="font-medium">{localPracticeInfo.teamName}</p>
