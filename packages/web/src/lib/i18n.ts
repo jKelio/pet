@@ -349,7 +349,6 @@ const resources = {
         leaveConfirmBody: 'The active training will be paused. You can resume it at any time.',
         resumeDraftTitle: 'Active Training Found',
         resumeDraftBody: 'An interrupted training session was found. Resume or start new?',
-        undo: 'Undo',
       },
     },
     glossary: {
@@ -773,7 +772,6 @@ const resources = {
         leaveConfirmBody: 'Das laufende Training wird pausiert. Du kannst es jederzeit fortsetzen.',
         resumeDraftTitle: 'Laufendes Training gefunden',
         resumeDraftBody: 'Ein unterbrochenes Training wurde gefunden. Fortsetzen oder neu starten?',
-        undo: 'Rückgängig',
       },
     },
     glossary: {
