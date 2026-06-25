@@ -38,7 +38,6 @@ export function TimeWatcher({ onFinish }: Props) {
   const startTimer = useTimerStore((s) => s.startTimer);
   const pauseTimer = useTimerStore((s) => s.pauseTimer);
   const incrementCounter = useTimerStore((s) => s.incrementCounter);
-  const decrementCounter = useTimerStore((s) => s.decrementCounter);
   const startTracking = useTimerStore((s) => s.startTracking);
   const startDrill = useTimerStore((s) => s.startDrill);
   const endDrill = useTimerStore((s) => s.endDrill);
@@ -47,11 +46,7 @@ export function TimeWatcher({ onFinish }: Props) {
   const [drillHasEnded, setDrillHasEnded] = useState(false);
   const [gapElapsed, setGapElapsed] = useState(0);
   const gapDisplayStartRef = useRef<number | null>(null);
-  const [tappedCounter, setTappedCounter] = useState<{
-    id: string;
-    label: string;
-    count: number;
-  } | null>(null);
+  const [blockedCounterId, setBlockedCounterId] = useState<string | null>(null);
 
   const currentDrill = drills[currentDrillIndex];
   const enabledActions = currentDrill?.actionButtons.filter((a) => a.enabled) ?? [];
@@ -62,12 +57,11 @@ export function TimeWatcher({ onFinish }: Props) {
     startTracking();
   }, [startTracking]);
 
-  // Auto-dismiss counter tap overlay after 1500 ms
   useEffect(() => {
-    if (!tappedCounter) return;
-    const id = setTimeout(() => setTappedCounter(null), 1500);
+    if (!blockedCounterId) return;
+    const id = setTimeout(() => setBlockedCounterId(null), 1000);
     return () => clearTimeout(id);
-  }, [tappedCounter]);
+  }, [blockedCounterId]);
 
   // Gap elapsed display timer
   useEffect(() => {
@@ -246,23 +240,6 @@ export function TimeWatcher({ onFinish }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      {tappedCounter && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
-          <p className="text-4xl font-bold">
-            {tappedCounter.label} · {tappedCounter.count}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              decrementCounter(tappedCounter.id);
-              setTappedCounter(null);
-            }}
-            className="mt-6 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors active:bg-destructive/80"
-          >
-            {t('timeWatcher.undo')}
-          </button>
-        </div>
-      )}
 
       {/* Drill header */}
       <div className="px-4 py-3 border-b border-border bg-card flex items-center gap-2 flex-wrap">
@@ -438,17 +415,23 @@ export function TimeWatcher({ onFinish }: Props) {
               {counterActions.map((action) => {
                 const counter = counters[action.id];
                 const count = counter?.count ?? 0;
+                const isBlocked = blockedCounterId === action.id;
 
                 return (
                   <button
                     key={action.id}
                     type="button"
+                    disabled={isBlocked}
                     onClick={() => {
-                      if (tappedCounter) return;
+                      if (isBlocked) return;
                       incrementCounter(action.id);
-                      setTappedCounter({ id: action.id, label: t(`actions.${action.id}`), count: count + 1 });
+                      setBlockedCounterId(action.id);
                     }}
-                    className="relative flex flex-col items-center gap-1 rounded-lg border border-primary bg-primary p-2 text-center text-primary-foreground transition-colors active:bg-primary/80"
+                    className={`relative flex flex-col items-center gap-1 rounded-lg border p-2 text-center text-primary-foreground transition-colors active:bg-primary/80 ${
+                      isBlocked
+                        ? 'border-green-500 bg-green-500 cursor-not-allowed'
+                        : 'border-primary bg-primary'
+                    }`}
                   >
                     <Plus className="absolute top-1.5 right-1.5 h-3 w-3 text-primary-foreground/60" />
                     <span className="min-h-[2rem] flex items-center justify-center text-xs font-medium leading-tight line-clamp-2 pr-3">
