@@ -1,5 +1,5 @@
 import type { AiRecommendationGenerator, AiProgressEvent, GenerateRecommendationInput } from '../../domain/ports/ai-recommendation.generator.js';
-import type { RecommendationDocument, PracticeSession, Drill } from '@pet/shared';
+import type { RecommendationDocument, TeiScores, PracticeSession, Drill } from '@pet/shared';
 
 export class RecommendationGenerationError extends Error {
   readonly statusCode = 502;
@@ -22,6 +22,7 @@ export function normalizeRecommendationDocument(raw: Record<string, unknown>): R
     strengths: arr('strengths', 'staerken', 'stärken', 'сильные_стороны', 'fortalezas'),
     concerns: arr('concerns', 'bedenken', 'опасения', 'préoccupations', 'preocupaciones'),
     recommendations: arr('recommendations', 'empfehlungen', 'рекомендации', 'recommandations', 'recomendaciones'),
+    tei: raw['tei'] as TeiScores | undefined,
   };
 }
 
