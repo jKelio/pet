@@ -5,6 +5,7 @@ import type { MembershipRepository } from '../../domain/ports/user.repository.js
 import type { AiRecommendationGenerator } from '../../domain/ports/ai-recommendation.generator.js';
 import type { Recommendation, Sport, PracticeSession } from '@pet/shared';
 import { DEFAULT_SPORT } from '@pet/shared';
+import { computeTei } from '../../domain/services/tei.js';
 import { RecommendationForbiddenError, RecommendationNotFoundError } from './get-recommendation.js';
 
 /** Thrown when a session already has a recommendation — analysis is one-shot, not re-runnable. */
@@ -70,10 +71,11 @@ export class GenerateRecommendationUseCase {
 
     for await (const event of this.deps.aiGenerator.generate({ session, knowledgeText, language: ctx.language })) {
       if (event.status === 'done' && event.document) {
+        const tei = computeTei(session);
         const recommendation = await this.deps.recommendationRepository.upsert({
           sessionId,
           tenantId: ctx.tenantId,
-          document: event.document,
+          document: { ...event.document, tei },
           sourceUrls,
           model: this.deps.geminiModel,
           createdBy: ctx.userId,

@@ -96,7 +96,9 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
       input.knowledgeText || '(no reference knowledge available)',
       ``,
       `Analyze the session data in the context of the reference knowledge.`,
-      `Be specific, data-driven, and practical. Reference concrete numbers from the session.`,
+      `Write \`summary\` as exactly ONE sentence in ${languageName} stating the overall session quality verdict.`,
+      `For \`strengths\`, \`concerns\`, and \`recommendations\`: be specific, data-driven, reference concrete numbers from the session.`,
+      `Each array item must be a self-contained actionable bullet (max 2 sentences). Aim for 3–5 items per array.`,
       ``,
       `Respond with a single JSON object matching this schema exactly (no markdown, no code fences):`,
       `{`,
@@ -113,6 +115,8 @@ export class GeminiRecommendationGenerator implements AiRecommendationGenerator 
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: 'application/json',
+        maxOutputTokens: 1200,
+        thinkingConfig: { thinkingBudget: 512 },
         responseSchema: {
           type: 'OBJECT',
           properties: {

@@ -306,6 +306,11 @@ const resources = {
         cancel: 'Cancel',
         generatedWith: 'Generated with',
         usedSources: 'Sources used',
+        teiTitle:        'Training Efficiency Index (TEI)',
+        teiActivity:     'Activity',
+        teiCoaching:     'Coaching',
+        teiRepetitions:  'Repetitions',
+        teiOrganisation: 'Organisation',
       },
       library: {
         title: 'Knowledge Library',
@@ -732,6 +737,11 @@ const resources = {
         cancel: 'Abbrechen',
         generatedWith: 'Generiert mit',
         usedSources: 'Verwendete Quellen',
+        teiTitle:        'Trainings-Effizienz-Index (TEI)',
+        teiActivity:     'Aktivität',
+        teiCoaching:     'Coaching',
+        teiRepetitions:  'Wiederholungen',
+        teiOrganisation: 'Organisation',
       },
       library: {
         title: 'Wissensbibliothek',

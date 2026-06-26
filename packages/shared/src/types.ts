@@ -158,6 +158,15 @@ export interface LibraryEntry {
 
 // ─── Recommendations ──────────────────────────────────────────────────────────
 
+export interface TeiScores {
+  activity: number;      // 0–40
+  coaching: number;      // 0–20
+  repetitions: number;   // 0–20
+  organisation: number;  // 0–20
+  total: number;         // 0–100
+  grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
+}
+
 export interface RecommendationDocument {
   summary: string;
   /** May be absent in records generated before this field was introduced. */
@@ -166,6 +175,8 @@ export interface RecommendationDocument {
   concerns?: string[];
   /** May be absent in records generated before this field was introduced. */
   recommendations?: string[];
+  /** May be absent in records generated before this field was introduced. */
+  tei?: TeiScores;
   /** Legacy field: no longer produced. Retained as optional for historical records. */
   sourceReferences?: string[];
 }
