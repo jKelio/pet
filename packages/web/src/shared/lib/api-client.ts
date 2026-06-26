@@ -114,6 +114,22 @@ export const apiClient = {
   patch: <T>(path: string, body: unknown, accessToken?: string) =>
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }, accessToken),
 
+  /** GET returning a binary Blob (e.g. a PDF). Throws ApiClientError on non-2xx. */
+  async getBlob(path: string, accessToken?: string): Promise<Blob> {
+    await whenServerReady();
+    const headers: HeadersInit = {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    };
+    const res = await fetch(`${BASE_URL}${path}`, { method: 'GET', headers, credentials: 'include' });
+    if (!res.ok) {
+      const error: ApiError = await res.json().catch(() => ({
+        code: 'UNKNOWN_ERROR', message: 'An unexpected error occurred', statusCode: res.status,
+      }));
+      throw new ApiClientError(error.code, error.message, error.statusCode);
+    }
+    return res.blob();
+  },
+
   /** POST returning a binary Blob (e.g. a PDF). Throws ApiClientError on non-2xx. */
   async postBlob(path: string, body: unknown, accessToken?: string): Promise<Blob> {
     await whenServerReady();

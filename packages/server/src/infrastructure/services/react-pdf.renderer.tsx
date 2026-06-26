@@ -3,7 +3,7 @@ import {
   Document, Page, Text, View, StyleSheet, Font, renderToBuffer,
   Svg, G, Path, Rect, Circle, Line,
 } from '@react-pdf/renderer';
-import type { PdfReportModel } from '@pet/shared';
+import type { PdfReportModel, Recommendation } from '@pet/shared';
 import type { PdfRenderer } from '../../domain/ports/pdf-renderer.js';
 
 type Locale = PdfReportModel['locale'];
@@ -612,8 +612,156 @@ function ReportDocument({ model }: { model: PdfReportModel }) {
   );
 }
 
+// ─── Recommendation PDF ──────────────────────────────────────────────────────
+
+const REC_STRINGS: Record<string, Record<string, string>> = {
+  en: {
+    title: 'AI Training Recommendation',
+    teiTitle: 'Training Efficiency Index (TEI)',
+    activity: 'Activity', coaching: 'Coaching',
+    repetitions: 'Repetitions', organisation: 'Organisation',
+    strengths: 'Strengths', concerns: 'Areas for Improvement',
+    recommendations: 'Recommendations',
+    generated: 'Generated', page: 'Page',
+  },
+  de: {
+    title: 'KI-Trainingsempfehlung',
+    teiTitle: 'Trainings-Effizienz-Index (TEI)',
+    activity: 'Aktivität', coaching: 'Coaching',
+    repetitions: 'Wiederholungen', organisation: 'Organisation',
+    strengths: 'Stärken', concerns: 'Verbesserungsbereiche',
+    recommendations: 'Empfehlungen',
+    generated: 'Erstellt', page: 'Seite',
+  },
+};
+
+const RC = {
+  green:  { bg: '#f0fdf4', border: '#86efac', text: '#15803d', bar: '#22c55e' },
+  yellow: { bg: '#fefce8', border: '#fde047', text: '#854d0e', bar: '#eab308' },
+  red:    { bg: '#fef2f2', border: '#fca5a5', text: '#991b1b', bar: '#ef4444' },
+  s: { bg: '#f0fdf4', border: '#86efac', header: '#166534', body: '#14532d' },
+  c: { bg: '#fffbeb', border: '#fcd34d', header: '#92400e', body: '#78350f' },
+  r: { bg: '#eff6ff', border: '#93c5fd', header: '#1e40af', body: '#1e3a8a' },
+};
+
+const recStyles = StyleSheet.create({
+  page: { padding: 32, fontSize: 9, fontFamily: FONT_FAMILY, color: '#0f172a' },
+  title: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
+  subtitle: { fontSize: 8, color: '#64748b', marginBottom: 20 },
+  teiCard: { borderRadius: 6, borderWidth: 1, padding: 12, marginBottom: 16 },
+  teiHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  teiTitle: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
+  teiRight: { flexDirection: 'row', alignItems: 'flex-end' },
+  teiScore: { fontSize: 26, fontWeight: 'bold', marginRight: 4 },
+  teiGrade: { fontSize: 9, fontWeight: 'bold', borderWidth: 1, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 3, marginBottom: 2 },
+  indexRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  indexLabel: { fontSize: 8, color: '#64748b', width: 80 },
+  indexTrack: { flex: 1, height: 5, backgroundColor: '#e2e8f0', borderRadius: 2 },
+  indexFill: { height: 5, borderRadius: 2 },
+  indexValue: { width: 36, fontSize: 8, color: '#64748b', textAlign: 'right' },
+  summary: { fontSize: 9, color: '#64748b', fontStyle: 'italic', marginBottom: 16 },
+  section: { borderRadius: 6, borderWidth: 1, padding: 12, marginBottom: 12 },
+  sectionTitle: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+  bullet: { flexDirection: 'row', marginBottom: 5 },
+  bulletDot: { fontSize: 9, width: 10 },
+  bulletText: { flex: 1, fontSize: 9, lineHeight: 1.5 },
+  recFooter: { position: 'absolute', bottom: 16, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', fontSize: 7, color: '#94a3b8' },
+});
+
+function RecIndexBar({ label, value, max, barColor }: { label: string; value: number; max: number; barColor: string }) {
+  const fillPct = `${Math.max(1, Math.round((value / max) * 100))}%`;
+  return (
+    <View style={recStyles.indexRow}>
+      <Text style={recStyles.indexLabel}>{label}</Text>
+      <View style={recStyles.indexTrack}>
+        <View style={[recStyles.indexFill, { width: fillPct, backgroundColor: barColor }]} />
+      </View>
+      <Text style={recStyles.indexValue}>{value}/{max}</Text>
+    </View>
+  );
+}
+
+function RecBulletList({ items, color }: { items: string[]; color: string }) {
+  return (
+    <>
+      {items.map((text, i) => (
+        <View key={i} style={recStyles.bullet}>
+          <Text style={[recStyles.bulletDot, { color }]}>{'•'}</Text>
+          <Text style={[recStyles.bulletText, { color }]}>{text}</Text>
+        </View>
+      ))}
+    </>
+  );
+}
+
+function RecommendationDocument({ recommendation, lang }: { recommendation: Recommendation; lang: string }) {
+  const t = REC_STRINGS[lang] ?? REC_STRINGS['en'];
+  const doc = recommendation.document;
+  const tei = doc.tei;
+  const pal = tei ? (tei.total >= 70 ? RC.green : tei.total >= 50 ? RC.yellow : RC.red) : null;
+
+  return (
+    <Document>
+      <Page size="A4" style={recStyles.page}>
+        <Text style={recStyles.title}>{t.title}</Text>
+        <Text style={recStyles.subtitle}>
+          {t.generated}: {recommendation.updatedAt.split('T')[0]}
+        </Text>
+
+        {tei && pal && (
+          <View style={[recStyles.teiCard, { backgroundColor: pal.bg, borderColor: pal.border }]}>
+            <View style={recStyles.teiHeader}>
+              <Text style={[recStyles.teiTitle, { color: pal.text }]}>{t.teiTitle}</Text>
+              <View style={recStyles.teiRight}>
+                <Text style={[recStyles.teiScore, { color: pal.text }]}>{tei.total}</Text>
+                <Text style={[recStyles.teiGrade, { color: pal.text, borderColor: pal.border }]}>{tei.grade}</Text>
+              </View>
+            </View>
+            <RecIndexBar label={t.activity}      value={tei.activity}      max={40} barColor={pal.bar} />
+            <RecIndexBar label={t.coaching}       value={tei.coaching}      max={20} barColor={pal.bar} />
+            <RecIndexBar label={t.repetitions}    value={tei.repetitions}   max={20} barColor={pal.bar} />
+            <RecIndexBar label={t.organisation}   value={tei.organisation}  max={20} barColor={pal.bar} />
+          </View>
+        )}
+
+        {doc.summary && <Text style={recStyles.summary}>{doc.summary}</Text>}
+
+        {(doc.strengths?.length ?? 0) > 0 && (
+          <View style={[recStyles.section, { backgroundColor: RC.s.bg, borderColor: RC.s.border }]}>
+            <Text style={[recStyles.sectionTitle, { color: RC.s.header }]}>{t.strengths}</Text>
+            <RecBulletList items={doc.strengths!} color={RC.s.body} />
+          </View>
+        )}
+
+        {(doc.concerns?.length ?? 0) > 0 && (
+          <View style={[recStyles.section, { backgroundColor: RC.c.bg, borderColor: RC.c.border }]}>
+            <Text style={[recStyles.sectionTitle, { color: RC.c.header }]}>{t.concerns}</Text>
+            <RecBulletList items={doc.concerns!} color={RC.c.body} />
+          </View>
+        )}
+
+        {(doc.recommendations?.length ?? 0) > 0 && (
+          <View style={[recStyles.section, { backgroundColor: RC.r.bg, borderColor: RC.r.border }]}>
+            <Text style={[recStyles.sectionTitle, { color: RC.r.header }]}>{t.recommendations}</Text>
+            <RecBulletList items={doc.recommendations!} color={RC.r.body} />
+          </View>
+        )}
+
+        <View style={recStyles.recFooter} fixed>
+          <Text>{t.title}</Text>
+          <Text render={({ pageNumber, totalPages }) => `${t.page} ${pageNumber} / ${totalPages}`} />
+        </View>
+      </Page>
+    </Document>
+  );
+}
+
 export class ReactPdfRenderer implements PdfRenderer {
   async render(model: PdfReportModel): Promise<Buffer> {
     return renderToBuffer(<ReportDocument model={model} />);
+  }
+
+  async renderRecommendation(recommendation: Recommendation, lang: string): Promise<Buffer> {
+    return renderToBuffer(<RecommendationDocument recommendation={recommendation} lang={lang} />);
   }
 }

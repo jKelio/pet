@@ -7,16 +7,46 @@ import { RecommendationConflictError } from '../../application/use-cases/generat
 import { RecommendationGenerationError } from '../../infrastructure/services/gemini-recommendation.generator.js';
 import type { EntitlementService } from '../../application/services/entitlement.service.js';
 import { isEntitlementError } from '../../application/services/entitlement.service.js';
+import type { PdfRenderer } from '../../domain/ports/pdf-renderer.js';
 
 interface RecommendationRoutesDeps {
   generateRecommendation: GenerateRecommendationUseCase;
   getRecommendation: GetRecommendationUseCase;
   entitlement: EntitlementService;
   geminiEnabled: boolean;
+  pdfRenderer: PdfRenderer;
 }
 
 export function registerRecommendationRoutes(fastify: FastifyInstance, deps: RecommendationRoutesDeps): void {
   fastify.addHook('onRequest', fastify.authenticate);
+
+  // GET /sessions/:sessionId/recommendation/pdf — render recommendation as PDF
+  fastify.get('/sessions/:sessionId/recommendation/pdf', async (request, reply) => {
+    const tenantId = request.tenantId;
+    if (!tenantId) return reply.code(403).send({ code: 'NO_TENANT', message: 'No active tenant', statusCode: 403 });
+
+    const { sessionId: rawSessionId } = request.params as { sessionId: string };
+    const sessionId = rawSessionId.replace(/^cloud-/, '');
+    const { lang = 'de' } = request.query as { lang?: string };
+
+    try {
+      const recommendation = await deps.getRecommendation.execute(sessionId, { userId: request.userId, tenantId });
+      const buffer = await deps.pdfRenderer.renderRecommendation(recommendation, lang);
+      const date = recommendation.updatedAt.split('T')[0];
+      return reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="recommendation-${date}.pdf"`)
+        .send(buffer);
+    } catch (error) {
+      if (error instanceof RecommendationNotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: error.message, statusCode: 404 });
+      }
+      if (error instanceof RecommendationForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: error.message, statusCode: 403 });
+      }
+      throw error;
+    }
+  });
 
   // GET /sessions/:sessionId/recommendation — load existing recommendation
   fastify.get('/sessions/:sessionId/recommendation', async (request, reply) => {

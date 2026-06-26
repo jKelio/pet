@@ -160,6 +160,7 @@ async function build() {
       getRecommendation: fastify.useCases.getRecommendation,
       entitlement: fastify.services.entitlement,
       geminiEnabled: fastify.geminiEnabled,
+      pdfRenderer: fastify.services.pdfRenderer,
     });
   });
 

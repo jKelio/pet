@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Loader2 } from 'lucide-react';
-import { domToPng } from 'modern-screenshot';
-import jsPDF from 'jspdf';
 import type { Recommendation, TeiScores } from '@pet/shared';
 import { Button } from '../../../shared/components/ui/button.js';
+import { apiClient } from '../../../shared/lib/api-client.js';
+import { useAuthStore } from '../../auth/stores/auth.store.js';
 
 interface RecommendationViewProps {
   recommendation: Recommendation;
@@ -73,49 +73,24 @@ function TeiCard({ tei }: { tei: TeiScores }) {
 }
 
 export function RecommendationView({ recommendation }: RecommendationViewProps) {
-  const { t } = useTranslation('pet');
-  const exportRef = useRef<HTMLDivElement>(null);
+  const { t, i18n } = useTranslation('pet');
   const [isExporting, setIsExporting] = useState(false);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const { document: doc } = recommendation;
 
   const exportToPdf = async () => {
-    if (!exportRef.current || isExporting) return;
+    if (isExporting) return;
     setIsExporting(true);
     try {
-      const container = exportRef.current;
-      const savedStyle = container.getAttribute('style') ?? '';
-      container.style.cssText = 'position:fixed;left:0;top:0;z-index:-9999;opacity:1;width:800px;overflow:visible';
-      await new Promise((r) => setTimeout(r, 300));
-
-      const sections = container.querySelectorAll<HTMLElement>('.pdf-section');
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm' });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const margin = 10;
-      const usableW = pdfW - 2 * margin;
-      const usableH = pdf.internal.pageSize.getHeight() - 2 * margin;
-      let currentY = 0;
-      let first = true;
-
-      for (let i = 0; i < sections.length; i++) {
-        try {
-          const dataUrl = await domToPng(sections[i], { scale: 2, quality: 0.92, backgroundColor: '#ffffff' });
-          const img = new Image();
-          await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; img.src = dataUrl; });
-          const scaledH = (img.height * usableW) / img.width;
-          if (!first && currentY + scaledH > usableH) { pdf.addPage(); currentY = 0; }
-          pdf.addImage(dataUrl, 'PNG', margin, margin + currentY, usableW, scaledH);
-          currentY += scaledH + 5;
-          first = false;
-        } catch { /* skip */ }
-      }
-
-      container.setAttribute('style', savedStyle);
-      const date = new Date().toISOString().split('T')[0];
-      const blob = pdf.output('blob');
+      const lang = i18n.language?.startsWith('de') ? 'de' : 'en';
+      const blob = await apiClient.getBlob(
+        `/sessions/${recommendation.sessionId}/recommendation/pdf?lang=${lang}`,
+        accessToken ?? undefined,
+      );
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `recommendation-${date}.pdf`;
+      a.download = `recommendation-${recommendation.updatedAt.split('T')[0]}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -132,7 +107,7 @@ export function RecommendationView({ recommendation }: RecommendationViewProps) 
         </Button>
       </div>
 
-      <div ref={exportRef} className="space-y-6">
+      <div className="space-y-6">
         {doc.tei && <TeiCard tei={doc.tei} />}
 
         {doc.summary && (

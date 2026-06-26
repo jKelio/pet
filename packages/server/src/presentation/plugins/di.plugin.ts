@@ -107,6 +107,7 @@ declare module 'fastify' {
     geminiEnabled: boolean;
     services: {
       entitlement: EntitlementService;
+      pdfRenderer: ReactPdfRenderer;
     };
   }
 }
@@ -249,7 +250,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   fastify.decorate('config', config);
   fastify.decorate('geminiEnabled', !!config.geminiApiKey);
   fastify.decorate('tokenService', tokenService);
-  fastify.decorate('services', { entitlement: entitlementService });
+  fastify.decorate('services', { entitlement: entitlementService, pdfRenderer });
   fastify.decorate('useCases', {
     sendMagicLink,
     verifyMagicLink,
