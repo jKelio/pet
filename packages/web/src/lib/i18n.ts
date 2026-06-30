@@ -287,7 +287,7 @@ const resources = {
       },
       recommendation: {
         title: 'Training Analysis',
-        generate: 'Analyse Training',
+        generate: 'Analyze Training',
         pdfExport: 'Export training analysis as PDF',
         statusFetching: 'Reading sources…',
         statusGenerating: 'Generating analysis…',
