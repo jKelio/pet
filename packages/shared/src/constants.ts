@@ -51,8 +51,6 @@ export const ACTION_COLORS: Record<string, string> = {
   explanation: '#0088FE',
   demonstration: '#00C49F',
   feedbackteam: '#FFBB28',
-  changesideone: '#FF8042',
-  changesidetwo: '#FF6666',
   timemoving: '#A28BFE',
   timemovingwithpuck: '#A28BFE',
   timemovingwithoutpuck: '#C9BCFE',
