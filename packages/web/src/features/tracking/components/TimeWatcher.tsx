@@ -59,7 +59,7 @@ export function TimeWatcher({ onFinish }: Props) {
 
   useEffect(() => {
     if (!blockedCounterId) return;
-    const id = setTimeout(() => setBlockedCounterId(null), 1000);
+    const id = setTimeout(() => setBlockedCounterId(null), 250);
     return () => clearTimeout(id);
   }, [blockedCounterId]);
 
