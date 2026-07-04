@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Document, Page, Text, View, StyleSheet, Font, renderToBuffer,
-  Svg, G, Path, Rect, Circle, Line,
+  Svg, G, Path, Rect, Circle, Line, Defs, LinearGradient, Stop,
 } from '@react-pdf/renderer';
 import type { PdfReportModel, Recommendation } from '@pet/shared';
 import type { PdfRenderer } from '../../domain/ports/pdf-renderer.js';
@@ -616,16 +616,16 @@ function ReportDocument({ model }: { model: PdfReportModel }) {
 
 const REC_STRINGS: Record<string, Record<string, string>> = {
   en: {
-    title: 'AI Training Recommendation',
+    title: 'Training Analysis',
     teiTitle: 'Training Efficiency Index (TEI)',
     activity: 'Activity', coaching: 'Coaching',
     repetitions: 'Repetitions', organisation: 'Organisation',
-    strengths: 'Strengths', concerns: 'Areas for Improvement',
+    strengths: 'Strengths', concerns: 'Areas for improvement',
     recommendations: 'Recommendations',
     generated: 'Generated', page: 'Page',
   },
   de: {
-    title: 'KI-Trainingsempfehlung',
+    title: 'Trainingsanalyse',
     teiTitle: 'Trainings-Effizienz-Index (TEI)',
     activity: 'Aktivität', coaching: 'Coaching',
     repetitions: 'Wiederholungen', organisation: 'Organisation',
@@ -646,8 +646,12 @@ const RC = {
 
 const recStyles = StyleSheet.create({
   page: { padding: 32, fontSize: 9, fontFamily: FONT_FAMILY, color: '#0f172a' },
-  title: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  subtitle: { fontSize: 8, color: '#64748b', marginBottom: 20 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
+  headerText: { marginLeft: 10 },
+  // lineHeight is pinned to 1 so the title+subtitle block has a deterministic
+  // height (16 + 4 + 8 = 28) that the header's PetLogoMark height is set to match.
+  title: { fontSize: 16, lineHeight: 1, fontWeight: 'bold', marginBottom: 4 },
+  subtitle: { fontSize: 8, lineHeight: 1, color: '#64748b' },
   teiCard: { borderRadius: 6, borderWidth: 1, padding: 12, marginBottom: 16 },
   teiHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   teiTitle: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
@@ -665,8 +669,34 @@ const recStyles = StyleSheet.create({
   bullet: { flexDirection: 'row', marginBottom: 5 },
   bulletDot: { fontSize: 9, width: 10 },
   bulletText: { flex: 1, fontSize: 9, lineHeight: 1.5 },
-  recFooter: { position: 'absolute', bottom: 16, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', fontSize: 7, color: '#94a3b8' },
+  recFooter: { position: 'absolute', bottom: 16, left: 32, right: 32, height: 12, fontSize: 7, color: '#94a3b8' },
+  footerBrand: { position: 'absolute', left: 0, right: 0, top: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  footerBrandText: { marginLeft: 4, fontSize: 7, fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 },
+  footerPage: { position: 'absolute', right: 0, top: 0 },
 });
+
+// The stem + bowl mark from PracMetricsLogo.tsx (web), redrawn for @react-pdf/renderer.
+// idPrefix keeps gradient ids unique when the mark is rendered more than once per document.
+function PetLogoMark({ height = 20, idPrefix }: { height?: number; idPrefix: string }) {
+  const width = (height * 380) / 318;
+  return (
+    <Svg viewBox="20 22 380 318" style={{ width, height }}>
+      <Defs>
+        <LinearGradient id={`${idPrefix}-stem`} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#2f8bf9" />
+          <Stop offset="55%" stopColor="#1066e4" />
+          <Stop offset="100%" stopColor="#0246c2" />
+        </LinearGradient>
+        <LinearGradient id={`${idPrefix}-bowl`} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#1a2c4c" />
+          <Stop offset="100%" stopColor="#0c1830" />
+        </LinearGradient>
+      </Defs>
+      <Path d="M 160,128 L 248,128 L 114,330 L 26,330 Z" fill={`url(#${idPrefix}-stem)`} />
+      <Path d="M 96,30 L 344,42 L 388,112 L 200,250 L 235,180 L 330,118 L 150,78 Z" fill={`url(#${idPrefix}-bowl)`} />
+    </Svg>
+  );
+}
 
 function RecIndexBar({ label, value, max, barColor }: { label: string; value: number; max: number; barColor: string }) {
   const fillPct = `${Math.max(1, Math.round((value / max) * 100))}%`;
@@ -703,10 +733,15 @@ function RecommendationDocument({ recommendation, lang }: { recommendation: Reco
   return (
     <Document>
       <Page size="A4" style={recStyles.page}>
-        <Text style={recStyles.title}>{t.title}</Text>
-        <Text style={recStyles.subtitle}>
-          {t.generated}: {recommendation.updatedAt.split('T')[0]}
-        </Text>
+        <View style={recStyles.header}>
+          <PetLogoMark height={28} idPrefix="hdr" />
+          <View style={recStyles.headerText}>
+            <Text style={recStyles.title}>{t.title}</Text>
+            <Text style={recStyles.subtitle}>
+              {t.generated}: {recommendation.updatedAt.split('T')[0]}
+            </Text>
+          </View>
+        </View>
 
         {tei && pal && (
           <View style={[recStyles.teiCard, { backgroundColor: pal.bg, borderColor: pal.border }]}>
@@ -748,8 +783,14 @@ function RecommendationDocument({ recommendation, lang }: { recommendation: Reco
         )}
 
         <View style={recStyles.recFooter} fixed>
-          <Text>{t.title}</Text>
-          <Text render={({ pageNumber, totalPages }) => `${t.page} ${pageNumber} / ${totalPages}`} />
+          <View style={recStyles.footerBrand}>
+            <PetLogoMark height={9} idPrefix="ftr" />
+            <Text style={recStyles.footerBrandText}>PracMetrics</Text>
+          </View>
+          <Text
+            style={recStyles.footerPage}
+            render={({ pageNumber, totalPages }) => `${t.page} ${pageNumber} / ${totalPages}`}
+          />
         </View>
       </Page>
     </Document>
