@@ -86,8 +86,12 @@ const PAGE_CONTENT_W = 531;
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 9, fontFamily: FONT_FAMILY, color: C.text },
-  title: { fontSize: 18, marginBottom: 2 },
-  subtitle: { fontSize: 9, color: C.muted, marginBottom: 14 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 },
+  headerText: { marginLeft: 10 },
+  // lineHeight is pinned to 1 so the title+subtitle block has a deterministic
+  // height (18 + 2 + 9 = 29) that the header's PetLogoMark height is set to match.
+  title: { fontSize: 18, lineHeight: 1, marginBottom: 2 },
+  subtitle: { fontSize: 9, lineHeight: 1, color: C.muted },
   infoGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
   infoCell: { width: '33%', marginBottom: 6 },
   infoLabel: { fontSize: 7, color: C.muted, textTransform: 'uppercase' },
@@ -115,7 +119,10 @@ const styles = StyleSheet.create({
   col: { flex: 1, marginRight: 10 },
   colLast: { flex: 1 },
   chartRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  footer: { position: 'absolute', bottom: 16, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', fontSize: 7, color: C.muted },
+  footer: { position: 'absolute', bottom: 16, left: 32, right: 32, height: 12, fontSize: 7, color: C.muted },
+  footerBrand: { position: 'absolute', left: 0, right: 0, top: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  footerBrandText: { marginLeft: 4, fontSize: 7, fontWeight: 'bold', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  footerPage: { position: 'absolute', right: 0, top: 0 },
 });
 
 function pct(value: number, max: number): string {
@@ -473,10 +480,15 @@ function ReportDocument({ model }: { model: PdfReportModel }) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>{t.title}</Text>
-        <Text style={styles.subtitle}>
-          {t.generated}: {new Date(model.generatedAt).toLocaleString()}
-        </Text>
+        <View style={styles.header}>
+          <PetLogoMark height={29} idPrefix="rpt-hdr" />
+          <View style={styles.headerText}>
+            <Text style={styles.title}>{t.title}</Text>
+            <Text style={styles.subtitle}>
+              {t.generated}: {new Date(model.generatedAt).toLocaleString()}
+            </Text>
+          </View>
+        </View>
 
         {cells.length > 0 && (
           <View style={styles.infoGrid}>
@@ -604,8 +616,14 @@ function ReportDocument({ model }: { model: PdfReportModel }) {
         })}
 
         <View style={styles.footer} fixed>
-          <Text>{t.title}</Text>
-          <Text render={({ pageNumber, totalPages }) => `${t.page} ${pageNumber} / ${totalPages}`} />
+          <View style={styles.footerBrand}>
+            <PetLogoMark height={9} idPrefix="rpt-ftr" />
+            <Text style={styles.footerBrandText}>PracMetrics</Text>
+          </View>
+          <Text
+            style={styles.footerPage}
+            render={({ pageNumber, totalPages }) => `${t.page} ${pageNumber} / ${totalPages}`}
+          />
         </View>
       </Page>
     </Document>
