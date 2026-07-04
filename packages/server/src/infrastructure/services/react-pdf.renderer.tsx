@@ -592,7 +592,7 @@ function ReportDocument({ model }: { model: PdfReportModel }) {
           ) : null;
 
           return (
-            <View key={i} style={styles.drillBlock}>
+            <View key={i} style={styles.drillBlock} break>
               {/* Keep the drill header glued to its first chart so it never sits
                   alone at the foot of a page. */}
               <View wrap={false}>
