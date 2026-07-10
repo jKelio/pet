@@ -91,6 +91,9 @@ export function HistoryPage() {
     );
   };
 
+  const teamLabel = (tm: { ageClass: number | null; name: string }) =>
+    tm.ageClass != null ? `U${tm.ageClass} — ${tm.name}` : tm.name;
+
   const ownTeams = teams.filter((t) => t.kind === 'own');
   const externalTeams = teams.filter((t) => t.kind === 'external');
   const externalClubs = [...new Set(externalTeams.map((t) => t.externalClubName).filter(Boolean) as string[])];
@@ -229,7 +232,7 @@ export function HistoryPage() {
               className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               {visibleTeams.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+                <option key={t.id} value={t.id}>{teamLabel(t)}</option>
               ))}
             </select>
           )}
@@ -296,7 +299,7 @@ export function HistoryPage() {
                         <option value="">{t('sessions.chooseTeam')}</option>
                         {teams.map((tm) => (
                           <option key={tm.id} value={tm.id}>
-                            {tm.externalClubName ? `${tm.externalClubName} – ${tm.name}` : tm.name}
+                            {tm.externalClubName ? `${tm.externalClubName} – ${teamLabel(tm)}` : teamLabel(tm)}
                           </option>
                         ))}
                       </select>
