@@ -39,7 +39,7 @@ function makeSessionRepo(existing: null = null): SessionRepository {
   return {
     findById: mock(async () => existing),
     save: mock(async () => {}),
-    findByTeam: mock(async () => []),
+    findByTeam: mock(async () => ({ items: [], nextCursor: null })),
   } as unknown as SessionRepository;
 }
 
@@ -121,7 +121,7 @@ describe('SyncSessionUseCase', () => {
         updatedAt: existingCreatedAt,
       })),
       save: mock(async () => {}),
-      findByTeam: mock(async () => []),
+      findByTeam: mock(async () => ({ items: [], nextCursor: null })),
     } as unknown as SessionRepository;
 
     const useCase = new SyncSessionUseCase({
@@ -162,7 +162,7 @@ describe('SyncSessionUseCase', () => {
         updatedAt: '2026-01-01T10:00:00.000Z',
       })),
       save: mock(async () => {}),
-      findByTeam: mock(async () => []),
+      findByTeam: mock(async () => ({ items: [], nextCursor: null })),
     } as unknown as SessionRepository;
     const entitlement = makeEntitlement(false);
     const useCase = new SyncSessionUseCase({

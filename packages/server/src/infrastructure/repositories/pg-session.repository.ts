@@ -1,7 +1,7 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc, inArray, sql, type SQL } from 'drizzle-orm';
 import type { DbClient } from '../db/client.js';
 import { practiceSessions, drills, teams, tenants } from '../db/schema.js';
-import type { SessionRepository, FindSessionsOptions } from '../../domain/ports/session.repository.js';
+import type { SessionRepository, FindSessionsOptions, SessionPageResult } from '../../domain/ports/session.repository.js';
 import type { PracticeSession, Drill, PracticeInfo } from '@pet/shared';
 
 export class PgSessionRepository implements SessionRepository {
@@ -27,22 +27,59 @@ export class PgSessionRepository implements SessionRepository {
     return this.toEntity(row.session, drillRows, row.teamName, row.clubName);
   }
 
-  async findByTeam(teamId: string, tenantId: string, _options: FindSessionsOptions = {}): Promise<PracticeSession[]> {
-    const rows = await this.db
+  async findByTeam(teamId: string, tenantId: string, options: FindSessionsOptions = {}): Promise<SessionPageResult> {
+    const { limit, before } = options;
+    // Sessions without a practice date sort as -infinity, i.e. after everything else.
+    const dateKey = sql`coalesce(${practiceSessions.date}, '-infinity'::date)`;
+
+    const conditions: SQL[] = [
+      eq(practiceSessions.teamId, teamId),
+      eq(practiceSessions.tenantId, tenantId),
+    ];
+    if (before) {
+      conditions.push(
+        sql`(${dateKey}, ${practiceSessions.createdAt}, ${practiceSessions.id}) < (coalesce(${before.date}::date, '-infinity'::date), ${before.createdAt}::timestamptz, ${before.id}::uuid)`,
+      );
+    }
+
+    const query = this.db
       .select({ session: practiceSessions, teamName: teams.name, clubName: tenants.name })
       .from(practiceSessions)
       .innerJoin(teams, eq(teams.id, practiceSessions.teamId))
       .innerJoin(tenants, eq(tenants.id, practiceSessions.tenantId))
-      .where(and(eq(practiceSessions.teamId, teamId), eq(practiceSessions.tenantId, tenantId)));
+      .where(and(...conditions))
+      .orderBy(desc(dateKey), desc(practiceSessions.createdAt), desc(practiceSessions.id));
 
-    return Promise.all(rows.map(async (row) => {
-      const drillRows = await this.db
-        .select()
-        .from(drills)
-        .where(eq(drills.sessionId, row.session.id))
-        .orderBy(drills.sequenceNumber);
-      return this.toEntity(row.session, drillRows, row.teamName, row.clubName);
-    }));
+    // Fetch one extra row to know whether an older page exists.
+    const rows = limit != null ? await query.limit(limit + 1) : await query;
+    const pageRows = limit != null ? rows.slice(0, limit) : rows;
+    const hasMore = limit != null && rows.length > limit;
+
+    const sessionIds = pageRows.map((row) => row.session.id);
+    const drillRows = sessionIds.length > 0
+      ? await this.db
+          .select()
+          .from(drills)
+          .where(inArray(drills.sessionId, sessionIds))
+          .orderBy(drills.sequenceNumber)
+      : [];
+    const drillsBySession = new Map<string, typeof drillRows>();
+    for (const drill of drillRows) {
+      const list = drillsBySession.get(drill.sessionId);
+      if (list) list.push(drill);
+      else drillsBySession.set(drill.sessionId, [drill]);
+    }
+
+    const items = pageRows.map((row) =>
+      this.toEntity(row.session, drillsBySession.get(row.session.id) ?? [], row.teamName, row.clubName),
+    );
+
+    const last = pageRows[pageRows.length - 1];
+    const nextCursor = hasMore && last
+      ? { date: last.session.date, createdAt: last.session.createdAt.toISOString(), id: last.session.id }
+      : null;
+
+    return { items, nextCursor };
   }
 
   async save(session: PracticeSession): Promise<void> {

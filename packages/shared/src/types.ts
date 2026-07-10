@@ -76,6 +76,13 @@ export interface PracticeSession {
   updatedAt: string;
 }
 
+/** One page of a team's session history, newest practice first. */
+export interface SessionListPage {
+  items: PracticeSession[];
+  /** Opaque cursor for the next (older) page; null when there are no more. */
+  nextCursor: string | null;
+}
+
 // ─── Auth & Identity ──────────────────────────────────────────────────────────
 
 export type UserRole = 'admin' | 'member';

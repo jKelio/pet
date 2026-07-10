@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { SyncSessionUseCase } from '../../application/use-cases/sync-session.js';
 import type { DeleteSessionUseCase } from '../../application/use-cases/delete-session.js';
 import type { ListTeamSessionsUseCase } from '../../application/use-cases/list-team-sessions.js';
+import { InvalidCursorError } from '../../application/use-cases/list-team-sessions.js';
 import type { GetSessionUseCase } from '../../application/use-cases/get-session.js';
 import { SyncSessionSchema } from '@pet/shared';
 import { UnauthorizedError } from '../../application/use-cases/sync-session.js';
@@ -58,9 +59,10 @@ export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRou
     }
   });
 
-  // GET /sessions?teamId=xxx — list sessions for a team (view-scope enforced)
+  // GET /sessions?teamId=xxx&limit=20&cursor=yyy — paginated session list for a team,
+  // newest practice first (view-scope enforced)
   fastify.get('/sessions', async (request, reply) => {
-    const { teamId } = request.query as { teamId?: string };
+    const { teamId, limit, cursor } = request.query as { teamId?: string; limit?: string; cursor?: string };
     const tenantId = request.tenantId;
 
     if (!tenantId || !teamId) {
@@ -71,15 +73,31 @@ export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRou
       });
     }
 
+    let parsedLimit: number | undefined;
+    if (limit !== undefined) {
+      parsedLimit = Number(limit);
+      if (!Number.isInteger(parsedLimit) || parsedLimit < 1) {
+        return reply.code(400).send({
+          code: 'VALIDATION_ERROR',
+          message: 'limit must be a positive integer',
+          statusCode: 400,
+        });
+      }
+    }
+
     try {
-      const sessions = await deps.listTeamSessions.execute(teamId, {
-        userId: request.userId,
-        tenantId,
-      });
-      return reply.code(200).send(sessions);
+      const page = await deps.listTeamSessions.execute(
+        teamId,
+        { userId: request.userId, tenantId },
+        { limit: parsedLimit, cursor },
+      );
+      return reply.code(200).send(page);
     } catch (error) {
       if (error instanceof ForbiddenError) {
         return reply.code(403).send({ code: 'FORBIDDEN', message: error.message, statusCode: 403 });
+      }
+      if (error instanceof InvalidCursorError) {
+        return reply.code(400).send({ code: 'INVALID_CURSOR', message: error.message, statusCode: 400 });
       }
       throw error;
     }

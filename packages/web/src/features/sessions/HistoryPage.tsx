@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { History, Clock, Users, User, ChevronRight, Loader2, RefreshCw, Layers, UploadCloud, Trash2, HardDrive } from 'lucide-react';
+import { History, Clock, Users, User, ChevronDown, ChevronRight, Loader2, RefreshCw, Layers, UploadCloud, Trash2, HardDrive } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from '../admin/stores/admin.store.js';
@@ -31,6 +31,8 @@ function formatDuration(ms: number): string {
   return `${h} h ${m} min`;
 }
 
+const PAGE_SIZE = 20;
+
 export function HistoryPage() {
   const { t } = useTranslation('pet');
   const navigate = useNavigate();
@@ -40,8 +42,14 @@ export function HistoryPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [selectedClub, setSelectedClub] = useState<string>('');
   const [sessions, setSessions] = useState<PracticeSession[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  // Bumped on every fresh first-page load so stale responses (team switched
+  // mid-request) can't overwrite or append to the current list.
+  const listVersion = useRef(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const restoreFromDraft = useTrackingStore((s) => s.restoreFromDraft);
@@ -98,17 +106,53 @@ export function HistoryPage() {
     }
   }, [visibleTeams, selectedTeamId]);
 
-  // Load sessions when team changes
-  useEffect(() => {
+  const loadFirstPage = useCallback(() => {
     if (!selectedTeamId || !accessToken) return;
+    const version = ++listVersion.current;
     setLoading(true);
     setError(null);
+    setLoadMoreError(null);
     sessionApi
-      .listByTeam(selectedTeamId, accessToken)
-      .then(setSessions)
-      .catch(() => setError(t('sessions.loadError')))
-      .finally(() => setLoading(false));
-  }, [selectedTeamId, accessToken]);
+      .listByTeam(selectedTeamId, accessToken, { limit: PAGE_SIZE })
+      .then((page) => {
+        if (listVersion.current !== version) return;
+        setSessions(page.items);
+        setNextCursor(page.nextCursor);
+      })
+      .catch(() => {
+        if (listVersion.current === version) setError(t('sessions.loadError'));
+      })
+      .finally(() => {
+        if (listVersion.current === version) setLoading(false);
+      });
+  }, [selectedTeamId, accessToken, t]);
+
+  // Load the first page when the team changes
+  useEffect(() => {
+    setSessions([]);
+    setNextCursor(null);
+    loadFirstPage();
+  }, [loadFirstPage]);
+
+  const handleLoadMore = () => {
+    if (!nextCursor || !selectedTeamId || !accessToken || loadingMore) return;
+    const version = listVersion.current;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    sessionApi
+      .listByTeam(selectedTeamId, accessToken, { limit: PAGE_SIZE, cursor: nextCursor })
+      .then((page) => {
+        if (listVersion.current !== version) return;
+        setSessions((prev) => [...prev, ...page.items]);
+        setNextCursor(page.nextCursor);
+      })
+      .catch(() => {
+        if (listVersion.current === version) setLoadMoreError(t('sessions.loadMoreError'));
+      })
+      .finally(() => {
+        if (listVersion.current === version) setLoadingMore(false);
+      });
+  };
 
   const handleOpen = (session: PracticeSession) => {
     resetAll();
@@ -385,11 +429,7 @@ export function HistoryPage() {
         {error && !loading && (
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <p className="text-sm text-destructive">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedTeamId((id) => id)}
-            >
+            <Button variant="outline" size="sm" onClick={loadFirstPage}>
               <RefreshCw className="mr-1.5 h-4 w-4" />
               {t('sessions.retry')}
             </Button>
@@ -465,6 +505,27 @@ export function HistoryPage() {
                 </div>
               </div>
             ))}
+
+            {nextCursor && (
+              <div className="flex flex-col items-center gap-2 pt-2 pb-4">
+                {loadMoreError && (
+                  <p className="text-xs text-destructive">{loadMoreError}</p>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ChevronDown className="mr-1.5 h-4 w-4" />
+                  )}
+                  {t('sessions.loadMore')}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

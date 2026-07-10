@@ -32,7 +32,7 @@ const SESSION: PracticeSession = {
 function makeSessionRepo(existing: PracticeSession | null): SessionRepository {
   return {
     findById: mock(async () => existing),
-    findByTeam: mock(async () => []),
+    findByTeam: mock(async () => ({ items: [], nextCursor: null })),
     save: mock(async () => {}),
     delete: mock(async () => {}),
   } as unknown as SessionRepository;
