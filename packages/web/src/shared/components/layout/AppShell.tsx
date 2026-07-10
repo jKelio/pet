@@ -20,6 +20,7 @@ import { useAdminStore } from '../../../features/admin/stores/admin.store.js';
 import { useSyncPending } from '../../../features/sessions/hooks/useSyncPending.js';
 import { TenantSwitcher } from './TenantSwitcher.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
+import { ThemeSwitcher } from './ThemeSwitcher.js';
 import { PracMetricsLogo } from '../PracMetricsLogo.js';
 
 interface NavItem {
@@ -102,8 +103,9 @@ function SidebarNav({
         })}
       </div>
 
-      {/* Footer: language + logout */}
+      {/* Footer: theme + language + logout */}
       <div className="p-4 border-t border-border space-y-1">
+        <ThemeSwitcher />
         <LanguageSwitcher />
         {isAuthenticated && (
           <Button

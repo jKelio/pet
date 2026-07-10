@@ -9,21 +9,37 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#03101f" />
+    <meta name="theme-color" content="#f7fafc" />
     <meta name="description" content="PracMetrics – Train Smarter. Improve Performance." />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="PracMetrics" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>PracMetrics</title>
+    <script>
+      // Apply the theme before first paint to avoid a flash of the wrong
+      // palette. Mirrors the logic in shared/stores/theme.store.ts.
+      (function () {
+        try {
+          var pref = localStorage.getItem('pet-theme');
+          var dark = pref === 'dark' || (pref !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', dark ? '#03101f' : '#f7fafc');
+        } catch (e) { /* localStorage unavailable — keep light default */ }
+      })();
+    </script>
     <style>
       #splash {
         position: fixed; inset: 0; z-index: 9999;
-        background: radial-gradient(900px 600px at 50% -5%, #0d1c39, #03101f 60%);
+        background: radial-gradient(900px 600px at 50% -5%, #ffffff, #f1f5f9 60%);
         display: flex; align-items: center; justify-content: center;
         transition: opacity 0.25s ease;
       }
       #splash.fade { opacity: 0; pointer-events: none; }
+      #splash .sp-bowl { fill: url(#sp-nv); }
+      :root.dark #splash { background: radial-gradient(900px 600px at 50% -5%, #0d1c39, #03101f 60%); }
+      :root.dark #splash .sp-bowl { fill: url(#sp-wh); }
     </style>
   </head>
   <body>
@@ -39,9 +55,13 @@
             <stop offset="0.55" stop-color="#1066e4"/>
             <stop offset="1" stop-color="#0246c2"/>
           </linearGradient>
+          <linearGradient id="sp-nv" x1="0" y1="0" x2="0.18" y2="1">
+            <stop offset="0" stop-color="#1a2c4c"/>
+            <stop offset="1" stop-color="#0c1830"/>
+          </linearGradient>
         </defs>
         <path d="M 160,128 L 248,128 L 114,330 L 26,330 Z" fill="url(#sp-bl)"/>
-        <path d="M 96,30 L 344,42 L 388,112 L 200,250 L 235,180 L 330,118 L 150,78 Z" fill="url(#sp-wh)"/>
+        <path class="sp-bowl" d="M 96,30 L 344,42 L 388,112 L 200,250 L 235,180 L 330,118 L 150,78 Z"/>
       </svg>
     </div>
     <div id="root"></div>

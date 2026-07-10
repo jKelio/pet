@@ -5,13 +5,11 @@ type LogoVariant = 'stacked' | 'compact' | 'icon';
 
 interface PracMetricsLogoProps {
   variant?: LogoVariant;
-  onLight?: boolean;
   className?: string;
 }
 
 export function PracMetricsLogo({
   variant = 'compact',
-  onLight = false,
   className,
 }: PracMetricsLogoProps) {
   const id = useId();
@@ -30,13 +28,9 @@ export function PracMetricsLogo({
           <stop offset="55%" stopColor="#1066e4" />
           <stop offset="100%" stopColor="#0246c2" />
         </linearGradient>
-        <linearGradient id={`${id}-bowl-dark`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#c2cddc" />
-        </linearGradient>
-        <linearGradient id={`${id}-bowl-light`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1a2c4c" />
-          <stop offset="100%" stopColor="#0c1830" />
+        <linearGradient id={`${id}-bowl`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" style={{ stopColor: 'var(--logo-mark-from)' }} />
+          <stop offset="100%" style={{ stopColor: 'var(--logo-mark-to)' }} />
         </linearGradient>
       </defs>
       <path
@@ -45,7 +39,7 @@ export function PracMetricsLogo({
       />
       <path
         d="M 96,30 L 344,42 L 388,112 L 200,250 L 235,180 L 330,118 L 150,78 Z"
-        fill={onLight ? `url(#${id}-bowl-light)` : `url(#${id}-bowl-dark)`}
+        fill={`url(#${id}-bowl)`}
       />
     </svg>
   );
@@ -65,7 +59,7 @@ export function PracMetricsLogo({
     >
       <span
         style={{
-          background: 'linear-gradient(180deg, #ffffff, #cfd8e6)',
+          background: 'linear-gradient(180deg, var(--logo-word-from), var(--logo-word-to))',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',

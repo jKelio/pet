@@ -23,25 +23,47 @@
   --radius: 0.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-background: hsl(214 97% 7%);
-    --color-foreground: hsl(0 0% 100%);
-    --color-card: hsl(214 72% 12%);
-    --color-card-foreground: hsl(0 0% 100%);
-    --color-popover: hsl(214 72% 12%);
-    --color-popover-foreground: hsl(0 0% 100%);
-    --color-primary: hsl(214 92% 57%);
-    --color-primary-foreground: hsl(214 47% 11%);
-    --color-muted: hsl(214 33% 20%);
-    --color-muted-foreground: hsl(214 20% 65%);
-    --color-accent: hsl(214 92% 57%);
-    --color-accent-foreground: hsl(214 47% 11%);
-    --color-destructive: hsl(0 63% 31%);
-    --color-border: hsl(214 33% 25%);
-    --color-input: hsl(214 33% 25%);
-    --color-ring: hsl(214 92% 57%);
-  }
+/* Runtime dark-theme overrides, keyed on the .dark class that the inline
+   script in index.html sets before first paint (user preference from
+   localStorage 'pet-theme', falling back to the OS scheme). Deliberately
+   plain CSS, NOT a nested @theme: Tailwind v4 evaluates @theme at build time
+   and hoists it out of at-rules, which made the dark palette win for every
+   visitor. Overriding the emitted --color-* custom properties keeps
+   utilities, body, and direct var(--color-*) consumers (SVG timelines)
+   switchable at runtime. color-scheme aligns native form controls
+   (date-picker icon, scrollbars, selects) with the active palette. */
+:root {
+  color-scheme: light;
+  /* Brand logo parts that must contrast with the surface: navy on light,
+     white on dark (mark = SVG bowl, word = "PRAC" wordmark). */
+  --logo-mark-from: hsl(219 49% 20%);
+  --logo-mark-to: hsl(220 60% 12%);
+  --logo-word-from: hsl(219 49% 20%);
+  --logo-word-to: hsl(220 60% 12%);
+}
+
+:root.dark {
+  color-scheme: dark;
+  --logo-mark-from: hsl(0 0% 100%);
+  --logo-mark-to: hsl(216 25% 81%);
+  --logo-word-from: hsl(0 0% 100%);
+  --logo-word-to: hsl(213 25% 86%);
+  --color-background: hsl(214 97% 7%);
+  --color-foreground: hsl(0 0% 100%);
+  --color-card: hsl(214 72% 12%);
+  --color-card-foreground: hsl(0 0% 100%);
+  --color-popover: hsl(214 72% 12%);
+  --color-popover-foreground: hsl(0 0% 100%);
+  --color-primary: hsl(214 92% 57%);
+  --color-primary-foreground: hsl(214 47% 11%);
+  --color-muted: hsl(214 33% 20%);
+  --color-muted-foreground: hsl(214 20% 65%);
+  --color-accent: hsl(214 92% 57%);
+  --color-accent-foreground: hsl(214 47% 11%);
+  --color-destructive: hsl(0 63% 31%);
+  --color-border: hsl(214 33% 25%);
+  --color-input: hsl(214 33% 25%);
+  --color-ring: hsl(214 92% 57%);
 }
 
 @layer base {

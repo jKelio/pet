@@ -18,6 +18,11 @@ const resources = {
         appFeedback: 'Feedback',
         logout: 'Log out',
       },
+      theme: {
+        system: 'System',
+        light: 'Light',
+        dark: 'Dark',
+      },
       serverWakeup: {
         waking1: 'The server is waking up… ☕',
         waking2: 'Almost there, the server is stretching…',
@@ -459,6 +464,11 @@ const resources = {
         superAdmin: 'SuperAdmin',
         appFeedback: 'Feedback',
         logout: 'Abmelden',
+      },
+      theme: {
+        system: 'System',
+        light: 'Hell',
+        dark: 'Dunkel',
       },
       serverWakeup: {
         waking1: 'Der Server wacht gerade auf… ☕',
