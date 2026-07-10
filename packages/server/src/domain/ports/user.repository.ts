@@ -12,6 +12,8 @@ export interface UserRepository {
   save(user: User): Promise<void>;
   saveMagicLinkToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
   updateLastLogin(userId: string): Promise<void>;
+  findAll(): Promise<Array<User & { lastLoginAt: string | null }>>;
+  delete(id: string): Promise<void>;
 }
 
 export interface TenantRepository {
@@ -35,6 +37,7 @@ export interface MembershipRepository {
   findByUser(userId: string): Promise<Membership[]>;
   findByUserAndTenant(userId: string, tenantId: string): Promise<Membership | null>;
   findByTenant(tenantId: string): Promise<Membership[]>;
+  findAll(): Promise<Membership[]>;
   save(membership: Membership): Promise<void>;
   delete(id: string): Promise<void>;
 }

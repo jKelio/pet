@@ -9,6 +9,12 @@ import { NotFoundError as AddNotFoundError, ConflictError } from '../../applicat
 import type { SuperAdminSetPlanUseCase } from '../../application/use-cases/superadmin-set-plan.js';
 import { NotFoundError as PlanNotFoundError } from '../../application/use-cases/superadmin-set-plan.js';
 import type { OnboardTenantUseCase } from '../../application/use-cases/onboard-tenant.js';
+import type { SuperAdminListUsersUseCase } from '../../application/use-cases/superadmin-list-users.js';
+import type { SuperAdminDeleteUserUseCase } from '../../application/use-cases/superadmin-delete-user.js';
+import {
+  NotFoundError as DeleteUserNotFoundError,
+  ForbiddenError as DeleteUserForbiddenError,
+} from '../../application/use-cases/superadmin-delete-user.js';
 
 interface SuperAdminRoutesDeps {
   listTenants: SuperAdminListTenantsUseCase;
@@ -16,6 +22,8 @@ interface SuperAdminRoutesDeps {
   addClubAdmin: SuperAdminAddClubAdminUseCase;
   setPlan: SuperAdminSetPlanUseCase;
   onboardTenant: OnboardTenantUseCase;
+  listUsers: SuperAdminListUsersUseCase;
+  deleteUser: SuperAdminDeleteUserUseCase;
 }
 
 const CreateTenantSchema = z.object({
@@ -63,6 +71,29 @@ export function registerSuperAdminRoutes(fastify: FastifyInstance, deps: SuperAd
     } catch (err) {
       if (err instanceof DeleteNotFoundError) {
         return reply.code(404).send({ code: 'NOT_FOUND', message: err.message, statusCode: 404 });
+      }
+      throw err;
+    }
+  });
+
+  // GET /superadmin/users — all users across all tenants
+  fastify.get('/superadmin/users', async (_request, reply) => {
+    const users = await deps.listUsers.execute();
+    return reply.send(users);
+  });
+
+  // DELETE /superadmin/users/:id — hard-delete a user to block further access
+  fastify.delete('/superadmin/users/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      await deps.deleteUser.execute(id);
+      return reply.code(204).send();
+    } catch (err) {
+      if (err instanceof DeleteUserNotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: err.message, statusCode: 404 });
+      }
+      if (err instanceof DeleteUserForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
       }
       throw err;
     }

@@ -68,7 +68,8 @@ export interface PracticeSession {
   id: string;
   tenantId: string;
   teamId: string;
-  createdBy: string;
+  /** Null when the authoring user account was deleted. */
+  createdBy: string | null;
   practiceInfo: PracticeInfo;
   drills: Drill[];
   status: SessionStatus;
@@ -131,6 +132,16 @@ export interface TenantMembership {
   tenantId: string;
   tenantName: string;
   role: UserRole;
+}
+
+/** Global user row for the super-admin Users tab. */
+export interface SuperAdminUserDto {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  lastLoginAt: string | null;
+  tenants: TenantMembership[];
 }
 
 // ─── API Contracts ────────────────────────────────────────────────────────────
@@ -196,7 +207,8 @@ export interface Recommendation {
   document: RecommendationDocument;
   sourceUrls: string[];
   model: string;
-  createdBy: string;
+  /** Null when the authoring user account was deleted. */
+  createdBy: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -26,6 +26,8 @@ import { SuperAdminListTenantsUseCase } from '../../application/use-cases/supera
 import { SuperAdminDeleteTenantUseCase } from '../../application/use-cases/superadmin-delete-tenant.js';
 import { SuperAdminAddClubAdminUseCase } from '../../application/use-cases/superadmin-add-club-admin.js';
 import { SuperAdminSetPlanUseCase } from '../../application/use-cases/superadmin-set-plan.js';
+import { SuperAdminListUsersUseCase } from '../../application/use-cases/superadmin-list-users.js';
+import { SuperAdminDeleteUserUseCase } from '../../application/use-cases/superadmin-delete-user.js';
 import { GetMyTenantsUseCase } from '../../application/use-cases/get-my-tenants.js';
 import { SwitchTenantUseCase } from '../../application/use-cases/switch-tenant.js';
 import { ListLibraryEntriesUseCase } from '../../application/use-cases/list-library-entries.js';
@@ -86,6 +88,8 @@ declare module 'fastify' {
       superAdminDeleteTenant: SuperAdminDeleteTenantUseCase;
       superAdminAddClubAdmin: SuperAdminAddClubAdminUseCase;
       superAdminSetPlan: SuperAdminSetPlanUseCase;
+      superAdminListUsers: SuperAdminListUsersUseCase;
+      superAdminDeleteUser: SuperAdminDeleteUserUseCase;
       getMyTenants: GetMyTenantsUseCase;
       switchTenant: SwitchTenantUseCase;
       listLibraryEntries: ListLibraryEntriesUseCase;
@@ -207,6 +211,8 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   const superAdminDeleteTenant = new SuperAdminDeleteTenantUseCase({ tenantRepository });
   const superAdminAddClubAdmin = new SuperAdminAddClubAdminUseCase({ userRepository, membershipRepository, tenantRepository });
   const superAdminSetPlan = new SuperAdminSetPlanUseCase({ tenantRepository });
+  const superAdminListUsers = new SuperAdminListUsersUseCase({ userRepository, membershipRepository, tenantRepository });
+  const superAdminDeleteUser = new SuperAdminDeleteUserUseCase({ userRepository, superAdminEmails: config.superAdminEmails });
   const getMyTenants = new GetMyTenantsUseCase({ membershipRepository, tenantRepository });
   const switchTenant = new SwitchTenantUseCase({ userRepository, membershipRepository, tokenIssuer: tokenService });
 
@@ -270,6 +276,8 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     superAdminDeleteTenant,
     superAdminAddClubAdmin,
     superAdminSetPlan,
+    superAdminListUsers,
+    superAdminDeleteUser,
     getMyTenants,
     switchTenant,
     listLibraryEntries,

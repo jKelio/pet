@@ -68,7 +68,8 @@ export const practiceSessions = pgTable('practice_sessions', {
   id: uuid('id').primaryKey(),
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   teamId: uuid('team_id').notNull().references(() => teams.id),
-  createdBy: uuid('created_by').notNull().references(() => users.id),
+  /** Null when the authoring user account was deleted (superadmin user removal). */
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   date: date('date'),
   coachName: text('coach_name').notNull().default(''),
   athletesCount: integer('athletes_count').notNull().default(0),
@@ -147,7 +148,8 @@ export const sessionRecommendations = pgTable('session_recommendations', {
   document: jsonb('document').notNull(),
   sourceUrls: text('source_urls').array().notNull().default(sql`ARRAY[]::text[]`),
   model: text('model').notNull(),
-  createdBy: uuid('created_by').notNull().references(() => users.id),
+  /** Null when the authoring user account was deleted (superadmin user removal). */
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

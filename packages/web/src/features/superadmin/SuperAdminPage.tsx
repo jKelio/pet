@@ -9,10 +9,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../shared/component
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { superAdminApi, type CreateTenantInput } from './api/superadmin.api.js';
 import { KnowledgeLibrarySection } from './components/KnowledgeLibrarySection.js';
+import { UsersSection } from './components/UsersSection.js';
 import { ApiClientError } from '../../shared/lib/api-client.js';
-import { TENANT_PLANS, type Tenant, type TenantPlan } from '@pet/shared';
+import { TENANT_PLANS, type Tenant, type TenantPlan, type SuperAdminUserDto } from '@pet/shared';
 
-const VALID_TABS = ['tenants', 'library'] as const;
+const VALID_TABS = ['tenants', 'users', 'library'] as const;
 type SuperAdminTab = (typeof VALID_TABS)[number];
 const DEFAULT_TAB: SuperAdminTab = 'tenants';
 
@@ -144,6 +145,7 @@ export function SuperAdminPage() {
   const { t } = useTranslation('pet');
   const accessToken = useAuthStore((s) => s.accessToken);
   const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [users, setUsers] = useState<SuperAdminUserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,7 +164,15 @@ export function SuperAdminPage() {
         else setError(err.message);
       })
       .finally(() => setLoading(false));
-  }, [accessToken]);
+    superAdminApi.listUsers(accessToken)
+      .then(setUsers)
+      .catch((err) => {
+        // 403 already surfaces as the forbidden screen via the tenants fetch
+        if (!(err instanceof ApiClientError && err.statusCode === 403)) {
+          setError(t('superadmin.errorLoadUsers'));
+        }
+      });
+  }, [accessToken, t]);
 
   const handleTabChange = (value: string) => {
     const tab = value as SuperAdminTab;
@@ -246,6 +256,7 @@ export function SuperAdminPage() {
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="tenants">{t('superadmin.tenants')} ({tenants.length})</TabsTrigger>
+            <TabsTrigger value="users">{t('superadmin.usersTab')} ({users.length})</TabsTrigger>
             <TabsTrigger value="library">{t('library.title')}</TabsTrigger>
           </TabsList>
 
@@ -320,6 +331,10 @@ export function SuperAdminPage() {
                 ))}
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="users">
+            {accessToken && <UsersSection accessToken={accessToken} users={users} onUsersChange={setUsers} />}
           </TabsContent>
 
           <TabsContent value="library">

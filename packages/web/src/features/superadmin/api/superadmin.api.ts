@@ -1,5 +1,5 @@
 import { apiClient } from '../../../shared/lib/api-client.js';
-import type { Tenant, Membership, TenantPlan, LibraryEntry, Sport } from '@pet/shared';
+import type { Tenant, Membership, TenantPlan, LibraryEntry, Sport, SuperAdminUserDto } from '@pet/shared';
 
 export interface CreateTenantInput {
   tenantName: string;
@@ -30,6 +30,13 @@ export const superAdminApi = {
 
   setPlan: (tenantId: string, plan: TenantPlan, accessToken: string) =>
     apiClient.patch<Tenant>(`/superadmin/tenants/${tenantId}/plan`, { plan }, accessToken),
+
+  // ── Global users ──
+  listUsers: (accessToken: string) =>
+    apiClient.get<SuperAdminUserDto[]>('/superadmin/users', accessToken),
+
+  deleteUser: (userId: string, accessToken: string) =>
+    apiClient.delete<void>(`/superadmin/users/${userId}`, accessToken),
 
   // ── Global knowledge library ──
   listLibrary: (accessToken: string) =>

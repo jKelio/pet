@@ -99,7 +99,10 @@ async function build() {
   await fastify.register(diPlugin, config);
 
   // Auth middleware decorator
-  await fastify.register(fp(authMiddlewarePlugin), { tokenService: fastify.tokenService });
+  await fastify.register(fp(authMiddlewarePlugin), {
+    tokenService: fastify.tokenService,
+    userRepository: fastify.repos.user,
+  });
   await fastify.register(fp(superAdminMiddlewarePlugin), { superAdminEmails: config.superAdminEmails });
 
   // Routes
@@ -142,6 +145,8 @@ async function build() {
       addClubAdmin: fastify.useCases.superAdminAddClubAdmin,
       setPlan: fastify.useCases.superAdminSetPlan,
       onboardTenant: fastify.useCases.onboardTenant,
+      listUsers: fastify.useCases.superAdminListUsers,
+      deleteUser: fastify.useCases.superAdminDeleteUser,
     });
   });
 

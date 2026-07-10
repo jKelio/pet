@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import type { DbClient } from '../db/client.js';
 import { users, memberships } from '../db/schema.js';
 import type { UserRepository, MembershipRepository } from '../../domain/ports/user.repository.js';
@@ -56,6 +56,18 @@ export class PgUserRepository implements UserRepository {
       .where(eq(users.id, userId));
   }
 
+  async findAll(): Promise<Array<User & { lastLoginAt: string | null }>> {
+    const rows = await this.db.select().from(users).orderBy(desc(users.createdAt));
+    return rows.map((row) => ({
+      ...this.toUser(row),
+      lastLoginAt: row.lastLoginAt?.toISOString() ?? null,
+    }));
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(users).where(eq(users.id, id));
+  }
+
   private toUser(row: typeof users.$inferSelect): User {
     return {
       id: row.id,
@@ -100,6 +112,11 @@ export class PgMembershipRepository implements MembershipRepository {
       .select()
       .from(memberships)
       .where(eq(memberships.tenantId, tenantId));
+    return rows.map(this.toMembership);
+  }
+
+  async findAll(): Promise<Membership[]> {
+    const rows = await this.db.select().from(memberships);
     return rows.map(this.toMembership);
   }
 
