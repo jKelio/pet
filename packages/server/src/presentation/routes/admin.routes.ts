@@ -31,6 +31,7 @@ function isTeamAlreadyExistsError(err: unknown): err is { code: string; message:
 const OnboardSchema = z.object({
   tenantName: z.string().trim().min(1).max(100),
   teamName: z.string().trim().min(1).max(100),
+  ageClass: z.number().int().min(7).max(21),
 });
 
 interface AdminRoutesDeps {

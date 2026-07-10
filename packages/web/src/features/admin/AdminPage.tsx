@@ -40,12 +40,14 @@ function OnboardingForm({ accessToken }: { accessToken: string }) {
   const { t } = useTranslation('pet');
   const [tenantName, setTenantName] = useState('');
   const [teamName, setTeamName] = useState('');
+  const [ageClass, setAgeClass] = useState('');
   const { onboard, loading, error } = useAdminStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tenantName.trim() || !teamName.trim()) return;
-    await onboard(tenantName.trim(), teamName.trim(), accessToken);
+    const age = parseInt(ageClass, 10);
+    if (!tenantName.trim() || !teamName.trim() || !ageClass || age < 7 || age > 21) return;
+    await onboard(tenantName.trim(), teamName.trim(), age, accessToken);
   };
 
   return (
@@ -78,6 +80,20 @@ function OnboardingForm({ accessToken }: { accessToken: string }) {
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
               placeholder={t('admin.firstTeamPlaceholder')}
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="onboardAgeClass">{t('admin.ageClassLabel')}</Label>
+            <Input
+              id="onboardAgeClass"
+              type="number"
+              min={7}
+              max={21}
+              value={ageClass}
+              onChange={(e) => setAgeClass(e.target.value)}
+              placeholder={t('admin.ageClassPlaceholder')}
               required
             />
           </div>

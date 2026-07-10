@@ -4,6 +4,8 @@ import type { Tenant, Membership, TenantPlan, LibraryEntry, Sport } from '@pet/s
 export interface CreateTenantInput {
   tenantName: string;
   teamName: string;
+  ageClass: number;
+  adminName: string;
   adminEmail: string;
 }
 

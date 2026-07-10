@@ -24,13 +24,16 @@ export class SuperAdminAddClubAdminUseCase {
     tenantRepository: TenantRepository;
   }) {}
 
-  async execute(tenantId: string, email: string): Promise<Membership> {
+  async execute(tenantId: string, email: string, name?: string): Promise<Membership> {
     const tenant = await this.deps.tenantRepository.findById(tenantId);
     if (!tenant) throw new NotFoundError('Tenant not found');
 
     let user = await this.deps.userRepository.findByEmail(email);
     if (!user) {
-      user = { id: crypto.randomUUID(), email, name: '', createdAt: new Date().toISOString() };
+      user = { id: crypto.randomUUID(), email, name: name ?? '', createdAt: new Date().toISOString() };
+      await this.deps.userRepository.save(user);
+    } else if (name && !user.name) {
+      user = { ...user, name };
       await this.deps.userRepository.save(user);
     }
 

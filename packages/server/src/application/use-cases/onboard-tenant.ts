@@ -14,6 +14,7 @@ export interface OnboardTenantDeps {
 export interface OnboardTenantInput {
   tenantName: string;
   teamName: string;
+  ageClass: number;
 }
 
 export interface OnboardTenantResult {
@@ -53,7 +54,7 @@ export class OnboardTenantUseCase {
       id: teamId,
       tenantId,
       name: input.teamName.trim(),
-      ageClass: null,
+      ageClass: input.ageClass,
       kind: 'own',
       externalClubName: null,
       createdAt: now,

@@ -21,6 +21,8 @@ interface SuperAdminRoutesDeps {
 const CreateTenantSchema = z.object({
   tenantName: z.string().trim().min(1).max(100),
   teamName: z.string().trim().min(1).max(100),
+  ageClass: z.number().int().min(7).max(21),
+  adminName: z.string().trim().min(1).max(100),
   adminEmail: z.string().email(),
 });
 
@@ -44,9 +46,9 @@ export function registerSuperAdminRoutes(fastify: FastifyInstance, deps: SuperAd
     if (!result.success) {
       return reply.code(400).send({ code: 'VALIDATION_ERROR', message: result.error.issues[0].message, statusCode: 400 });
     }
-    const { tenantName, teamName, adminEmail } = result.data;
-    const onboarding = await deps.onboardTenant.execute({ tenantName, teamName }, request.userId);
-    await deps.addClubAdmin.execute(onboarding.tenant.id, adminEmail).catch(() => {
+    const { tenantName, teamName, ageClass, adminName, adminEmail } = result.data;
+    const onboarding = await deps.onboardTenant.execute({ tenantName, teamName, ageClass }, request.userId);
+    await deps.addClubAdmin.execute(onboarding.tenant.id, adminEmail, adminName).catch(() => {
       // Tenant was created — admin email may already be the onboarding user; ignore conflict
     });
     return reply.code(201).send(onboarding);

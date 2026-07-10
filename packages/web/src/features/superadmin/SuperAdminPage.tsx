@@ -23,18 +23,28 @@ function readHashTab(): SuperAdminTab {
 
 function CreateTenantForm({ accessToken, onCreated }: { accessToken: string; onCreated: () => void }) {
   const { t } = useTranslation('pet');
+  const emptyForm = { tenantName: '', teamName: '', ageClass: '', adminName: '', adminEmail: '' };
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<CreateTenantInput>({ tenantName: '', teamName: '', adminEmail: '' });
+  const [form, setForm] = useState(emptyForm);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    const age = parseInt(form.ageClass, 10);
+    if (!form.ageClass || age < 7 || age > 21) return;
     setCreating(true);
     setError(null);
     try {
-      await superAdminApi.createTenant(form, accessToken);
-      setForm({ tenantName: '', teamName: '', adminEmail: '' });
+      const input: CreateTenantInput = {
+        tenantName: form.tenantName.trim(),
+        teamName: form.teamName.trim(),
+        ageClass: age,
+        adminName: form.adminName.trim(),
+        adminEmail: form.adminEmail.trim(),
+      };
+      await superAdminApi.createTenant(input, accessToken);
+      setForm(emptyForm);
       setOpen(false);
       onCreated();
     } catch (err) {
@@ -76,6 +86,29 @@ function CreateTenantForm({ accessToken, onCreated }: { accessToken: string; onC
             placeholder={t('superadmin.firstTeamPlaceholder')}
             value={form.teamName}
             onChange={(e) => setForm((f) => ({ ...f, teamName: e.target.value }))}
+            required
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="createAgeClass">{t('admin.ageClassLabel')}</Label>
+          <Input
+            id="createAgeClass"
+            type="number"
+            min={7}
+            max={21}
+            placeholder={t('admin.ageClassPlaceholder')}
+            value={form.ageClass}
+            onChange={(e) => setForm((f) => ({ ...f, ageClass: e.target.value }))}
+            required
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="adminName">{t('superadmin.adminNameLabel')}</Label>
+          <Input
+            id="adminName"
+            placeholder={t('superadmin.adminNamePlaceholder')}
+            value={form.adminName}
+            onChange={(e) => setForm((f) => ({ ...f, adminName: e.target.value }))}
             required
           />
         </div>

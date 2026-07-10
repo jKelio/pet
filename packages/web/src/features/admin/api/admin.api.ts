@@ -13,6 +13,7 @@ export interface MyProfile {
 export interface OnboardPayload {
   tenantName: string;
   teamName: string;
+  ageClass: number;
 }
 
 export interface OnboardResult {

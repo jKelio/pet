@@ -22,7 +22,7 @@ interface AdminState {
   error: string | null;
 
   loadProfile: (accessToken: string) => Promise<void>;
-  onboard: (tenantName: string, teamName: string, accessToken: string) => Promise<void>;
+  onboard: (tenantName: string, teamName: string, ageClass: number, accessToken: string) => Promise<void>;
   createTeam: (name: string, ageClass: number, accessToken: string) => Promise<void>;
   createExternalTeam: (name: string, externalClubName: string, ageClass: number, accessToken: string) => Promise<Team>;
   loadMembers: (accessToken: string) => Promise<void>;
@@ -65,10 +65,10 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      onboard: async (tenantName, teamName, accessToken) => {
+      onboard: async (tenantName, teamName, ageClass, accessToken) => {
         set({ loading: true, error: null });
         try {
-          const result = await adminApi.onboard({ tenantName, teamName }, accessToken);
+          const result = await adminApi.onboard({ tenantName, teamName, ageClass }, accessToken);
           set({
             tenant: result.tenant,
             membership: result.membership,
