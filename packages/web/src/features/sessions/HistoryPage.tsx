@@ -13,6 +13,7 @@ import { resolveSyncTeamId } from './lib/sessionSync.js';
 import type { SavedSession } from './lib/db.js';
 import i18n from '../../lib/i18n.js';
 import type { PracticeSession } from '@pet/shared';
+import { getEffectiveDurationMs } from '@pet/shared';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(i18n.language, {
@@ -423,7 +424,7 @@ export function HistoryPage() {
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
-                    {formatDuration(session.practiceInfo.totalTime)}
+                    {formatDuration(getEffectiveDurationMs(session))}
                   </span>
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" />

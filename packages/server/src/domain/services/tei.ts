@@ -1,9 +1,9 @@
 import type { PracticeSession, TeiScores } from '@pet/shared';
-import { PUCK_TIMER_IDS, PASSIVE_TIMER_IDS, TIME_STATIONARY } from '@pet/shared';
+import { PUCK_TIMER_IDS, PASSIVE_TIMER_IDS, TIME_STATIONARY, getEffectiveDurationMs } from '@pet/shared';
 
 export function computeTei(session: PracticeSession): TeiScores {
-  const totalMs = session.practiceInfo.totalTime;
-  if (!totalMs) {
+  const totalMs = getEffectiveDurationMs(session);
+  if (totalMs <= 0) {
     return { activity: 10, coaching: 5, repetitions: 5, organisation: 5, total: 25, grade: 'F' };
   }
 

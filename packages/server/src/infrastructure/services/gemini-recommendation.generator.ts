@@ -1,5 +1,6 @@
 import type { AiRecommendationGenerator, AiProgressEvent, GenerateRecommendationInput } from '../../domain/ports/ai-recommendation.generator.js';
 import type { RecommendationDocument, TeiScores, PracticeSession, Drill } from '@pet/shared';
+import { getEffectiveDurationMs } from '@pet/shared';
 
 export class RecommendationGenerationError extends Error {
   readonly statusCode = 502;
@@ -29,7 +30,7 @@ export function normalizeRecommendationDocument(raw: Record<string, unknown>): R
 
 function formatSessionSummary(session: PracticeSession): string {
   const info = session.practiceInfo;
-  const totalMinutes = Math.round(info.totalTime / 60000);
+  const totalMinutes = Math.round(getEffectiveDurationMs(session) / 60_000);
   const wasteMinutes = Math.round((info.wasteTime?.totalTime ?? 0) / 60000);
   const wastePercent = totalMinutes > 0 ? Math.round((wasteMinutes / totalMinutes) * 100) : 0;
 

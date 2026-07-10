@@ -52,6 +52,7 @@ export interface PracticeInfo {
   coachName: string;
   athletesNumber: number;
   coachesNumber: number;
+  /** Planned/actual total practice duration, in minutes (not ms — unlike TimerData.totalTime). */
   totalTime: number;
   trackedPlayerName: string;
   drillsNumber: number;
