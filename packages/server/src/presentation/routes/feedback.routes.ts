@@ -13,6 +13,7 @@ const TYPE_META: Record<FeedbackType, { prefix: string; label: string }> = {
 };
 
 const TITLE_MAX = 60;
+const MAX_SCREENSHOTS = 3;
 
 function buildTitle(type: FeedbackType, text: string): string {
   const { prefix } = TYPE_META[type];
@@ -68,7 +69,7 @@ export function registerFeedbackRoutes(fastify: FastifyInstance, deps: FeedbackR
 
     let type: FeedbackType = 'general';
     let text = '';
-    let screenshotUrl: string | undefined;
+    const screenshotUrls: string[] = [];
 
     for await (const part of parts) {
       if (part.type === 'field') {
@@ -78,17 +79,17 @@ export function registerFeedbackRoutes(fastify: FastifyInstance, deps: FeedbackR
           text = (part.value as string).trim();
         }
       } else if (part.type === 'file' && part.fieldname === 'screenshot') {
-        if (part.mimetype.startsWith('image/')) {
+        if (part.mimetype.startsWith('image/') && screenshotUrls.length < MAX_SCREENSHOTS) {
           const buffer = await part.toBuffer();
           if (buffer.length > 0) {
             try {
-              screenshotUrl = await uploadScreenshot(buffer, part.mimetype, deps.githubPat);
+              screenshotUrls.push(await uploadScreenshot(buffer, part.mimetype, deps.githubPat));
             } catch (err) {
               fastify.log.warn({ err }, 'Screenshot upload to GitHub failed, submitting without it');
             }
           }
         } else {
-          await part.toBuffer(); // drain to avoid hanging
+          await part.toBuffer(); // drain to avoid hanging (wrong mimetype, or cap already reached)
         }
       }
     }
@@ -102,7 +103,7 @@ export function registerFeedbackRoutes(fastify: FastifyInstance, deps: FeedbackR
     const { label } = TYPE_META[type];
 
     const bodyLines = [`**From:** ${displayName}`, '', text];
-    if (screenshotUrl) bodyLines.push('', `![screenshot](${screenshotUrl})`);
+    for (const url of screenshotUrls) bodyLines.push('', `![screenshot](${url})`);
 
     const ghRes = await fetch(`${GH_API}/repos/${REPO}/issues`, {
       method: 'POST',

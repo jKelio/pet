@@ -16,6 +16,8 @@ const TYPES: { value: FeedbackType; labelKey: string }[] = [
   { value: 'general', labelKey: 'appFeedback.typeGeneral' },
 ];
 
+const MAX_SCREENSHOTS = 3;
+
 export function AppFeedbackPage() {
   const { t } = useTranslation('pet');
   const { accessToken } = useAuth();
@@ -23,17 +25,17 @@ export function AppFeedbackPage() {
 
   const [type, setType] = useState<FeedbackType>('general');
   const [text, setText] = useState('');
-  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshots, setScreenshots] = useState<File[]>([]);
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setScreenshot(file);
+    const files = Array.from(e.target.files ?? []);
+    setScreenshots((prev) => [...prev, ...files].slice(0, MAX_SCREENSHOTS));
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const removeScreenshot = () => {
-    setScreenshot(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  const removeScreenshot = (index: number) => {
+    setScreenshots((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,12 +47,12 @@ export function AppFeedbackPage() {
       const form = new FormData();
       form.append('type', type);
       form.append('text', text.trim());
-      if (screenshot) form.append('screenshot', screenshot);
+      screenshots.forEach((file) => form.append('screenshot', file));
 
       await apiClient.postForm('/app-feedback', form, accessToken ?? undefined);
       setStatus('success');
       setText('');
-      removeScreenshot();
+      setScreenshots([]);
       setType('general');
     } catch {
       setStatus('error');
@@ -106,15 +108,16 @@ export function AppFeedbackPage() {
 
             <div className="space-y-2">
               <Label className="block">{t('appFeedback.screenshotLabel')}</Label>
-              {screenshot ? (
-                <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+              {screenshots.map((file, index) => (
+                <div key={`${file.name}-${index}`} className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
                   <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate flex-1">{screenshot.name}</span>
-                  <button type="button" onClick={removeScreenshot} className="shrink-0 text-muted-foreground hover:text-foreground">
+                  <span className="truncate flex-1">{file.name}</span>
+                  <button type="button" onClick={() => removeScreenshot(index)} className="shrink-0 text-muted-foreground hover:text-foreground">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-              ) : (
+              ))}
+              {screenshots.length < MAX_SCREENSHOTS ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -124,11 +127,14 @@ export function AppFeedbackPage() {
                   <Paperclip className="h-4 w-4" />
                   {t('appFeedback.screenshotButton')}
                 </Button>
+              ) : (
+                <p className="text-xs text-muted-foreground">{t('appFeedback.screenshotMaxReached')}</p>
               )}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
                 onChange={handleFileChange}
               />

@@ -20,4 +20,5 @@ The abuse surface concern from ADR 0005 is mitigated by making the route JWT-aut
 - `GITHUB_PAT` is a new required secret in production and in `.env.example` — rotation is now an ops concern.
 - Issues are created under the bot identity (the PAT owner), not per-member attribution. The issue body carries `**From:** <display name>` to preserve human attribution.
 - `buildIssueUrl.ts` and its tests are deleted; the URL-building logic moves server-side.
-- Screenshot upload uses GitHub's undocumented asset upload endpoint (`https://uploads.github.com/repos/{owner}/{repo}/issues/assets`). If GitHub changes this endpoint, screenshots silently disappear from issues until updated — the fallback is to submit without the image rather than block the whole form.
+- Screenshot upload uses GitHub's Contents API (`PUT /repos/{owner}/{repo}/contents/{path}`), writing each screenshot directly into the repo under `feedback-screenshots/` as an individual commit. If this call fails, that screenshot silently disappears from the issue — the fallback is to submit without it rather than block the whole form.
+- Up to 3 screenshots may be attached per submission (each one its own commit); a member can attach more than one, but the count is capped both client-side and server-side to bound the number of commits a single feedback submission can generate against the public repo.
