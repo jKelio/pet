@@ -67,6 +67,7 @@ export function HistoryPage() {
   const syncErrors = useLocalSessionsStore((s) => s.errors);
   const loadPending = useLocalSessionsStore((s) => s.loadPending);
   const syncOne = useLocalSessionsStore((s) => s.syncOne);
+  const syncedVersion = useLocalSessionsStore((s) => s.syncedVersion);
   const deleteOne = useLocalSessionsStore((s) => s.deleteOne);
   const clearLocalOnly = useLocalSessionsStore((s) => s.clearLocalOnly);
   const updateLocalPracticeInfo = useLocalSessionsStore((s) => s.updatePracticeInfo);
@@ -144,6 +145,12 @@ export function HistoryPage() {
     setNextCursor(null);
     loadFirstPage();
   }, [loadFirstPage]);
+
+  // Refresh the cloud list after a successful sync so the synced entry
+  // moves from the outbox into the list without a page reload.
+  useEffect(() => {
+    if (syncedVersion > 0) loadFirstPage();
+  }, [syncedVersion, loadFirstPage]);
 
   const handleLoadMore = () => {
     if (!nextCursor || !selectedTeamId || !accessToken || loadingMore) return;

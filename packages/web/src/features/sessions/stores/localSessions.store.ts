@@ -10,6 +10,8 @@ interface LocalSessionsStore {
   syncingIds: string[];
   /** Per-session sync error messages, keyed by session id. */
   errors: Record<string, string>;
+  /** Bumped after every successful sync so views can refresh the cloud list. */
+  syncedVersion: number;
 
   loadPending: () => Promise<void>;
   syncOne: (id: string, accessToken: string, teamId: string) => Promise<void>;
@@ -27,6 +29,7 @@ export const useLocalSessionsStore = create<LocalSessionsStore>()((set, get) => 
   pending: [],
   syncingIds: [],
   errors: {},
+  syncedVersion: 0,
 
   loadPending: async () => {
     const rows = await db.sessions.toArray();
@@ -43,6 +46,7 @@ export const useLocalSessionsStore = create<LocalSessionsStore>()((set, get) => 
     }));
     try {
       await syncSession(session, accessToken, teamId);
+      set((s) => ({ syncedVersion: s.syncedVersion + 1 }));
     } catch (err) {
       set((s) => ({
         errors: { ...s.errors, [id]: err instanceof Error ? err.message : 'sync failed' },
@@ -55,16 +59,19 @@ export const useLocalSessionsStore = create<LocalSessionsStore>()((set, get) => 
 
   syncAllPending: async (accessToken, teams) => {
     await get().loadPending();
+    let syncedCount = 0;
     for (const session of get().pending) {
       if (session.localOnly) continue; // foreign/scouting session — never sync
       const teamId = resolveSyncTeamId(session, teams);
       if (!teamId) continue; // ambiguous team — needs a manual pick
       try {
         await syncSession(session, accessToken, teamId);
+        syncedCount++;
       } catch {
         // Leave failed sessions in the outbox; they retry on next reconnect.
       }
     }
+    if (syncedCount > 0) set((s) => ({ syncedVersion: s.syncedVersion + 1 }));
     await get().loadPending();
   },
 
