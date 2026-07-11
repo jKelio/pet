@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Timer,
+  Zap,
   History,
   Users,
   BookOpen,
@@ -34,6 +35,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.tracking', href: '/', icon: Timer, requiresAuth: true, requiresPermission: 'sessions:track' },
+  { labelKey: 'nav.drillTracker', href: '/drill', icon: Zap, requiresAuth: true, requiresPermission: 'sessions:track' },
   { labelKey: 'nav.history', href: '/history', icon: History, requiresAuth: true },
   { labelKey: 'nav.glossary', href: '/glossary', icon: BookOpen, requiresAuth: false },
   { labelKey: 'nav.admin', href: '/admin', icon: Users, requiresAuth: true },

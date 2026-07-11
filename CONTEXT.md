@@ -34,6 +34,25 @@ _Avoid_: Segment (reserved for a single timer start/stop interval), bout.
 The on-screen charts, KPI cards, and timelines shown immediately after a Completed Session finishes, or when re-opening a session from the History view. A transient view — it exists only in the context of one specific session and is reached either (a) automatically after finishing live tracking, or (b) via "View results" in the History view. It is not a persistent navigation destination; there is no sidebar link. Direct access to `/sessions` without session data in the store redirects to the History view. Distinct from the [[PDF Report]], which is a generated document artifact.
 _Avoid_: Results page, Ergebnisse, Trainingsergebnisse.
 
+### Trackers
+
+**Tracker**:
+One of the two top-level tracking surfaces a member enters to log on-ice data: the [[Training Tracker]] or the [[Drill Tracker]]. Each is its own navigation destination; "Tracker" is the umbrella term.
+_Avoid_: mode, tracking mode (in code `TrackingMode` already denotes the setup-wizard step; never reuse it for this concept).
+
+**Training Tracker** (DE: Trainings-Tracker):
+The full-featured Tracker for a whole practice session, offering the choice between a [[Planned Session]] and an [[Open Session]] and the complete session lifecycle (Completed Session, History, [[Cloud Sync]], [[PDF Report]], [[Recommendation]]).
+_Avoid_: session tracker, full mode.
+
+**Drill Tracker** (DE: Drill-Tracker):
+The lightweight Tracker for a single drill: zero setup, straight onto the live surface with the unrestricted action set of an [[Open Session]]. Produces a [[Drill Run]], not a Session.
+_Avoid_: quick track, observer mode, drill mode.
+
+**Drill Run**:
+One ephemeral use of the [[Drill Tracker]]: exactly one [[Drill]], evaluated on screen with the per-drill results block (action timeline, time distribution, action counts) and optionally exported as a [[PDF Report]] (same metered [[Entitlement]], counted per Drill Run; the tracked player's name is asked at export time, not upfront). Never stored as a Completed Session — no History entry, no [[Cloud Sync]], no [[Recommendation]]; closing the evaluation discards it.
+_Note_: while live, a Drill Run autosaves as a draft for crash recovery — "ephemeral" describes after completion, not during. There is deliberately no path converting a Drill Run into a Session; a member who wants the whole practice starts the [[Training Tracker]] afresh.
+_Avoid_: drill session, quick session, ephemeral session.
+
 ### Sessions
 
 **Planned Session**:

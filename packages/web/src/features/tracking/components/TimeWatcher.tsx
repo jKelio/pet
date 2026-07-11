@@ -11,6 +11,7 @@ import { useTrackingStore } from '../stores/tracking.store.js';
 import { useTimerStore, formatTime } from '../stores/timer.store.js';
 import { useTimerEngine } from '../hooks/useTimerEngine.js';
 import { hapticTick } from '../lib/tapFeedback.js';
+import { drillRunHasData } from '../hooks/useDraftPersistence.js';
 import { DrillTagSelector } from './DrillTagSelector.js';
 
 interface Props {
@@ -24,6 +25,7 @@ export function TimeWatcher({ onFinish }: Props) {
   useTimerEngine();
 
   const drills = useTrackingStore((s) => s.drills);
+  const isDrillRun = useTrackingStore((s) => s.tracker) === 'drill';
   const currentDrillIndex = useTrackingStore((s) => s.currentDrillIndex);
   const setCurrentDrillIndex = useTrackingStore((s) => s.setCurrentDrillIndex);
   const sessionType = useTrackingStore((s) => s.sessionType);
@@ -57,10 +59,12 @@ export function TimeWatcher({ onFinish }: Props) {
   const enabledActions = currentDrill?.actionButtons.filter((a) => a.enabled) ?? [];
   const isLastDrill = currentDrillIndex === drills.length - 1;
 
-  // Begin gap tracking on mount
+  // Begin gap tracking on mount. A Drill Run has no session clock, so it never
+  // opens session-level gap segments.
   useEffect(() => {
+    if (isDrillRun) return;
     startTracking();
-  }, [startTracking]);
+  }, [startTracking, isDrillRun]);
 
   useEffect(() => {
     if (!blockedCounterId) return;
@@ -101,6 +105,11 @@ export function TimeWatcher({ onFinish }: Props) {
   const handleEndDrill = () => {
     hapticTick();
     endDrill();
+    if (isDrillRun) {
+      // A Drill Run is exactly one drill: ending it goes straight to the evaluation.
+      onFinish();
+      return;
+    }
     setDrillHasEnded(true);
   };
 
@@ -144,6 +153,50 @@ export function TimeWatcher({ onFinish }: Props) {
 
   const nextDrillNumber = drillHasEnded ? currentDrillIndex + 2 : currentDrillIndex + 1;
   const showFinishButton = drillHasEnded && isLastDrill;
+
+  // ── GAP VIEW (Drill Run) ──────────────────────────────────────────────────
+  // Zero-setup surface: a static ready card instead of the session gap clock,
+  // tags selectable before the start (after "End Drill" the run goes straight
+  // to the evaluation, so there is no post-drill gap to tag in).
+  if (!drillActive && isDrillRun) {
+    const hasRecordedData = drillRunHasData(drills);
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-sm space-y-4">
+            <div className="rounded-xl border border-border bg-card p-6 text-center">
+              <Play className="h-8 w-8 mx-auto mb-3 text-primary" />
+              <p className="font-semibold mb-1">{t('drillTracker.readyTitle')}</p>
+              <p className="text-sm text-muted-foreground">{t('drillTracker.readyHint')}</p>
+            </div>
+
+            {currentDrill && (
+              <div className="rounded-xl border border-border bg-card p-4">
+                <DrillTagSelector
+                  label={t('timeWatcher.drillTags')}
+                  selectedTags={currentDrill.tags as string[]}
+                  onToggle={handleToggleTag}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border space-y-2">
+          <Button className="w-full" onClick={handleStartDrill}>
+            <Play className="h-4 w-4 mr-2" />
+            {t('timeWatcher.startDrill')}
+          </Button>
+          {hasRecordedData && (
+            <Button className="w-full" variant="outline" onClick={onFinish}>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {t('drillTracker.showEvaluation')}
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // ── GAP VIEW ──────────────────────────────────────────────────────────────
   if (!drillActive) {

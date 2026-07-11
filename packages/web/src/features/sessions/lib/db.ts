@@ -12,6 +12,8 @@ export interface DraftSession {
   currentDrillIndex?: number;
   /** Marked as a foreign/scouting session that must never be synced to the cloud */
   localOnly?: boolean;
+  /** Ephemeral Drill Tracker run (crash recovery only); absent = Training Tracker draft */
+  kind?: 'drillRun';
 }
 
 export interface SavedSession {

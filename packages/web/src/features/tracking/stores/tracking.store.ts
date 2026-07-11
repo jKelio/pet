@@ -34,8 +34,13 @@ const initialPracticeInfo: PracticeInfo = {
   wasteTime: { totalTime: 0, timeSegments: [] },
 };
 
+/** Which top-level tracking surface owns the store: the Training Tracker
+ *  (full session lifecycle) or the Drill Tracker (one ephemeral Drill Run). */
+export type Tracker = 'training' | 'drill';
+
 interface TrackingStore {
   sessionId: string;
+  tracker: Tracker;
   mode: TrackingMode;
   sessionType: SessionType;
   practiceInfo: PracticeInfo;
@@ -56,12 +61,15 @@ interface TrackingStore {
   goToNextStep: () => void;
   goToPrevStep: () => void;
   resetAllData: () => void;
+  /** Seed the store for an ephemeral Drill Run: one drill, straight to the live surface. */
+  startDrillRun: () => void;
   /** Restore session state from a persisted draft */
-  restoreFromDraft: (sessionId: string, practiceInfo: PracticeInfo, drills: Drill[], currentDrillIndex?: number) => void;
+  restoreFromDraft: (sessionId: string, practiceInfo: PracticeInfo, drills: Drill[], currentDrillIndex?: number, tracker?: Tracker) => void;
 }
 
 export const useTrackingStore = create<TrackingStore>()((set, get) => ({
   sessionId: generateId(),
+  tracker: 'training',
   mode: 'practiceInfo',
   sessionType: 'planned',
   practiceInfo: { ...initialPracticeInfo },
@@ -150,6 +158,7 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
   resetAllData: () =>
     set({
       sessionId: generateId(),
+      tracker: 'training',
       mode: 'practiceInfo',
       sessionType: 'planned',
       practiceInfo: { ...initialPracticeInfo, date: new Date().toISOString() },
@@ -158,9 +167,27 @@ export const useTrackingStore = create<TrackingStore>()((set, get) => ({
       trackExternal: false,
     }),
 
-  restoreFromDraft: (sessionId, practiceInfo, drills, currentDrillIndex = 0) =>
+  startDrillRun: () =>
+    set({
+      sessionId: generateId(),
+      tracker: 'drill',
+      mode: 'timeWatcher',
+      sessionType: 'open',
+      practiceInfo: {
+        ...initialPracticeInfo,
+        date: new Date().toISOString(),
+        sessionType: 'open',
+        drillsNumber: 1,
+      },
+      drills: [createOneDrill(1)],
+      currentDrillIndex: 0,
+      trackExternal: false,
+    }),
+
+  restoreFromDraft: (sessionId, practiceInfo, drills, currentDrillIndex = 0, tracker = 'training') =>
     set({
       sessionId,
+      tracker,
       practiceInfo,
       drills,
       sessionType: practiceInfo.sessionType ?? 'planned',

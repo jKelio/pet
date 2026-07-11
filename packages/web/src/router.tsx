@@ -30,6 +30,9 @@ const SuperAdminPage = lazy(() =>
 const LandingPage = lazy(() =>
   import('./features/marketing/LandingPage.js').then((m) => ({ default: m.LandingPage })),
 );
+const DrillTrackerPage = lazy(() =>
+  import('./features/drill-tracker/DrillTrackerPage.js').then((m) => ({ default: m.DrillTrackerPage })),
+);
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -106,6 +109,18 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootRoute />,
+  },
+  {
+    path: '/drill',
+    element: (
+      <AppShell>
+        <PermissionRoute permission="sessions:track">
+          <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Lädt…</div>}>
+            <DrillTrackerPage />
+          </Suspense>
+        </PermissionRoute>
+      </AppShell>
+    ),
   },
   {
     path: '/sessions',
