@@ -136,6 +136,10 @@ An Action measured as *elapsed time* (e.g. Explanation, Demonstration, `with Puc
 An Action measured as a *number of occurrences* (e.g. Shot, Pass, Feedback to a player). Each trigger records one event; there is no duration.
 _Avoid_: Tally, hit count.
 
+**Tap Feedback**:
+The felt confirmation of an [[Action]] tap on the live-tracking surface — a short vibration (where the device supports it) plus a visual pulse on the tapped control. Fires only for an *effective* action (a timer switched, a Counter counted, a drill started/ended); taps swallowed by the counter debounce give none. The feedback must never suggest more effect than actually happened.
+_Avoid_: haptics alone (the visual pulse is part of the concept), click feedback.
+
 ### AI recommendations
 
 **Library Entry**:

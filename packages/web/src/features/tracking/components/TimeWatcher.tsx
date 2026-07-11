@@ -10,6 +10,7 @@ import { Button } from '../../../shared/components/ui/button.js';
 import { useTrackingStore } from '../stores/tracking.store.js';
 import { useTimerStore, formatTime } from '../stores/timer.store.js';
 import { useTimerEngine } from '../hooks/useTimerEngine.js';
+import { hapticTick } from '../lib/tapFeedback.js';
 import { DrillTagSelector } from './DrillTagSelector.js';
 
 interface Props {
@@ -47,6 +48,10 @@ export function TimeWatcher({ onFinish }: Props) {
   const [gapElapsed, setGapElapsed] = useState(0);
   const gapDisplayStartRef = useRef<number | null>(null);
   const [blockedCounterId, setBlockedCounterId] = useState<string | null>(null);
+  // Timer button currently playing its tap pulse. Counters keep their green
+  // flash and the coarse buttons swap the whole view, so only timer toggles
+  // need the explicit pulse.
+  const [pulsingTimerId, setPulsingTimerId] = useState<string | null>(null);
 
   const currentDrill = drills[currentDrillIndex];
   const enabledActions = currentDrill?.actionButtons.filter((a) => a.enabled) ?? [];
@@ -62,6 +67,12 @@ export function TimeWatcher({ onFinish }: Props) {
     const id = setTimeout(() => setBlockedCounterId(null), 250);
     return () => clearTimeout(id);
   }, [blockedCounterId]);
+
+  useEffect(() => {
+    if (!pulsingTimerId) return;
+    const id = setTimeout(() => setPulsingTimerId(null), 200);
+    return () => clearTimeout(id);
+  }, [pulsingTimerId]);
 
   // Gap elapsed display timer
   useEffect(() => {
@@ -79,6 +90,7 @@ export function TimeWatcher({ onFinish }: Props) {
   }, [drillActive]);
 
   const handleStartDrill = () => {
+    hapticTick();
     if (drillHasEnded) {
       setCurrentDrillIndex(currentDrillIndex + 1);
     }
@@ -87,11 +99,13 @@ export function TimeWatcher({ onFinish }: Props) {
   };
 
   const handleEndDrill = () => {
+    hapticTick();
     endDrill();
     setDrillHasEnded(true);
   };
 
   const handleFinish = () => {
+    hapticTick();
     finishTracking();
     if (sessionType === 'open') {
       setPracticeInfo((prev) => ({ ...prev, drillsNumber: drills.length }));
@@ -100,6 +114,7 @@ export function TimeWatcher({ onFinish }: Props) {
   };
 
   const handleAddAndStartDrill = () => {
+    hapticTick();
     appendDrill();
     setCurrentDrillIndex(drills.length);
     setDrillHasEnded(false);
@@ -118,6 +133,8 @@ export function TimeWatcher({ onFinish }: Props) {
   };
 
   const handleTimerClick = (actionId: string, isRunning: boolean) => {
+    hapticTick();
+    setPulsingTimerId(actionId);
     if (isRunning) {
       pauseTimer(actionId);
     } else {
@@ -311,6 +328,8 @@ export function TimeWatcher({ onFinish }: Props) {
                                 disabled={isDisabled}
                                 onClick={() => handleTimerClick(id, isRunning)}
                                 className={`flex-1 rounded-md border px-2 py-1.5 text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  pulsingTimerId === id ? 'animate-tap-pulse' : ''
+                                } ${
                                   isActive
                                     ? 'border-destructive bg-destructive text-destructive-foreground'
                                     : 'border-primary bg-primary text-primary-foreground'
@@ -370,6 +389,8 @@ export function TimeWatcher({ onFinish }: Props) {
                         disabled={isDisabled}
                         onClick={() => handleTimerClick(action.id, isRunning)}
                         className={`flex-1 rounded-md border px-2 py-1.5 text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          pulsingTimerId === action.id ? 'animate-tap-pulse' : ''
+                        } ${
                           isActive
                             ? 'border-destructive bg-destructive text-destructive-foreground'
                             : 'border-primary bg-primary text-primary-foreground'
@@ -424,6 +445,7 @@ export function TimeWatcher({ onFinish }: Props) {
                     disabled={isBlocked}
                     onClick={() => {
                       if (isBlocked) return;
+                      hapticTick();
                       incrementCounter(action.id);
                       setBlockedCounterId(action.id);
                     }}

@@ -84,3 +84,20 @@
 .animate-wakeup-indeterminate {
   animation: wakeup-indeterminate 1.4s ease-in-out infinite;
 }
+
+/* Visual half of the tracking-surface Tap Feedback (vibration is Android-only). */
+@keyframes tap-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.93); }
+  100% { transform: scale(1); }
+}
+
+.animate-tap-pulse {
+  animation: tap-pulse 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-tap-pulse {
+    animation: none;
+  }
+}
