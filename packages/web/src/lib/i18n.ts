@@ -31,6 +31,21 @@ const resources = {
         failedBody: "We couldn't wake the server. Please try again.",
         retry: 'Try again',
       },
+      landing: {
+        claim: 'Every minute on the ice, measured.',
+        subclaim:
+          'PracMetrics tracks timing and reps across every drill of your practice — live from the boards — and turns them into a clear picture of training efficiency.',
+        ctaLogin: 'Log in',
+        trackingTitle: 'Live Tracking',
+        trackingBody:
+          'Log timers and counters per drill as practice happens — with puck, without puck, coaching phases. Works offline at the rink.',
+        teiTitle: 'TEI Analysis',
+        teiBody:
+          'The Training Efficiency Index condenses activity, coaching, repetitions and organisation into one score you can compare across sessions.',
+        federationTitle: 'Federation Reporting',
+        federationBody:
+          'Track member clubs as external teams, keep every session in one club-wide history, and export PDF reports for your federation.',
+      },
       appFeedback: {
         title: 'Feedback',
         subtitle: 'Report a bug, request a feature, or share general feedback',
@@ -485,6 +500,21 @@ const resources = {
         failedTitle: 'Server nicht erreichbar',
         failedBody: 'Der Server konnte nicht geweckt werden. Bitte versuche es erneut.',
         retry: 'Erneut versuchen',
+      },
+      landing: {
+        claim: 'Jede Minute auf dem Eis, messbar.',
+        subclaim:
+          'PracMetrics erfasst Zeiten und Wiederholungen über alle Drills deines Trainings – live von der Bande – und macht daraus ein klares Bild deiner Trainingseffizienz.',
+        ctaLogin: 'Einloggen',
+        trackingTitle: 'Live-Tracking',
+        trackingBody:
+          'Erfasse Timer und Zähler pro Drill direkt im Training – mit Puck, ohne Puck, Coaching-Phasen. Funktioniert offline in der Halle.',
+        teiTitle: 'TEI-Analyse',
+        teiBody:
+          'Der Trainings-Effizienz-Index verdichtet Aktivität, Coaching, Wiederholungen und Organisation zu einem Wert, den du über Einheiten hinweg vergleichen kannst.',
+        federationTitle: 'Federation-Reporting',
+        federationBody:
+          'Tracke Mitgliedsvereine als externe Teams, halte alle Einheiten in einer vereinsweiten Historie fest und exportiere PDF-Reports für deinen Verband.',
       },
       appFeedback: {
         title: 'Feedback',

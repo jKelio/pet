@@ -27,6 +27,9 @@ const AppFeedbackPage = lazy(() =>
 const SuperAdminPage = lazy(() =>
   import('./features/superadmin/SuperAdminPage.js').then((m) => ({ default: m.SuperAdminPage })),
 );
+const LandingPage = lazy(() =>
+  import('./features/marketing/LandingPage.js').then((m) => ({ default: m.LandingPage })),
+);
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -57,6 +60,40 @@ function PermissionRoute({
 }
 
 
+/**
+ * Public root: unauthenticated visitors get the marketing landing page,
+ * members get the tracking app exactly as before (ADR: public landing page
+ * at root route). The Suspense fallback mirrors the landing surface so the
+ * lazy chunk loads without a light flash.
+ */
+function RootRoute() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  if (!isAuthenticated) {
+    return (
+      <Suspense
+        fallback={
+          <div
+            className="min-h-screen"
+            style={{
+              backgroundColor: '#03101f',
+              backgroundImage: 'radial-gradient(1100px 700px at 50% -10%, #0d1c39, #03101f 60%)',
+            }}
+          />
+        }
+      >
+        <LandingPage />
+      </Suspense>
+    );
+  }
+  return (
+    <AppShell>
+      <PermissionRoute permission="sessions:track">
+        <TrackingPage />
+      </PermissionRoute>
+    </AppShell>
+  );
+}
+
 export const router = createBrowserRouter([
   {
     path: '/auth/login',
@@ -68,13 +105,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: (
-      <AppShell>
-        <PermissionRoute permission="sessions:track">
-          <TrackingPage />
-        </PermissionRoute>
-      </AppShell>
-    ),
+    element: <RootRoute />,
   },
   {
     path: '/sessions',
