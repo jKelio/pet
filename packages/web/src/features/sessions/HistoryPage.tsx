@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { History, Clock, Users, User, ChevronDown, ChevronRight, Loader2, RefreshCw, Layers, UploadCloud, Trash2, HardDrive } from 'lucide-react';
+import { History, Clock, Users, User, ChevronDown, ChevronRight, Loader2, RefreshCw, Layers, UploadCloud, Trash2, HardDrive, Pencil } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from '../admin/stores/admin.store.js';
@@ -11,8 +11,9 @@ import { useLocalSessionsStore } from './stores/localSessions.store.js';
 import { sessionApi } from './api/session.api.js';
 import { resolveSyncTeamId } from './lib/sessionSync.js';
 import type { SavedSession } from './lib/db.js';
+import { EditPracticeInfoDialog } from './components/EditPracticeInfoDialog.js';
 import i18n from '../../lib/i18n.js';
-import type { PracticeSession } from '@pet/shared';
+import type { PracticeSession, UpdatePracticeInfoInput } from '@pet/shared';
 import { getEffectiveDurationMs } from '@pet/shared';
 
 function formatDate(iso: string): string {
@@ -52,6 +53,12 @@ export function HistoryPage() {
   const listVersion = useRef(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Session whose practice metadata is being edited in the dialog
+  const [editTarget, setEditTarget] = useState<
+    | { kind: 'cloud'; session: PracticeSession }
+    | { kind: 'local'; session: SavedSession }
+    | null
+  >(null);
   const restoreFromDraft = useTrackingStore((s) => s.restoreFromDraft);
   const resetAll = useTimerStore((s) => s.resetAll);
 
@@ -62,6 +69,7 @@ export function HistoryPage() {
   const syncOne = useLocalSessionsStore((s) => s.syncOne);
   const deleteOne = useLocalSessionsStore((s) => s.deleteOne);
   const clearLocalOnly = useLocalSessionsStore((s) => s.clearLocalOnly);
+  const updateLocalPracticeInfo = useLocalSessionsStore((s) => s.updatePracticeInfo);
   // Per-session team choice for ambiguous pending sessions (coach has multiple teams).
   const [teamPicks, setTeamPicks] = useState<Record<string, string>>({});
 
@@ -182,6 +190,17 @@ export function HistoryPage() {
 
   const canDeleteCloud = (session: PracticeSession) =>
     membership?.role === 'admin' || session.createdBy === membership?.userId;
+
+  const handleSaveEdit = async (patch: UpdatePracticeInfoInput) => {
+    if (!editTarget) return;
+    if (editTarget.kind === 'cloud') {
+      if (!accessToken) return;
+      const updated = await sessionApi.updatePracticeInfo(editTarget.session.id, patch, accessToken);
+      setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    } else {
+      await updateLocalPracticeInfo(editTarget.session.id, patch);
+    }
+  };
 
   const handleDeleteCloud = async (session: PracticeSession) => {
     if (!accessToken || !confirm(t('sessions.confirmDeleteCloud'))) return;
@@ -330,6 +349,15 @@ export function HistoryPage() {
                     <Button
                       size="icon"
                       variant="ghost"
+                      onClick={() => setEditTarget({ kind: 'local', session })}
+                      title={t('sessions.editPracticeInfo')}
+                      className="h-8 w-8"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
                       onClick={() => handleDeleteLocal(session.id)}
                       title={t('sessions.deleteAction')}
                       className="h-8 w-8 text-destructive hover:text-destructive"
@@ -403,6 +431,15 @@ export function HistoryPage() {
                   >
                     <UploadCloud className="mr-1 h-3.5 w-3.5" />
                     {t('sessions.syncAnyway')}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setEditTarget({ kind: 'local', session })}
+                    title={t('sessions.editPracticeInfo')}
+                    className="h-8 w-8"
+                  >
+                    <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
                     size="icon"
@@ -493,6 +530,17 @@ export function HistoryPage() {
                     <Button
                       size="icon"
                       variant="ghost"
+                      onClick={() => setEditTarget({ kind: 'cloud', session })}
+                      title={t('sessions.editPracticeInfo')}
+                      className="h-8 w-8"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {canDeleteCloud(session) && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
                       onClick={() => handleDeleteCloud(session)}
                       disabled={deletingId === session.id}
                       title={t('sessions.deleteAction')}
@@ -532,6 +580,17 @@ export function HistoryPage() {
           </div>
         )}
       </div>
+
+      {editTarget && (
+        <EditPracticeInfoDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditTarget(null);
+          }}
+          practiceInfo={editTarget.session.practiceInfo}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 }

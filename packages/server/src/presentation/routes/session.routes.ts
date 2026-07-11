@@ -4,7 +4,8 @@ import type { DeleteSessionUseCase } from '../../application/use-cases/delete-se
 import type { ListTeamSessionsUseCase } from '../../application/use-cases/list-team-sessions.js';
 import { InvalidCursorError } from '../../application/use-cases/list-team-sessions.js';
 import type { GetSessionUseCase } from '../../application/use-cases/get-session.js';
-import { SyncSessionSchema } from '@pet/shared';
+import type { UpdateSessionPracticeInfoUseCase } from '../../application/use-cases/update-session-practice-info.js';
+import { SyncSessionSchema, UpdatePracticeInfoSchema } from '@pet/shared';
 import { UnauthorizedError } from '../../application/use-cases/sync-session.js';
 import { ForbiddenError, NotFoundError } from '../../application/use-cases/delete-session.js';
 import { isEntitlementError } from '../../application/services/entitlement.service.js';
@@ -14,6 +15,7 @@ interface SessionRoutesDeps {
   deleteSession: DeleteSessionUseCase;
   listTeamSessions: ListTeamSessionsUseCase;
   getSession: GetSessionUseCase;
+  updateSessionPracticeInfo: UpdateSessionPracticeInfoUseCase;
 }
 
 export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRoutesDeps): void {
@@ -116,6 +118,43 @@ export function registerSessionRoutes(fastify: FastifyInstance, deps: SessionRou
       const session = await deps.getSession.execute(id, { userId: request.userId, tenantId });
       return reply.code(200).send(session);
     } catch (error) {
+      if (error instanceof NotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: error.message, statusCode: 404 });
+      }
+      throw error;
+    }
+  });
+
+  // PATCH /sessions/:id/practice-info — correct practice metadata (creator or club_admin)
+  fastify.patch('/sessions/:id/practice-info', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const tenantId = request.tenantId;
+
+    if (!tenantId) {
+      return reply.code(403).send({ code: 'NO_TENANT', message: 'No active tenant', statusCode: 403 });
+    }
+
+    const result = UpdatePracticeInfoSchema.safeParse(request.body);
+    if (!result.success) {
+      const issue = result.error.issues[0];
+      const field = issue.path.length > 0 ? `${issue.path.join('.')}: ` : '';
+      return reply.code(400).send({
+        code: 'VALIDATION_ERROR',
+        message: `${field}${issue.message}`,
+        statusCode: 400,
+      });
+    }
+
+    try {
+      const session = await deps.updateSessionPracticeInfo.execute(id, result.data, {
+        userId: request.userId,
+        tenantId,
+      });
+      return reply.code(200).send(session);
+    } catch (error) {
+      if (error instanceof ForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: error.message, statusCode: 403 });
+      }
       if (error instanceof NotFoundError) {
         return reply.code(404).send({ code: 'NOT_FOUND', message: error.message, statusCode: 404 });
       }

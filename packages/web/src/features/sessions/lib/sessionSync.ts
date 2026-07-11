@@ -36,7 +36,9 @@ export function normalizeDrill(drill: Drill): Drill {
 export function normalizePracticeInfo(pi: PracticeInfo): PracticeInfo {
   return {
     ...pi,
-    totalTime: Math.round(pi.totalTime * 3_600_000),
+    // totalTime stays in minutes — the server (TEI, getEffectiveDurationMs)
+    // reads it as minutes. Converting here would corrupt the stored value.
+    totalTime: Math.round(pi.totalTime),
     wasteTime: normalizeTimerData(pi.wasteTime),
   };
 }

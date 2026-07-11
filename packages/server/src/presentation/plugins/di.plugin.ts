@@ -12,6 +12,7 @@ import { SendMagicLinkUseCase } from '../../application/use-cases/send-magic-lin
 import { VerifyMagicLinkUseCase } from '../../application/use-cases/verify-magic-link.js';
 import { SyncSessionUseCase } from '../../application/use-cases/sync-session.js';
 import { DeleteSessionUseCase } from '../../application/use-cases/delete-session.js';
+import { UpdateSessionPracticeInfoUseCase } from '../../application/use-cases/update-session-practice-info.js';
 import { ListTeamSessionsUseCase } from '../../application/use-cases/list-team-sessions.js';
 import { GetSessionUseCase } from '../../application/use-cases/get-session.js';
 import { GetMyProfileUseCase } from '../../application/use-cases/get-my-profile.js';
@@ -75,6 +76,7 @@ declare module 'fastify' {
       verifyMagicLink: VerifyMagicLinkUseCase;
       syncSession: SyncSessionUseCase;
       deleteSession: DeleteSessionUseCase;
+      updateSessionPracticeInfo: UpdateSessionPracticeInfoUseCase;
       listTeamSessions: ListTeamSessionsUseCase;
       getSession: GetSessionUseCase;
       getMyProfile: GetMyProfileUseCase;
@@ -168,6 +170,11 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
   });
 
   const deleteSession = new DeleteSessionUseCase({
+    sessionRepository,
+    membershipRepository,
+  });
+
+  const updateSessionPracticeInfo = new UpdateSessionPracticeInfoUseCase({
     sessionRepository,
     membershipRepository,
   });
@@ -270,6 +277,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     verifyMagicLink,
     syncSession,
     deleteSession,
+    updateSessionPracticeInfo,
     listTeamSessions,
     getSession,
     getMyProfile,

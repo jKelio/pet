@@ -202,6 +202,11 @@ const resources = {
         deleteError: 'Could not delete the session.',
         confirmDeleteLocal: 'Delete this local session? This cannot be undone.',
         confirmDeleteCloud: 'Delete this session from the cloud for everyone? This cannot be undone.',
+        editAction: 'Edit',
+        editPracticeInfo: 'Edit practice info',
+        editSave: 'Save',
+        editCancel: 'Cancel',
+        editError: 'Changes could not be saved.',
       },
       general: {
         infoHeader: 'General',
@@ -652,6 +657,11 @@ const resources = {
         deleteError: 'Session konnte nicht gelöscht werden.',
         confirmDeleteLocal: 'Diese lokale Session löschen? Das kann nicht rückgängig gemacht werden.',
         confirmDeleteCloud: 'Diese Session für alle aus der Cloud löschen? Das kann nicht rückgängig gemacht werden.',
+        editAction: 'Bearbeiten',
+        editPracticeInfo: 'Trainingsdaten bearbeiten',
+        editSave: 'Speichern',
+        editCancel: 'Abbrechen',
+        editError: 'Änderungen konnten nicht gespeichert werden.',
       },
       general: {
         infoHeader: 'Allgemein',

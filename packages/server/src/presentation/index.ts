@@ -120,6 +120,7 @@ async function build() {
     registerSessionRoutes(scope, {
       syncSession: fastify.useCases.syncSession,
       deleteSession: fastify.useCases.deleteSession,
+      updateSessionPracticeInfo: fastify.useCases.updateSessionPracticeInfo,
       listTeamSessions: fastify.useCases.listTeamSessions,
       getSession: fastify.useCases.getSession,
     });

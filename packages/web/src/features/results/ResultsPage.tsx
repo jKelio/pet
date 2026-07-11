@@ -22,14 +22,17 @@ import {
   Layers,
   TrendingDown,
   Cloud,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { useTrackingStore } from '../tracking/stores/tracking.store.js';
 import { completeSession } from '../tracking/hooks/useDraftPersistence.js';
 import { useAuthStore } from '../auth/stores/auth.store.js';
 import { useAdminStore } from '../admin/stores/admin.store.js';
-import type { SavedSession } from '../sessions/lib/db.js';
+import { db, type SavedSession } from '../sessions/lib/db.js';
 import { syncSession, resolveSyncTeamId } from '../sessions/lib/sessionSync.js';
+import { sessionApi } from '../sessions/api/session.api.js';
+import { EditPracticeInfoDialog } from '../sessions/components/EditPracticeInfoDialog.js';
 import {
   extractDrillDurations,
   extractTimelineSegmentsForDrill,
@@ -46,7 +49,7 @@ import { pdfApi } from './api/pdf.api.js';
 import { buildPdfReportModel } from './lib/buildPdfReportModel.js';
 import { toServerSessionId } from './lib/serverSessionId.js';
 import { ApiClientError } from '../../shared/lib/api-client.js';
-import { DRILL_COLORS, PASSIVE_TIMER_IDS } from '@pet/shared';
+import { DRILL_COLORS, PASSIVE_TIMER_IDS, type UpdatePracticeInfoInput } from '@pet/shared';
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -66,10 +69,12 @@ export function ResultsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
-  // Freeze display data on first render so resetting the store doesn't clear the UI
+  // Freeze display data on first render so resetting the store doesn't clear the UI.
+  // practiceInfo stays settable so the edit dialog can correct it in place.
   const [localSessionId] = useState(() => useTrackingStore.getState().sessionId);
   const [localDrills] = useState(() => useTrackingStore.getState().drills);
-  const [localPracticeInfo] = useState(() => useTrackingStore.getState().practiceInfo);
+  const [localPracticeInfo, setLocalPracticeInfo] = useState(() => useTrackingStore.getState().practiceInfo);
+  const [editOpen, setEditOpen] = useState(false);
   // The id under which the completed session was actually stored (normalized to a UUID).
   const savedIdRef = useRef(localSessionId);
 
@@ -150,6 +155,25 @@ export function ResultsPage() {
     } finally {
       setSyncing(false);
     }
+  };
+
+  // Persist corrected practice metadata wherever this session currently lives:
+  // in the cloud (synced / opened from the cloud history) or in the local
+  // outbox (pending sync / local-only). The frozen display copy follows suit.
+  const handleSavePracticeInfo = async (patch: UpdatePracticeInfoInput) => {
+    const rawId = savedIdRef.current;
+    const bareId = toServerSessionId(rawId);
+    const isCloud = viewOnly ? rawId.startsWith('cloud-') : synced;
+    if (isCloud) {
+      if (!accessToken) throw new Error(t('sessions.editError'));
+      await sessionApi.updatePracticeInfo(bareId, patch, accessToken);
+    } else {
+      const existing = await db.sessions.get(bareId);
+      if (existing) {
+        await db.sessions.update(bareId, { practiceInfo: { ...existing.practiceInfo, ...patch } });
+      }
+    }
+    setLocalPracticeInfo((prev) => ({ ...prev, ...patch }));
   };
 
   // ── Computed values ───────────────────────────────────────────────────────
@@ -262,6 +286,10 @@ export function ResultsPage() {
         <div className="flex items-center justify-between px-6 py-4 gap-3 flex-wrap">
           <h1 className="text-xl font-bold">{t('results.title')}</h1>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4" />
+              <span className="ml-1.5 hidden sm:inline">{t('sessions.editAction')}</span>
+            </Button>
             <Button variant="outline" size="sm" onClick={exportToPdf} disabled={isExporting}>
               {isExporting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -740,6 +768,12 @@ export function ResultsPage() {
         })}
       </div>
 
+      <EditPracticeInfoDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        practiceInfo={localPracticeInfo}
+        onSave={handleSavePracticeInfo}
+      />
     </div>
   );
 }

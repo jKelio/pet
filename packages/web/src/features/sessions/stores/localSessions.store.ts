@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { UpdatePracticeInfoInput } from '@pet/shared';
 import { db, type SavedSession } from '../lib/db.js';
 import { syncSession, resolveSyncTeamId } from '../lib/sessionSync.js';
 
@@ -18,6 +19,8 @@ interface LocalSessionsStore {
   deleteOne: (id: string) => Promise<void>;
   /** Clear the local-only flag so a foreign session can be synced after all. */
   clearLocalOnly: (id: string) => Promise<void>;
+  /** Correct the practice metadata of a session in the local outbox. */
+  updatePracticeInfo: (id: string, patch: UpdatePracticeInfoInput) => Promise<void>;
 }
 
 export const useLocalSessionsStore = create<LocalSessionsStore>()((set, get) => ({
@@ -72,6 +75,13 @@ export const useLocalSessionsStore = create<LocalSessionsStore>()((set, get) => 
 
   clearLocalOnly: async (id) => {
     await db.sessions.update(id, { localOnly: false });
+    await get().loadPending();
+  },
+
+  updatePracticeInfo: async (id, patch) => {
+    const session = await db.sessions.get(id);
+    if (!session) return;
+    await db.sessions.update(id, { practiceInfo: { ...session.practiceInfo, ...patch } });
     await get().loadPending();
   },
 }));

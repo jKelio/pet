@@ -84,6 +84,17 @@ export const SyncSessionSchema = z.object({
   drills: z.array(DrillSchema),
 });
 
+// Metadata fields a coach may correct after the fact. Team/club assignment and
+// tracked timing data (wasteTime, drillsNumber) stay immutable.
+export const UpdatePracticeInfoSchema = z.object({
+  date: z.string().datetime(),
+  coachName: z.string().trim(),
+  trackedPlayerName: z.string().trim(),
+  athletesNumber: z.number().int().nonnegative().max(999),
+  coachesNumber: z.number().int().nonnegative().max(999),
+  totalTime: z.number().int().nonnegative(),
+});
+
 // ─── Admin Schemas ────────────────────────────────────────────────────────────
 
 export const InviteUserSchema = z.object({
@@ -254,6 +265,7 @@ export const GenerateRecommendationSchema = z.object({
 export type SendMagicLinkInput = z.infer<typeof SendMagicLinkSchema>;
 export type VerifyMagicLinkInput = z.infer<typeof VerifyMagicLinkSchema>;
 export type SyncSessionInput = z.infer<typeof SyncSessionSchema>;
+export type UpdatePracticeInfoInput = z.infer<typeof UpdatePracticeInfoSchema>;
 export type InviteUserInput = z.infer<typeof InviteUserSchema>;
 export type CreateTeamInput = z.infer<typeof CreateTeamSchema>;
 export type CreateExternalTeamInput = z.infer<typeof CreateExternalTeamSchema>;
