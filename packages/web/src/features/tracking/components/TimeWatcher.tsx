@@ -176,7 +176,7 @@ export function TimeWatcher({ onFinish }: Props) {
           </div>
         </div>
 
-        <div className="p-4 border-t border-border space-y-2">
+        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border space-y-2">
           {sessionType === 'open' ? (
             drillHasEnded ? (
               <>
@@ -491,7 +491,7 @@ export function TimeWatcher({ onFinish }: Props) {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border">
         <Button className="w-full" variant="destructive" onClick={handleEndDrill}>
           <Square className="h-4 w-4 mr-2" />
           {t('timeWatcher.endDrill')}
