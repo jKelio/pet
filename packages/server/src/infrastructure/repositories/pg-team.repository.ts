@@ -47,6 +47,10 @@ export class PgTeamRepository implements TeamRepository {
     }
   }
 
+  async delete(id: string, tenantId: string): Promise<void> {
+    await this.db.delete(teams).where(and(eq(teams.id, id), eq(teams.tenantId, tenantId)));
+  }
+
   private toTeam(row: typeof teams.$inferSelect): Team {
     return {
       id: row.id,

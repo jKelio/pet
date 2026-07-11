@@ -515,6 +515,35 @@ function PlanUsageCard() {
   );
 }
 
+function DeleteTeamButton({ teamId, accessToken }: { teamId: string; accessToken: string }) {
+  const { t } = useTranslation('pet');
+  const deleteTeam = useAdminStore((s) => s.deleteTeam);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!window.confirm(t('admin.confirmDeleteTeam'))) return;
+    setDeleting(true);
+    try {
+      await deleteTeam(teamId, accessToken);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <Button
+      size="icon"
+      variant="ghost"
+      className="text-destructive hover:text-destructive shrink-0 ml-auto"
+      onClick={handleDelete}
+      disabled={deleting}
+      title={t('admin.deleteTeam')}
+    >
+      {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+    </Button>
+  );
+}
+
 export function AdminPage() {
   const { t } = useTranslation('pet');
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -616,6 +645,7 @@ export function AdminPage() {
                           </span>
                         )}
                         <span className="font-medium text-sm">{team.name}</span>
+                        {isAdmin && <DeleteTeamButton teamId={team.id} accessToken={accessToken} />}
                       </div>
                     ))}
                   </div>
@@ -660,6 +690,7 @@ export function AdminPage() {
                               <span className="block text-xs text-muted-foreground">{team.externalClubName}</span>
                             )}
                           </div>
+                          {isAdmin && <DeleteTeamButton teamId={team.id} accessToken={accessToken} />}
                         </div>
                       ))}
                     </div>

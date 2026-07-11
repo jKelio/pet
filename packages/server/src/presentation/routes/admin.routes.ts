@@ -5,6 +5,12 @@ import type { GetMyProfileUseCase } from '../../application/use-cases/get-my-pro
 import type { OnboardTenantUseCase } from '../../application/use-cases/onboard-tenant.js';
 import type { CreateTeamUseCase } from '../../application/use-cases/create-team.js';
 import { ForbiddenError } from '../../application/use-cases/create-team.js';
+import type { DeleteTeamUseCase } from '../../application/use-cases/delete-team.js';
+import {
+  ForbiddenError as DeleteTeamForbiddenError,
+  NotFoundError as DeleteTeamNotFoundError,
+  ConflictError as DeleteTeamConflictError,
+} from '../../application/use-cases/delete-team.js';
 import type { ListMembersUseCase } from '../../application/use-cases/list-members.js';
 import type { InviteMemberUseCase } from '../../application/use-cases/invite-member.js';
 import {
@@ -38,6 +44,7 @@ interface AdminRoutesDeps {
   getMyProfile: GetMyProfileUseCase;
   onboardTenant: OnboardTenantUseCase;
   createTeam: CreateTeamUseCase;
+  deleteTeam: DeleteTeamUseCase;
   listMembers: ListMembersUseCase;
   inviteMember: InviteMemberUseCase;
   removeMember: RemoveMemberUseCase;
@@ -158,6 +165,31 @@ export function registerAdminRoutes(fastify: FastifyInstance, deps: AdminRoutesD
     }
     const teams = await deps.teamRepository.findByTenant(tenantId);
     return reply.send(teams);
+  });
+
+  // DELETE /admin/teams/:id — delete a team (admin only; blocked while sessions exist)
+  fastify.delete('/admin/teams/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const tenantId = request.tenantId;
+    if (!tenantId) {
+      return reply.code(403).send({ code: 'NO_TENANT', message: 'No tenant in token', statusCode: 403 });
+    }
+
+    try {
+      await deps.deleteTeam.execute(id, request.userId, tenantId);
+      return reply.code(204).send();
+    } catch (err) {
+      if (err instanceof DeleteTeamForbiddenError) {
+        return reply.code(403).send({ code: 'FORBIDDEN', message: err.message, statusCode: 403 });
+      }
+      if (err instanceof DeleteTeamNotFoundError) {
+        return reply.code(404).send({ code: 'NOT_FOUND', message: err.message, statusCode: 404 });
+      }
+      if (err instanceof DeleteTeamConflictError) {
+        return reply.code(409).send({ code: 'CONFLICT', message: err.message, statusCode: 409 });
+      }
+      throw err;
+    }
   });
 
   // GET /admin/members — list all members with user details

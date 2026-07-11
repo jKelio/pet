@@ -30,6 +30,7 @@ export interface TeamRepository {
   findById(id: string, tenantId: string): Promise<Team | null>;
   findByTenant(tenantId: string): Promise<Team[]>;
   save(team: Team): Promise<void>;
+  delete(id: string, tenantId: string): Promise<void>;
 }
 
 export interface MembershipRepository {

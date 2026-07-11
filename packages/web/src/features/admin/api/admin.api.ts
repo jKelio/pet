@@ -43,6 +43,9 @@ export const adminApi = {
   listTeams: (accessToken: string) =>
     apiClient.get<Team[]>('/admin/teams', accessToken),
 
+  deleteTeam: (teamId: string, accessToken: string) =>
+    apiClient.delete<void>(`/admin/teams/${encodeURIComponent(teamId)}`, accessToken),
+
   listMembers: (accessToken: string) =>
     apiClient.get<MemberWithUser[]>('/admin/members', accessToken),
 

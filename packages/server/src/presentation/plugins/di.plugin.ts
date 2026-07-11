@@ -17,6 +17,7 @@ import { GetSessionUseCase } from '../../application/use-cases/get-session.js';
 import { GetMyProfileUseCase } from '../../application/use-cases/get-my-profile.js';
 import { OnboardTenantUseCase } from '../../application/use-cases/onboard-tenant.js';
 import { CreateTeamUseCase } from '../../application/use-cases/create-team.js';
+import { DeleteTeamUseCase } from '../../application/use-cases/delete-team.js';
 import { RefreshSessionUseCase } from '../../application/use-cases/refresh-session.js';
 import { ListMembersUseCase } from '../../application/use-cases/list-members.js';
 import { InviteMemberUseCase } from '../../application/use-cases/invite-member.js';
@@ -79,6 +80,7 @@ declare module 'fastify' {
       getMyProfile: GetMyProfileUseCase;
       onboardTenant: OnboardTenantUseCase;
       createTeam: CreateTeamUseCase;
+      deleteTeam: DeleteTeamUseCase;
       refreshSession: RefreshSessionUseCase;
       listMembers: ListMembersUseCase;
       inviteMember: InviteMemberUseCase;
@@ -201,6 +203,12 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     entitlementService,
   });
 
+  const deleteTeam = new DeleteTeamUseCase({
+    teamRepository,
+    membershipRepository,
+    sessionRepository,
+  });
+
   const refreshSession = new RefreshSessionUseCase({
     tokenService,
     userRepository,
@@ -267,6 +275,7 @@ const diPlugin: FastifyPluginAsync<AppConfig> = async (fastify, config) => {
     getMyProfile,
     onboardTenant,
     createTeam,
+    deleteTeam,
     refreshSession,
     listMembers,
     inviteMember,

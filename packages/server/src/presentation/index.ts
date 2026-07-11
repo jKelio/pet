@@ -130,6 +130,7 @@ async function build() {
       getMyProfile: fastify.useCases.getMyProfile,
       onboardTenant: fastify.useCases.onboardTenant,
       createTeam: fastify.useCases.createTeam,
+      deleteTeam: fastify.useCases.deleteTeam,
       listMembers: fastify.useCases.listMembers,
       inviteMember: fastify.useCases.inviteMember,
       removeMember: fastify.useCases.removeMember,

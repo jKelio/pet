@@ -25,6 +25,7 @@ interface AdminState {
   onboard: (tenantName: string, teamName: string, ageClass: number, accessToken: string) => Promise<void>;
   createTeam: (name: string, ageClass: number, accessToken: string) => Promise<void>;
   createExternalTeam: (name: string, externalClubName: string, ageClass: number, accessToken: string) => Promise<Team>;
+  deleteTeam: (teamId: string, accessToken: string) => Promise<void>;
   loadMembers: (accessToken: string) => Promise<void>;
   inviteMember: (email: string, role: UserRole, name: string | undefined, accessToken: string) => Promise<void>;
   updateMemberName: (membershipId: string, name: string, accessToken: string) => Promise<void>;
@@ -110,6 +111,19 @@ export const useAdminStore = create<AdminState>()(
         } catch (err) {
           set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorCreate') });
           throw err;
+        }
+      },
+
+      deleteTeam: async (teamId, accessToken) => {
+        set({ loading: true, error: null });
+        try {
+          await adminApi.deleteTeam(teamId, accessToken);
+          set((s) => ({
+            teams: s.teams.filter((tm) => tm.id !== teamId),
+            loading: false,
+          }));
+        } catch (err) {
+          set({ loading: false, error: err instanceof Error ? err.message : tr('admin.errorDeleteTeam') });
         }
       },
 
