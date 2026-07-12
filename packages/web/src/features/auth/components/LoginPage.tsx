@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Button } from '../../../shared/components/ui/button.js';
 import { Input } from '../../../shared/components/ui/input.js';
 import { Label } from '../../../shared/components/ui/label.js';
@@ -119,6 +120,17 @@ export function LoginPage() {
             </>
           )}
         </Card>
+
+        {/* Impressum must be reachable from every public page (ADR 0018) */}
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          <Link to="/impressum" className="hover:text-foreground">
+            {t('landing.footerImprint')}
+          </Link>{' '}
+          ·{' '}
+          <Link to="/datenschutz" className="hover:text-foreground">
+            {t('landing.footerPrivacy')}
+          </Link>
+        </p>
       </div>
     </div>
   );

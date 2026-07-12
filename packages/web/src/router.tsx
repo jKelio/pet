@@ -8,6 +8,7 @@ import { TrackingPage } from './features/tracking/TrackingPage.js';
 import { useAuthStore } from './features/auth/stores/auth.store.js';
 import { useAdminStore } from './features/admin/stores/admin.store.js';
 import { useAuth } from './features/auth/hooks/useAuth.js';
+import { SURFACE_FALLBACK_STYLE } from './features/marketing/surface.js';
 
 const ResultsPage = lazy(() =>
   import('./features/results/ResultsPage.js').then((m) => ({ default: m.ResultsPage })),
@@ -29,6 +30,12 @@ const SuperAdminPage = lazy(() =>
 );
 const LandingPage = lazy(() =>
   import('./features/marketing/LandingPage.js').then((m) => ({ default: m.LandingPage })),
+);
+const ImprintPage = lazy(() =>
+  import('./features/marketing/ImprintPage.js').then((m) => ({ default: m.ImprintPage })),
+);
+const PrivacyPage = lazy(() =>
+  import('./features/marketing/PrivacyPage.js').then((m) => ({ default: m.PrivacyPage })),
 );
 const DrillTrackerPage = lazy(() =>
   import('./features/drill-tracker/DrillTrackerPage.js').then((m) => ({ default: m.DrillTrackerPage })),
@@ -63,29 +70,28 @@ function PermissionRoute({
 }
 
 
+/** Suspense wrapper for the public marketing pages: the fallback mirrors the
+ * dark marketing surface so the lazy chunk loads without a light flash. */
+function MarketingSuspense({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen" style={SURFACE_FALLBACK_STYLE} />}>
+      {children}
+    </Suspense>
+  );
+}
+
 /**
  * Public root: unauthenticated visitors get the marketing landing page,
- * members get the tracking app exactly as before (ADR: public landing page
- * at root route). The Suspense fallback mirrors the landing surface so the
- * lazy chunk loads without a light flash.
+ * members get the tracking app exactly as before (ADR 0018: public landing
+ * page at root route).
  */
 function RootRoute() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!isAuthenticated) {
     return (
-      <Suspense
-        fallback={
-          <div
-            className="min-h-screen"
-            style={{
-              backgroundColor: '#03101f',
-              backgroundImage: 'radial-gradient(1100px 700px at 50% -10%, #0d1c39, #03101f 60%)',
-            }}
-          />
-        }
-      >
+      <MarketingSuspense>
         <LandingPage />
-      </Suspense>
+      </MarketingSuspense>
     );
   }
   return (
@@ -109,6 +115,23 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootRoute />,
+  },
+  {
+    // Public legal pages, reachable without auth (ADR 0018)
+    path: '/impressum',
+    element: (
+      <MarketingSuspense>
+        <ImprintPage />
+      </MarketingSuspense>
+    ),
+  },
+  {
+    path: '/datenschutz',
+    element: (
+      <MarketingSuspense>
+        <PrivacyPage />
+      </MarketingSuspense>
+    ),
   },
   {
     path: '/drill',

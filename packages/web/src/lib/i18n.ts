@@ -68,6 +68,8 @@ const resources = {
         federationTitle: 'Federation Reporting',
         federationBody:
           'Track member clubs as external teams, keep every session in one club-wide history, and export PDF reports for your federation.',
+        footerImprint: 'Imprint',
+        footerPrivacy: 'Privacy Policy',
       },
       appFeedback: {
         title: 'Feedback',
@@ -562,6 +564,8 @@ const resources = {
         federationTitle: 'Federation-Reporting',
         federationBody:
           'Tracke Mitgliedsvereine als externe Teams, halte alle Einheiten in einer vereinsweiten Historie fest und exportiere PDF-Reports für deinen Verband.',
+        footerImprint: 'Impressum',
+        footerPrivacy: 'Datenschutz',
       },
       appFeedback: {
         title: 'Feedback',

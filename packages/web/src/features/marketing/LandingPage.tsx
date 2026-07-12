@@ -4,35 +4,10 @@ import { Gauge, Timer, FileText, ArrowRight } from 'lucide-react';
 import { Button } from '../../shared/components/ui/button.js';
 import { Card, CardContent } from '../../shared/components/ui/card.js';
 import { PracMetricsLogo } from '../../shared/components/PracMetricsLogo.js';
+import { SURFACE_STYLE, HEADLINE_STYLE, MONO_STYLE } from './surface.js';
 
-/*
- * Fixed dark marketing surface (ADR: public landing page at root route).
- * Deliberately independent of the app theme: colors are hardcoded to the
- * splash-screen palette (#03101f → #0d1c39) instead of the bg-background /
- * text-foreground tokens, so the page looks identical regardless of the
- * visitor's prefers-color-scheme. The logo CSS variables are pinned to their
- * dark-theme values for the same reason — on a light-preference device the
- * global :root values would render the mark navy-on-navy.
- */
-const SURFACE_STYLE: React.CSSProperties & Record<string, string> = {
-  backgroundColor: '#03101f',
-  backgroundImage: 'radial-gradient(1100px 700px at 50% -10%, #0d1c39, #03101f 60%)',
-  color: '#cfd8e6',
-  fontFamily: "'Saira', sans-serif",
-  '--logo-mark-from': 'hsl(0 0% 100%)',
-  '--logo-mark-to': 'hsl(216 25% 81%)',
-  '--logo-word-from': 'hsl(0 0% 100%)',
-  '--logo-word-to': 'hsl(213 25% 86%)',
-};
-
-const HEADLINE_STYLE: React.CSSProperties = {
-  fontFamily: "'Saira Semi Condensed', sans-serif",
-  textTransform: 'uppercase',
-};
-
-const MONO_STYLE: React.CSSProperties = {
-  fontFamily: "'JetBrains Mono', monospace",
-};
+// Fixed dark marketing surface at the root route (ADR 0018); shared styling
+// and the theme-independence rationale live in ./surface.ts.
 
 interface Feature {
   index: string;
@@ -168,7 +143,14 @@ export function LandingPage() {
 
       <footer className="relative border-t border-white/10 py-6 text-center">
         <span className="text-[11px] tracking-[0.25em] text-[#8fa0bb]" style={MONO_STYLE}>
-          © {new Date().getFullYear()} PRACMETRICS
+          © {new Date().getFullYear()} PRACMETRICS ·{' '}
+          <Link to="/impressum" className="hover:text-white">
+            {t('landing.footerImprint')}
+          </Link>{' '}
+          ·{' '}
+          <Link to="/datenschutz" className="hover:text-white">
+            {t('landing.footerPrivacy')}
+          </Link>
         </span>
       </footer>
     </div>
