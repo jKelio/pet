@@ -33,9 +33,13 @@ interface NavItem {
   requiresPermission?: Permission;
 }
 
+// Trackers (glossary umbrella term) render as an indented group under a "Tracker" header.
+const TRACKER_ITEMS: NavItem[] = [
+  { labelKey: 'nav.trackerTraining', href: '/', icon: Timer, requiresAuth: true, requiresPermission: 'sessions:track' },
+  { labelKey: 'nav.trackerDrill', href: '/drill', icon: Zap, requiresAuth: true, requiresPermission: 'sessions:track' },
+];
+
 const NAV_ITEMS: NavItem[] = [
-  { labelKey: 'nav.tracking', href: '/', icon: Timer, requiresAuth: true, requiresPermission: 'sessions:track' },
-  { labelKey: 'nav.drillTracker', href: '/drill', icon: Zap, requiresAuth: true, requiresPermission: 'sessions:track' },
   { labelKey: 'nav.history', href: '/history', icon: History, requiresAuth: true },
   { labelKey: 'nav.glossary', href: '/glossary', icon: BookOpen, requiresAuth: false },
   { labelKey: 'nav.admin', href: '/admin', icon: Users, requiresAuth: true },
@@ -47,6 +51,7 @@ interface SidebarNavProps {
   mobile?: boolean;
   isAuthenticated: boolean;
   user: { email: string } | null;
+  visibleTrackerItems: NavItem[];
   visibleItems: NavItem[];
   currentPath: string;
   onLinkClick: () => void;
@@ -57,12 +62,36 @@ function SidebarNav({
   mobile = false,
   isAuthenticated,
   user,
+  visibleTrackerItems,
   visibleItems,
   currentPath,
   onLinkClick,
   onLogout,
 }: SidebarNavProps) {
   const { t } = useTranslation('pet');
+
+  const renderLink = (item: NavItem, indented = false) => {
+    const Icon = item.icon;
+    const isActive = currentPath === item.href;
+    return (
+      <Link
+        key={item.href}
+        to={item.href}
+        onClick={onLinkClick}
+        className={cn(
+          'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+          indented && 'ml-3',
+          isActive
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        {t(item.labelKey)}
+      </Link>
+    );
+  };
+
   return (
     <nav
       className={cn(
@@ -83,26 +112,15 @@ function SidebarNav({
 
       {/* Nav Links */}
       <div className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {visibleItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentPath === item.href;
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={onLinkClick}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {t(item.labelKey)}
-            </Link>
-          );
-        })}
+        {visibleTrackerItems.length > 0 && (
+          <>
+            <p className="px-3 pt-1 pb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t('nav.trackerGroup')}
+            </p>
+            {visibleTrackerItems.map((item) => renderLink(item, true))}
+          </>
+        )}
+        {visibleItems.map((item) => renderLink(item))}
       </div>
 
       {/* Footer: theme + language + logout */}
@@ -154,16 +172,18 @@ export function AppShell({ children }: AppShellProps) {
 
   const closeSidebar = () => setSidebarOpen(false);
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) =>
-      (!item.requiresAuth || isAuthenticated) &&
-      (!item.requiresSuperAdmin || isSuperAdmin) &&
-      (!item.requiresPermission || can(item.requiresPermission)),
-  );
+  const isVisible = (item: NavItem) =>
+    (!item.requiresAuth || isAuthenticated) &&
+    (!item.requiresSuperAdmin || isSuperAdmin) &&
+    (!item.requiresPermission || can(item.requiresPermission));
+
+  const visibleTrackerItems = TRACKER_ITEMS.filter(isVisible);
+  const visibleItems = NAV_ITEMS.filter(isVisible);
 
   const sidebarProps = {
     isAuthenticated,
     user,
+    visibleTrackerItems,
     visibleItems,
     currentPath: location.pathname,
     onLinkClick: closeSidebar,

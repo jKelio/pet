@@ -10,8 +10,9 @@ const resources = {
         reload: 'Reload',
       },
       nav: {
-        tracking: 'Training Tracker',
-        drillTracker: 'Drill Tracker',
+        trackerGroup: 'Tracker',
+        trackerTraining: 'Training',
+        trackerDrill: 'Drill',
         history: 'History',
         glossary: 'Glossary',
         admin: 'Admin',
@@ -503,8 +504,9 @@ const resources = {
         reload: 'Neu laden',
       },
       nav: {
-        tracking: 'Trainings-Tracker',
-        drillTracker: 'Drill-Tracker',
+        trackerGroup: 'Tracker',
+        trackerTraining: 'Training',
+        trackerDrill: 'Drill',
         history: 'Historie',
         glossary: 'Glossar',
         admin: 'Verwaltung',
